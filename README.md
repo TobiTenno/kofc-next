@@ -103,7 +103,9 @@ Proxy config lives in `docker/swag/nginx/proxy-confs/kofc.subdomain.conf` and fo
 - **`main` branch** — after lint and build pass, [semantic-release](https://semantic-release.gitbook.io/) creates a version tag, GitHub release, and `CHANGELOG.md` update (Conventional Commits required; commitlint enforced locally via Husky).
 - **Docker** — `@codedependant/semantic-release-docker` builds and pushes `ghcr.io/<owner>/kofc-next:<version>` and `:latest`. CI sets `dockerProject` from `GITHUB_REPOSITORY` (no hardcoded owner); see `Prepare release config` in `.github/workflows/release.yml`.
 
-CI uses `src/data/council.json.example` as a build fixture. Production deployments mount real council data at runtime.
+CI uses `src/data/council.json.example` and `src/data/council.csv.example` as build/E2E fixtures. Production deployments mount real council data at runtime.
+
+**Local E2E:** `npm run test:e2e` (fixtures, build, seed, Cypress — one script). Interactive: `npm run test:e2e:open`. Build-only smoke: `npm run test:build`.
 
 ## Env
 

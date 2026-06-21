@@ -14,6 +14,9 @@ RUN cp src/data/council.json.example src/data/council.json \
 
 FROM node:jod-alpine AS runner
 
+LABEL org.opencontainers.image.source="https://github.com/TobiTenno/kofc-next"
+LABEL org.opencontainers.image.description="Knights of Columbus Council Site"
+
 WORKDIR /app
 
 ENV NODE_ENV=production

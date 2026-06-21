@@ -43,6 +43,9 @@ next-env.d.ts
 
 # wip files
 with-cypress-app/
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
 .idea/
 src/data/council.json
 src/data/council.csv

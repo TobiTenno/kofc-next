@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "node scripts/check-node-version.mjs && next build",
-    "cypress:open": "cypress open",
+    "cypress:open": "node scripts/run-e2e.mjs --open",
     "db:migrate": "node scripts/check-node-version.mjs && npx tsx src/db/migrate.ts",
     "dev": "node scripts/check-node-version.mjs && next dev --hostname 0.0.0.0",
     "format": "biome format --write",
@@ -13,7 +13,10 @@
     "member:seed-password": "node scripts/check-node-version.mjs && npx tsx scripts/seed-member-password.ts",
     "prepare": "husky",
     "rebuild:native": "npm rebuild better-sqlite3 --foreground-scripts",
-    "start": "next start"
+    "start": "next start",
+    "test:build": "node scripts/run-e2e.mjs --build-only",
+    "test:e2e": "node scripts/run-e2e.mjs",
+    "test:e2e:open": "node scripts/run-e2e.mjs --open"
   },
   "dependencies": {
     "@emotion/cache": "^11.14.0",
@@ -62,6 +65,7 @@
     "@types/react": "^19.2.17",
     "@types/react-big-calendar": "^1.16.3",
     "@types/react-dom": "^19.2.3",
+    "cypress": "^14.5.4",
     "drizzle-kit": "^0.31.10",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
