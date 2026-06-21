@@ -1,39 +1,25 @@
 'use client';
 
 import { createContext, type ReactNode, useContext } from 'react';
-import { prettifyError } from 'zod';
-import config from '@/data/council.json' with { type: 'json' };
-import { CouncilConfigSchema } from '@/schema/council';
 import type { CouncilConfig } from '@/types/council';
 
-const parseResult = CouncilConfigSchema.safeParse(config);
+const CouncilContext = createContext<CouncilConfig | null>(null);
 
-export const councilConfig: CouncilConfig = parseResult?.success
-  ? {
-      ...parseResult.data,
-      complete: true,
-    }
-  : {
-      complete: false,
-      errorMessage: prettifyError(parseResult?.error) ?? 'Council not found',
-      council: undefined,
-    };
+type CouncilProviderProps = {
+  value: CouncilConfig;
+  children: ReactNode;
+};
 
-export const CouncilContext = createContext<CouncilConfig>({
-  complete: false,
-  errorMessage: 'Council not found',
-  council: undefined,
-});
-
-export default function CouncilProvider({ children }: { children: ReactNode }) {
+export default function CouncilProvider({
+  value,
+  children,
+}: CouncilProviderProps) {
   return (
-    <CouncilContext.Provider value={councilConfig}>
-      {children}
-    </CouncilContext.Provider>
+    <CouncilContext.Provider value={value}>{children}</CouncilContext.Provider>
   );
 }
 
-export const useConfig = () => {
+export const useConfig = (): CouncilConfig => {
   const context = useContext(CouncilContext);
   if (!context) {
     return {

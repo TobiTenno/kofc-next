@@ -1,14 +1,14 @@
 import { MemberSubNav } from '@/components/MemberSubNav';
 import { SiteNav } from '@/components/SiteNav';
+import { loadCouncilConfig } from '@/lib/council-config';
 import { isPayPalConfigured } from '@/lib/dues';
 import { buildMemberNavContext } from '@/lib/member-nav';
 import { getMembershipNumber, getSession } from '@/lib/session';
-import { councilConfig } from '@/providers/council';
 
 export const dynamic = 'force-dynamic';
 
 export const SiteHeader = async () => {
-  const { council } = councilConfig;
+  const { council } = loadCouncilConfig();
   const session = await getSession();
   const membershipNumber = session ? await getMembershipNumber() : null;
   const memberContext = membershipNumber

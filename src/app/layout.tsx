@@ -5,8 +5,9 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import Image from 'next/image';
 import Script from 'next/script';
 import { SiteHeader } from '@/components/SiteHeader';
+import { loadCouncilConfig } from '@/lib/council-config';
 import { ColorSchemeProvider } from '@/providers/color-scheme';
-import ConfigProvider, { councilConfig } from '@/providers/council';
+import CouncilProvider from '@/providers/council';
 import theme from '../theme';
 import './globals.css';
 
@@ -28,50 +29,54 @@ export const viewport: Viewport = {
   viewportFit: 'cover',
 };
 
-export const metadata: Metadata = {
-  title: `Knights of Columbus - Council ${councilConfig?.council?.number ?? ''}`,
-  description: `Council ${councilConfig?.council?.number ?? ''}`,
-  robots: {
-    index: true,
-    follow: false,
-  },
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
-    other: [
-      {
-        url: '/android-chrome-512x512.png',
-        rel: 'android-chrome',
-        sizes: '512x512',
-        type: 'image/png',
-      },
-      {
-        url: '/android-chrome-192x192.png',
-        rel: 'android-chrome',
-        sizes: '192x192',
-        type: 'image/png',
-      },
-      {
-        url: '/favicon-16x16.png',
-        rel: 'icon',
-        sizes: '16x16',
-        type: 'image/png',
-      },
-      {
-        url: '/favicon-32x32.png',
-        rel: 'icon',
-        sizes: '32x32',
-        type: 'image/png',
-      },
-    ],
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const councilConfig = loadCouncilConfig();
+  return {
+    title: `Knights of Columbus - Council ${councilConfig?.council?.number ?? ''}`,
+    description: `Council ${councilConfig?.council?.number ?? ''}`,
+    robots: {
+      index: true,
+      follow: false,
+    },
+    icons: {
+      icon: '/favicon.ico',
+      apple: '/apple-touch-icon.png',
+      other: [
+        {
+          url: '/android-chrome-512x512.png',
+          rel: 'android-chrome',
+          sizes: '512x512',
+          type: 'image/png',
+        },
+        {
+          url: '/android-chrome-192x192.png',
+          rel: 'android-chrome',
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          url: '/favicon-16x16.png',
+          rel: 'icon',
+          sizes: '16x16',
+          type: 'image/png',
+        },
+        {
+          url: '/favicon-32x32.png',
+          rel: 'icon',
+          sizes: '32x32',
+          type: 'image/png',
+        },
+      ],
+    },
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const councilConfig = loadCouncilConfig();
   const { council } = councilConfig;
   const footer = (
     <footer className='row-start-3 flex gap-[24px] flex-wrap items-center justify-center'>
@@ -95,7 +100,7 @@ export default function RootLayout({
 
   return (
     <html lang='en' suppressHydrationWarning>
-      <ConfigProvider>
+      <CouncilProvider value={councilConfig}>
         <AppRouterCacheProvider options={{ enableCssLayer: true }}>
           <ThemeProvider theme={theme}>
             <ColorSchemeProvider>
@@ -117,7 +122,7 @@ export default function RootLayout({
             </ColorSchemeProvider>
           </ThemeProvider>
         </AppRouterCacheProvider>
-      </ConfigProvider>
+      </CouncilProvider>
     </html>
   );
 }

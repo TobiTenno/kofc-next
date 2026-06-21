@@ -9,10 +9,12 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-RUN cp src/data/council.json.example src/data/council.json \
-  && npm run build
+RUN npm run build
 
 FROM node:jod-alpine AS runner
+
+LABEL org.opencontainers.image.source="https://github.com/TobiTenno/kofc-next"
+LABEL org.opencontainers.image.description="Knights of Columbus Council Site"
 
 WORKDIR /app
 
