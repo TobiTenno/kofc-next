@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import {
+  buildExternalRequestUrl,
   getRequestHost,
   shouldRedirectToCanonicalOrigin,
   toCanonicalUrl,
@@ -31,7 +32,13 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
 
     if (!session) {
       const params = new URLSearchParams({ next: pathname });
-      return NextResponse.redirect(`/members/login?${params}`);
+      const loginUrl = buildExternalRequestUrl(
+        request.headers,
+        request.nextUrl,
+        '/members/login',
+        `?${params}`,
+      );
+      return NextResponse.redirect(loginUrl);
     }
   }
 

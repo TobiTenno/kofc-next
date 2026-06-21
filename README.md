@@ -103,7 +103,16 @@ BETTER_AUTH_URL=https://kofc.example.com
 NEXT_PUBLIC_APP_URL=https://kofc.example.com
 ```
 
-`NEXT_PUBLIC_APP_URL` is embedded at **build** time for Docker images; pass it as a build arg or rebuild after changing it. SWAG sends `X-Forwarded-Host` / `X-Forwarded-Proto`; the app uses those to avoid redirect loops when the Node process sees an internal hostname.
+`NEXT_PUBLIC_APP_URL` is embedded at **build** time for Docker images; pass it as a build arg or rebuild after changing it.
+
+When SWAG (or any reverse proxy) terminates TLS and forwards to a host port (e.g. `localhost:8367`), you **must** pass the public host and scheme — not only `Host`. Without `X-Forwarded-Proto`, Next.js 16 standalone treats proxy routes as HTTP and can 307-loop. Include SWAG’s `proxy.conf` or set at least:
+
+```nginx
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Host $host;
+proxy_set_header X-Forwarded-Proto $scheme;
+proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+```
 
 ## CI / release
 

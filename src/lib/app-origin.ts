@@ -38,6 +38,18 @@ export const getRequestProtocol = (
   return fallbackProtocol;
 };
 
+/** Absolute URL using client-facing host/proto (required for proxy redirects). */
+export const buildExternalRequestUrl = (
+  headers: Headers,
+  fallbackUrl: URL,
+  pathname: string,
+  search = '',
+): URL => {
+  const protocol = getRequestProtocol(headers, fallbackUrl.protocol);
+  const host = getRequestHost(headers, fallbackUrl.host);
+  return new URL(`${pathname}${search}`, `${protocol}//${host}`);
+};
+
 /** Canonical browser origin from env (NEXT_PUBLIC_APP_URL preferred). */
 export const getCanonicalAppOrigin = (): string | null => {
   const raw = process.env.NEXT_PUBLIC_APP_URL ?? process.env.BETTER_AUTH_URL;
@@ -64,11 +76,14 @@ export const shouldRedirectToCanonicalOrigin = (
 
   try {
     const canonicalUrl = new URL(canonical);
-    if (canonicalUrl.host === requestHost) {
+    const requestHostname = requestHost.split(':')[0] ?? requestHost;
+    if (
+      canonicalUrl.hostname === requestHostname ||
+      canonicalUrl.host === requestHost
+    ) {
       return false;
     }
 
-    const requestHostname = requestHost.split(':')[0] ?? requestHost;
     return (
       isLoopbackHost(requestHostname) && !isLoopbackHost(canonicalUrl.hostname)
     );
