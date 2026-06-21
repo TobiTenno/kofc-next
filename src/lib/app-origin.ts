@@ -4,6 +4,40 @@ export const isLoopbackHost = (hostname: string): boolean =>
   hostname === '[::1]' ||
   hostname.endsWith('.localhost');
 
+/** First value when a reverse proxy forwards comma-separated headers. */
+export const firstForwardedHeaderValue = (
+  value: string | null | undefined,
+): string | null => {
+  if (!value) {
+    return null;
+  }
+
+  const first = value.split(',')[0]?.trim();
+  return first || null;
+};
+
+/** Client-facing host (X-Forwarded-Host, then Host, then Next URL). */
+export const getRequestHost = (
+  headers: Headers,
+  fallbackHost: string,
+): string =>
+  firstForwardedHeaderValue(headers.get('x-forwarded-host')) ??
+  headers.get('host') ??
+  fallbackHost;
+
+/** Client-facing protocol from X-Forwarded-Proto when present. */
+export const getRequestProtocol = (
+  headers: Headers,
+  fallbackProtocol: string,
+): string => {
+  const forwarded = firstForwardedHeaderValue(headers.get('x-forwarded-proto'));
+  if (forwarded === 'https' || forwarded === 'http') {
+    return `${forwarded}:`;
+  }
+
+  return fallbackProtocol;
+};
+
 /** Canonical browser origin from env (NEXT_PUBLIC_APP_URL preferred). */
 export const getCanonicalAppOrigin = (): string | null => {
   const raw = process.env.NEXT_PUBLIC_APP_URL ?? process.env.BETTER_AUTH_URL;

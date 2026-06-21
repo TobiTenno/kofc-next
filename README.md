@@ -96,6 +96,15 @@ Set in `.env`:
 
 Proxy config lives in `docker/swag/nginx/proxy-confs/kofc.subdomain.conf` and forwards to the `app` service on port 3000.
 
+Set the public site URL in `.env` so auth and canonical redirects match what browsers use (replace with your subdomain):
+
+```bash
+BETTER_AUTH_URL=https://kofc.example.com
+NEXT_PUBLIC_APP_URL=https://kofc.example.com
+```
+
+`NEXT_PUBLIC_APP_URL` is embedded at **build** time for Docker images; pass it as a build arg or rebuild after changing it. SWAG sends `X-Forwarded-Host` / `X-Forwarded-Proto`; the app uses those to avoid redirect loops when the Node process sees an internal hostname.
+
 ## CI / release
 
 - **Pull requests** — GitHub Actions runs Biome (`npm run lint`), production build, and Cypress E2E.
