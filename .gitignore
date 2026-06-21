@@ -49,4 +49,6 @@ cypress/downloads/
 .idea/
 src/data/council.json
 src/data/council.csv
+!src/data/council.json.example
+!src/data/council.csv.example
 data/
