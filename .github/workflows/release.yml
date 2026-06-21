@@ -78,11 +78,6 @@ jobs:
         env:
           HUSKY: 0
 
-      - name: Configure git for semantic-release
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
       - name: Prepare release config
         run: |
           owner="${GITHUB_REPOSITORY%%/*}"

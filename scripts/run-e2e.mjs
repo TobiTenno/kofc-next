@@ -65,6 +65,8 @@ if (buildOnly) {
   process.exit(0);
 }
 
+run('npm', ['run', 'db:migrate'], 'database migrate');
+
 run(
   'npx',
   [

@@ -100,7 +100,7 @@ Proxy config lives in `docker/swag/nginx/proxy-confs/kofc.subdomain.conf` and fo
 
 - **Pull requests** — GitHub Actions runs Biome (`npm run lint`) and a production Next.js build.
 - **Dependabot** — `.github/dependabot.yml` only (npm, GitHub Actions, Docker). Each ecosystem uses one `groups` entry with `patterns: ["*"]` so updates land in a single commit per PR.
-- **`main` branch** — after lint and build pass, [semantic-release](https://semantic-release.gitbook.io/) creates a version tag, GitHub release, and `CHANGELOG.md` update (Conventional Commits required; commitlint enforced locally via Husky).
+- **`main` branch** — after lint and build pass, [semantic-release](https://semantic-release.gitbook.io/) creates a **git tag** and **GitHub Release** with notes (Conventional Commits required; commitlint enforced locally via Husky). Does **not** push commits to `main` (branch protection: PR + signed commits). **`package.json` / `CHANGELOG.md` on `main` are not auto-bumped** — use [GitHub Releases](https://github.com/TobiTenno/kofc-next/releases) and tags as the version source of truth.
 - **Docker** — `@codedependant/semantic-release-docker` builds and pushes `ghcr.io/<owner>/kofc-next:<version>` and `:latest`. CI sets `dockerProject` from `GITHUB_REPOSITORY` (no hardcoded owner); see `Prepare release config` in `.github/workflows/release.yml`.
 
 CI uses `src/data/council.json.example` and `src/data/council.csv.example` as build/E2E fixtures. Production deployments mount real council data at runtime.
