@@ -56,24 +56,27 @@ const e2eEnv = {
 /** @type {import('node:child_process').ChildProcess | null} */
 let serverProcess = null;
 
-const resolveDatabasePath = () =>
-  path.resolve(
-    root,
-    e2eEnv.DATABASE_PATH.replace(/^\.\//, '') || 'data/app.db',
-  );
+const resolveDatabasePath = () => {
+  const configured = e2eEnv.DATABASE_PATH.replace(/^\.\//, '') || 'data/app.db';
+  if (configured === ':memory:') {
+    return ':memory:';
+  }
+  return path.resolve(root, configured);
+};
 
-const runEnv = () => ({
+const runEnv = (extraEnv = {}) => ({
   ...process.env,
   ...e2eEnv,
-  DATABASE_PATH: resolveDatabasePath(),
+  ...extraEnv,
+  DATABASE_PATH: extraEnv.DATABASE_PATH ?? resolveDatabasePath(),
 });
 
-const run = (command, commandArgs, label) => {
+const run = (command, commandArgs, label, extraEnv = {}) => {
   console.log(`\n> ${label ?? [command, ...commandArgs].join(' ')}`);
   const result = spawnSync(command, commandArgs, {
     cwd: root,
     stdio: 'inherit',
-    env: runEnv(),
+    env: runEnv(extraEnv),
   });
 
   if (result.status !== 0) {
@@ -229,7 +232,9 @@ try {
     ensureCypressBinary();
   }
 
-  run('npm', ['run', 'build'], 'production build');
+  run('npm', ['run', 'build'], 'production build', {
+    DATABASE_PATH: ':memory:',
+  });
 
   if (!buildOnly) {
     run('npm', ['run', 'db:migrate'], 'database migrate');
