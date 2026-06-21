@@ -1,0 +1,41 @@
+{
+  "council": {
+    "id": "01947a93-8372-7681-88c9-52a8b2d41666",
+    "number": 1234,
+    "name": "Example Council",
+    "address": {
+      "street": "123 Main St",
+      "city": "Anytown",
+      "state": "NY",
+      "zipCode": "12345"
+    },
+    "parish": {
+      "name": "Example Parish",
+      "street": "123 Church St",
+      "city": "Anytown",
+      "state": "NY",
+      "zipCode": "12345"
+    },
+    "meetingTimes": {
+      "council": {
+        "day": "Monday",
+        "time": "7:00 PM",
+        "frequency": "monthly"
+      },
+      "officers": {
+        "day": "Monday",
+        "time": "6:30 PM",
+        "frequency": "monthly"
+      }
+    }
+  },
+  "webmaster": {
+    "membershipNumber": "0000000"
+  },
+  "permissions": {
+    "sendCouncilEmail": [],
+    "managePermissions": [],
+    "manageEvents": [],
+    "manageGalleries": []
+  }
+}

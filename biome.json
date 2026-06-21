@@ -1,0 +1,82 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.0/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["**", "!node_modules", "!.next", "!dist", "!build"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "a11y": {
+        "noSvgWithoutTitle": "off",
+        "useSemanticElements": "warn"
+      },
+      "performance": {
+        "noImgElement": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "warn"
+      },
+      "suspicious": {
+        "noUnknownAtRules": "off"
+      }
+    },
+    "domains": {
+      "next": "recommended",
+      "react": "recommended"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["public/**"],
+      "linter": {
+        "enabled": false
+      },
+      "formatter": {
+        "enabled": false
+      }
+    },
+    {
+      "includes": ["**/shadcn-big-calendar.css"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDescendingSpecificity": "off"
+          },
+          "suspicious": {
+            "noDuplicateProperties": "off"
+          }
+        }
+      }
+    }
+  ],
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "single",
+      "quoteStyle": "single"
+    }
+  }
+}

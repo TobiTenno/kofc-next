@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          HUSKY: 0
+
+      - name: Biome check
+        run: npm run lint
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+        env:
+          HUSKY: 0
+
+      - name: Prepare council config for build
+        run: cp src/data/council.json.example src/data/council.json
+
+      - name: Next.js production build
+        run: npm run build
+        env:
+          BETTER_AUTH_SECRET: ci-build-secret-minimum-32-characters-long
+          BETTER_AUTH_URL: http://localhost:3000
+          NEXT_PUBLIC_APP_URL: http://localhost:3000

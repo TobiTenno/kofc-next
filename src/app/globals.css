@@ -1,0 +1,206 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant not-dark (&:where(:not(.dark, .dark *)));
+
+@layer theme, base, mui, components, utilities;
+
+:root {
+  color-scheme: light;
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #ffffff;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #172554;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #3b82f6;
+  --destructive: #dc2626;
+  --radius: 0.5rem;
+  --field-placeholder: var(--muted-foreground);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #1f2937;
+  --foreground: #ededed;
+  --card: #111827;
+  --card-foreground: #ededed;
+  --popover: #111827;
+  --popover-foreground: #ededed;
+  --primary: #93c5fd;
+  --primary-foreground: #172554;
+  --secondary: #374151;
+  --secondary-foreground: #f3f4f6;
+  --muted: #374151;
+  --muted-foreground: #9ca3af;
+  --border: #6b7280;
+  --input: #6b7280;
+  --ring: #60a5fa;
+  --destructive: #f87171;
+
+  /* HeroUI form fields — visible edges in dark mode */
+  --field-border-width: 1px;
+  --field-border: oklch(58% 0.012 286);
+  --field-border-hover: oklch(66% 0.014 286);
+  --field-border-focus: oklch(74% 0.016 286);
+  --border-secondary: oklch(52% 0.01 286);
+  --separator: oklch(48% 0.008 286);
+  --field-placeholder: var(--muted-foreground);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+html {
+  overflow-x: clip;
+}
+
+@layer components {
+  /* HeroUI select chevron — vertically center in trigger */
+  .select__trigger .select__indicator {
+    inset-block: auto;
+    top: 50%;
+    display: grid;
+    place-items: center;
+    translate: 0 -50%;
+  }
+
+  .select__trigger .select__indicator[data-open="true"] {
+    translate: 0 -50%;
+    rotate: 180deg;
+  }
+
+  /* Mobile touch targets for HeroUI controls */
+  @media (max-width: 640px) {
+    .select__trigger,
+    .input,
+    .textarea,
+    [data-slot="select-trigger"] {
+      min-height: 2.75rem;
+    }
+
+    [data-slot="list-box-item"] {
+      min-height: 2.75rem;
+      padding-block: 0.625rem;
+    }
+
+    .select__popover {
+      max-height: min(70dvh, 28rem);
+    }
+  }
+
+  /* Roster — unified card; filters + table one surface */
+  .roster-panel .roster-table.table-root,
+  .roster-panel .roster-table.table-root--primary {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .roster-panel .roster-table .table__header {
+    background: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .roster-panel .roster-table .table__column {
+    background: transparent;
+    color: var(--foreground);
+    border-radius: 0;
+  }
+
+  .roster-panel .roster-table.table-root--secondary .table__column,
+  .roster-panel
+    .roster-table.table-root--secondary
+    :is(
+      th.table__column:first-child,
+      th.table__column:last-child,
+      [role="row"] > [role="presentation"]:first-of-type > .table__column,
+      [role="row"] > [role="presentation"]:last-of-type > .table__column
+    ) {
+    border-radius: 0;
+  }
+
+  .roster-panel .roster-table .table__body,
+  .roster-panel .roster-table .table__cell {
+    background: var(--card);
+    color: var(--foreground);
+  }
+
+  .roster-panel .roster-table .table__row .table__cell {
+    border-color: var(--border);
+  }
+
+  .roster-panel .roster-table .table__footer {
+    border-top: 1px solid var(--border);
+    background: var(--card);
+    padding-inline: 1rem;
+    padding-block: 0.75rem;
+  }
+
+  .roster-filters .input::placeholder,
+  .roster-filters input::placeholder {
+    color: var(--muted-foreground);
+    opacity: 1;
+  }
+
+  .roster-filters [data-placeholder="true"] {
+    color: var(--muted-foreground);
+  }
+
+  /* HeroUI alerts — description text matches variant in dark mode */
+  .dark .alert--success .alert__description {
+    @apply text-success-soft-foreground;
+  }
+
+  .dark .alert--danger .alert__description {
+    @apply text-danger-soft-foreground;
+  }
+
+  .dark .alert--accent .alert__description {
+    @apply text-accent-soft-foreground;
+  }
+
+  .dark .alert--warning .alert__description {
+    @apply text-warning-soft-foreground;
+  }
+
+  .dark .alert--default .alert__description {
+    color: var(--foreground);
+  }
+
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+    margin: 0;
+    padding: 0.125rem;
+    border: 1px solid rgb(255 255 255 / 0.15);
+    border-radius: 0.5rem;
+    background: rgb(255 255 255 / 0.05);
+  }
+}

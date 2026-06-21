@@ -1,0 +1,42 @@
+# Single Dependabot config — one grouped PR (one commit) per ecosystem.
+# Cross-ecosystem (npm + Actions + Docker) cannot share one PR; see groups below.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 1
+    groups:
+      all-npm:
+        patterns:
+          - "*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 1
+    groups:
+      all-actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/New_York
+    open-pull-requests-limit: 1
+    groups:
+      all-docker:
+        patterns:
+          - "*"

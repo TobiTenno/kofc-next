@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+    expose:
+      - '3000'
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    environment:
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      DATABASE_PATH: /app/data/app.db
+    volumes:
+      - ./data:/app/data
+      - ./src/data/council.json:/app/src/data/council.json
+      - ./src/data/council.csv:/app/src/data/council.csv
+
+  swag:
+    image: lscr.io/linuxserver/swag:latest
+    profiles:
+      - with-proxy
+    cap_add:
+      - NET_ADMIN
+    environment:
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      TZ: ${TZ:-America/New_York}
+      URL: ${SWAG_URL:-example.com}
+      SUBDOMAINS: ${SWAG_SUBDOMAINS:-kofc}
+      VALIDATION: ${SWAG_VALIDATION:-http}
+      EMAIL: ${SWAG_EMAIL:-}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./docker/swag:/config
+    depends_on:
+      - app

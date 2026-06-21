@@ -1,0 +1,8 @@
+'*.**,!package*.json':
+  - 'npm run format'
+'*.ts':
+  - biome lint --write --staged
+#  - npm test -- --reporter=mocha-minimalist-reporter
+package*.json:
+  - npm dedupe
+  - npx sort-package-json
