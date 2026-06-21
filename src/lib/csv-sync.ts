@@ -1,13 +1,13 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
-import path from 'node:path';
 import { parse } from 'csv-parse/sync';
 import { eq, notInArray } from 'drizzle-orm';
 import { db } from '@/db';
 import { appMeta, members, user } from '@/db/schema';
+import { getCouncilCsvPath } from '@/lib/council-paths';
 import { normalizeEmail } from '@/lib/utils';
 
-const csvPath = path.join(process.cwd(), 'src/data/council.csv');
+const csvPath = (): string => getCouncilCsvPath();
 
 type CsvRow = Record<string, string>;
 
@@ -33,11 +33,11 @@ const csvColumns = {
 } as const;
 
 export const readCouncilCsv = (): CsvRow[] => {
-  if (!fs.existsSync(csvPath)) {
+  if (!fs.existsSync(csvPath())) {
     return [];
   }
 
-  const content = fs.readFileSync(csvPath, 'utf8');
+  const content = fs.readFileSync(csvPath(), 'utf8');
   return parse(content, {
     columns: true,
     skip_empty_lines: true,
@@ -46,10 +46,10 @@ export const readCouncilCsv = (): CsvRow[] => {
 };
 
 export const hashCsvContent = (): string | null => {
-  if (!fs.existsSync(csvPath)) {
+  if (!fs.existsSync(csvPath())) {
     return null;
   }
-  const content = fs.readFileSync(csvPath, 'utf8');
+  const content = fs.readFileSync(csvPath(), 'utf8');
   return createHash('sha256').update(content).digest('hex');
 };
 

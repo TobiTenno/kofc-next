@@ -98,14 +98,14 @@ Proxy config lives in `docker/swag/nginx/proxy-confs/kofc.subdomain.conf` and fo
 
 ## CI / release
 
-- **Pull requests** — GitHub Actions runs Biome (`npm run lint`) and a production Next.js build.
+- **Pull requests** — GitHub Actions runs Biome (`npm run lint`), production build, and Cypress E2E.
 - **Dependabot** — `.github/dependabot.yml` only (npm, GitHub Actions, Docker). Each ecosystem uses one `groups` entry with `patterns: ["*"]` so updates land in a single commit per PR.
-- **`main` branch** — after lint and build pass, [semantic-release](https://semantic-release.gitbook.io/) creates a **git tag** and **GitHub Release** with notes (Conventional Commits required; commitlint enforced locally via Husky). Does **not** push commits to `main` (branch protection: PR + signed commits). **`package.json` / `CHANGELOG.md` on `main` are not auto-bumped** — use [GitHub Releases](https://github.com/TobiTenno/kofc-next/releases) and tags as the version source of truth.
+- **`main` branch** — release workflow runs lint, build, and Cypress E2E before [semantic-release](https://semantic-release.gitbook.io/) creates a **git tag** and **GitHub Release** with notes (Conventional Commits required; commitlint enforced locally via Husky). Does **not** push commits to `main` (branch protection: PR + signed commits). **`package.json` / `CHANGELOG.md` on `main` are not auto-bumped** — use [GitHub Releases](https://github.com/TobiTenno/kofc-next/releases) and tags as the version source of truth.
 - **Docker** — `@codedependant/semantic-release-docker` builds and pushes `ghcr.io/<owner>/kofc-next:<version>` and `:latest`. CI sets `dockerProject` from `GITHUB_REPOSITORY` (no hardcoded owner); see `Prepare release config` in `.github/workflows/release.yml`.
 
-CI uses `src/data/council.json.example` and `src/data/council.csv.example` as build/E2E fixtures. Production deployments mount real council data at runtime.
+CI E2E reads `src/data/council.json.example` and `src/data/council.csv.example` via `COUNCIL_JSON_PATH` / `COUNCIL_CSV_PATH` — your local `council.json` / `council.csv` are never touched. Production deployments mount real council data at runtime (or set those env vars).
 
-**Local E2E:** `npm run test:e2e` (fixtures, build, seed, Cypress — one script). Interactive: `npm run test:e2e:open`. Build-only smoke: `npm run test:build`.
+**Local E2E:** `npm run test:e2e` (interactive: `npm run test:e2e:open`). Override paths: `COUNCIL_JSON_PATH=... COUNCIL_CSV_PATH=... npm run test:e2e`.
 
 ## Env
 

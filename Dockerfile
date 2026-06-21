@@ -9,8 +9,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-RUN cp src/data/council.json.example src/data/council.json \
-  && npm run build
+RUN npm run build
 
 FROM node:jod-alpine AS runner
 

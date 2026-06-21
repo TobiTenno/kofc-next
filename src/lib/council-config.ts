@@ -1,12 +1,12 @@
 import fs from 'node:fs';
-import path from 'node:path';
 import { prettifyError } from 'zod';
+import { getCouncilJsonPath } from '@/lib/council-paths';
 import { CouncilConfigSchema } from '@/schema/council';
 import type { CouncilConfig } from '@/types/council';
 
-const configPath = path.join(process.cwd(), 'src/data/council.json');
-
 export const loadCouncilConfig = (): CouncilConfig => {
+  const configPath = getCouncilJsonPath();
+
   if (!fs.existsSync(configPath)) {
     return {
       complete: false,
@@ -33,6 +33,7 @@ export const loadCouncilConfig = (): CouncilConfig => {
 };
 
 export const writeCouncilConfig = (config: CouncilConfig): void => {
+  const configPath = getCouncilJsonPath();
   const {
     complete: _complete,
     errorMessage: _errorMessage,
@@ -45,4 +46,4 @@ export const writeCouncilConfig = (config: CouncilConfig): void => {
   );
 };
 
-export const councilConfigPath = configPath;
+export const councilConfigPath = (): string => getCouncilJsonPath();

@@ -14,11 +14,5 @@ export default defineConfig({
       TEST_MEMBER_NUMBER: '0000000',
       TEST_MEMBER_PASSWORD: 'cypress-ci-password',
     },
-    webServer: {
-      command: 'npm run start',
-      url: baseUrl,
-      reuseExistingServer: !process.env.CI,
-      timeout: 120_000,
-    },
   },
 });

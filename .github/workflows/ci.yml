@@ -47,7 +47,7 @@ jobs:
         env:
           HUSKY: 0
 
-      - name: Production build (example council fixtures)
+      - name: Production build
         run: npm run test:build
         env:
           HUSKY: 0
@@ -68,6 +68,12 @@ jobs:
         run: npm ci
         env:
           HUSKY: 0
+
+      - name: Cache Cypress binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/Cypress
+          key: cypress-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
       - name: E2E tests
         run: npm run test:e2e
