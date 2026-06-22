@@ -6,10 +6,12 @@ import {
   Input,
   Label,
   ListBox,
+  Modal,
   Pagination,
   Select,
   Table,
   TextField,
+  useOverlayState,
 } from '@heroui/react';
 import type { Selection } from '@react-types/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -95,21 +97,29 @@ const RosterCheckbox = ({
   indeterminate?: boolean;
   onChange: (checked: boolean) => void;
   ariaLabel: string;
-}) => (
-  <input
-    type='checkbox'
-    aria-label={ariaLabel}
-    checked={checked}
-    ref={(element) => {
-      if (element) {
-        element.indeterminate = indeterminate;
-      }
-    }}
-    onChange={(event) => onChange(event.target.checked)}
-    onClick={(event) => event.stopPropagation()}
-    className='size-4 shrink-0 cursor-pointer accent-primary'
-  />
-);
+}) => {
+  const stopActivation = (event: React.SyntheticEvent): void => {
+    event.stopPropagation();
+  };
+
+  return (
+    <input
+      type='checkbox'
+      aria-label={ariaLabel}
+      checked={checked}
+      ref={(element) => {
+        if (element) {
+          element.indeterminate = indeterminate;
+        }
+      }}
+      onChange={(event) => onChange(event.target.checked)}
+      onClick={stopActivation}
+      onPointerDown={stopActivation}
+      onMouseDown={stopActivation}
+      className='size-4 shrink-0 cursor-pointer accent-primary'
+    />
+  );
+};
 
 const stopRowActivation = (event: React.SyntheticEvent): void => {
   event.stopPropagation();
@@ -137,13 +147,7 @@ const formatDuesStatus = (status: DuesStatus): string => {
   }
 };
 
-const BulkEmailForm = ({
-  members,
-  onClear,
-}: {
-  members: RosterMemberRow[];
-  onClear: () => void;
-}) => {
+const BulkEmailForm = ({ members }: { members: RosterMemberRow[] }) => {
   const composeRef = useRef<EmailComposeFieldsHandle>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
@@ -155,6 +159,8 @@ const BulkEmailForm = ({
   const membershipNumbers = membersWithEmail.map(
     (member) => member.membershipNumber,
   );
+  const isSingle = members.length === 1;
+  const singleMember = isSingle ? members[0] : null;
 
   const submit = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();
@@ -169,17 +175,26 @@ const BulkEmailForm = ({
     const response = await fetch('/api/members/email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subject,
-        text,
-        membershipNumbers,
-      }),
+      body: JSON.stringify(
+        isSingle && singleMember
+          ? {
+              subject,
+              text,
+              membershipNumber: singleMember.membershipNumber,
+            }
+          : {
+              subject,
+              text,
+              membershipNumbers,
+            },
+      ),
     });
 
     setLoading(false);
     const payload = (await response.json()) as {
       error?: string;
       recipientCount?: number;
+      recipientEmail?: string;
       skippedCount?: number;
     };
 
@@ -190,125 +205,28 @@ const BulkEmailForm = ({
     }
 
     setMessageTone('success');
-    const skipped =
-      payload.skippedCount && payload.skippedCount > 0
-        ? ` (${payload.skippedCount} skipped — no email on file)`
-        : '';
-    setMessage(
-      `Sent to ${payload.recipientCount ?? membershipNumbers.length} member(s).${skipped}`,
-    );
-    composeRef.current?.reset();
-    onClear();
-  };
-
-  return (
-    <form
-      onSubmit={submit}
-      className='grid gap-3 border-b border-border bg-muted/30 p-4'
-      onClick={stopRowActivation}
-      onKeyDown={stopRowActivation}
-    >
-      <div className='flex flex-wrap items-center justify-between gap-2'>
-        <p className='text-sm font-medium'>
-          Email {members.length} selected
-          {membersWithEmail.length < members.length
-            ? ` (${membersWithEmail.length} with email on file)`
-            : null}
-        </p>
-        <Button type='button' variant='ghost' size='sm' onPress={onClear}>
-          Clear selection
-        </Button>
-      </div>
-      <EmailComposeFields
-        ref={composeRef}
-        subjectId='bulk-email-subject'
-        messageId='bulk-email-message'
-      />
-      {message ? (
-        <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Description>{message}</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      ) : null}
-      <Button
-        type='submit'
-        variant='primary'
-        isDisabled={loading || membersWithEmail.length === 0}
-        size='sm'
-        className='w-fit'
-      >
-        {loading ? 'Sending…' : `Send to ${membersWithEmail.length} member(s)`}
-      </Button>
-    </form>
-  );
-};
-
-const MemberEmailForm = ({ member }: { member: RosterMemberRow }) => {
-  const composeRef = useRef<EmailComposeFieldsHandle>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
-    'success',
-  );
-  const [loading, setLoading] = useState(false);
-
-  const submit = async (event: React.FormEvent): Promise<void> => {
-    event.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    const { subject, text } = composeRef.current?.getValues() ?? {
-      subject: '',
-      text: '',
-    };
-
-    const response = await fetch('/api/members/email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subject,
-        text,
-        membershipNumber: member.membershipNumber,
-      }),
-    });
-
-    setLoading(false);
-    const payload = (await response.json()) as {
-      error?: string;
-      recipientEmail?: string;
-    };
-
-    if (!response.ok) {
-      setMessageTone('danger');
-      setMessage(payload.error ?? 'Send failed');
-      return;
+    if (isSingle && singleMember) {
+      setMessage(
+        `Sent to ${payload.recipientEmail ?? singleMember.primaryEmail}.`,
+      );
+    } else {
+      const skipped =
+        payload.skippedCount && payload.skippedCount > 0
+          ? ` (${payload.skippedCount} skipped — no email on file)`
+          : '';
+      setMessage(
+        `Sent to ${payload.recipientCount ?? membershipNumbers.length} member(s).${skipped}`,
+      );
     }
-
-    setMessageTone('success');
-    setMessage(`Sent to ${payload.recipientEmail ?? member.primaryEmail}.`);
     composeRef.current?.reset();
   };
 
-  if (!member.primaryEmail) {
-    return (
-      <p className='text-sm text-muted-foreground'>
-        No email on file for this member.
-      </p>
-    );
-  }
-
   return (
-    <form
-      onSubmit={submit}
-      className='grid gap-3 border-t border-border pt-3'
-      onClick={stopRowActivation}
-      onKeyDown={stopRowActivation}
-    >
+    <form onSubmit={submit} className='grid gap-4'>
       <EmailComposeFields
         ref={composeRef}
-        subjectId={`member-email-subject-${member.membershipNumber}`}
-        messageId={`member-email-message-${member.membershipNumber}`}
+        subjectId='roster-email-subject'
+        messageId='roster-email-message'
         autoFocusSubject
       />
       {message ? (
@@ -319,26 +237,91 @@ const MemberEmailForm = ({ member }: { member: RosterMemberRow }) => {
           </Alert.Content>
         </Alert>
       ) : null}
-      <Button
-        type='submit'
-        variant='primary'
-        isDisabled={loading}
-        size='sm'
-        className='w-fit'
-      >
-        {loading ? 'Sending…' : 'Send email'}
-      </Button>
+      <div className='flex flex-wrap justify-end gap-2'>
+        <Button
+          type='submit'
+          variant='primary'
+          isDisabled={loading || membersWithEmail.length === 0}
+        >
+          {loading
+            ? 'Sending…'
+            : isSingle
+              ? 'Send email'
+              : `Send to ${membersWithEmail.length} member(s)`}
+        </Button>
+      </div>
     </form>
   );
 };
 
-const MemberDetails = ({
-  member,
-  canSendEmail = false,
+const RosterEmailModal = ({
+  members,
+  isOpen,
+  onOpenChange,
 }: {
-  member: RosterMemberRow;
-  canSendEmail?: boolean;
-}) => (
+  members: RosterMemberRow[];
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  const overlay = useOverlayState({
+    isOpen,
+    onOpenChange,
+  });
+  const membersWithEmail = members.filter((member) => member.primaryEmail);
+  const isSingle = members.length === 1;
+
+  return (
+    <Modal state={overlay}>
+      <Modal.Backdrop variant='blur'>
+        <Modal.Container placement='center' size='lg'>
+          <Modal.Dialog aria-label='Email roster members'>
+            <Modal.Header>
+              <Modal.Heading>
+                {isSingle
+                  ? `Email ${members[0]?.displayName ?? 'member'}`
+                  : `Email ${members.length} members`}
+              </Modal.Heading>
+              <Modal.CloseTrigger />
+            </Modal.Header>
+            <Modal.Body className='grid gap-3'>
+              {isSingle ? (
+                <dl className='grid gap-1 text-sm'>
+                  <div className='flex flex-wrap gap-x-2'>
+                    <dt className='text-muted-foreground'>Number</dt>
+                    <dd className='font-mono font-medium'>
+                      {members[0]?.membershipNumber}
+                    </dd>
+                  </div>
+                  <div className='flex flex-wrap gap-x-2'>
+                    <dt className='text-muted-foreground'>Email</dt>
+                    <dd className='break-all font-medium'>
+                      {members[0]?.primaryEmail ?? 'No email on file'}
+                    </dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className='text-sm text-muted-foreground'>
+                  {membersWithEmail.length} of {members.length} selected have
+                  email on file.
+                </p>
+              )}
+              {membersWithEmail.length === 0 ? (
+                <p className='text-sm text-muted-foreground'>
+                  No email on file for the selected member
+                  {members.length === 1 ? '' : 's'}.
+                </p>
+              ) : (
+                <BulkEmailForm members={members} />
+              )}
+            </Modal.Body>
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal.Backdrop>
+    </Modal>
+  );
+};
+
+const MemberDetails = ({ member }: { member: RosterMemberRow }) => (
   // biome-ignore lint/a11y/noStaticElementInteractions: prevent table row toggle inside details
   <div
     className='grid gap-3 py-1'
@@ -361,11 +344,6 @@ const MemberDetails = ({
         <dd className='break-all font-medium'>{member.primaryEmail ?? '—'}</dd>
       </div>
     </dl>
-    {canSendEmail && member.primaryEmail ? (
-      <p className='text-sm text-muted-foreground'>
-        Compose email in the panel above the table.
-      </p>
-    ) : null}
   </div>
 );
 
@@ -386,17 +364,19 @@ export const RosterTable = ({
   const [selectedMembershipNumbers, setSelectedMembershipNumbers] = useState<
     Set<string>
   >(() => new Set());
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
     column: 'displayName',
     direction: 'ascending',
   });
 
-  const enableBulkEmail = showDuesTools && canSendEmail;
+  const enableRowSelection = canSendEmail;
   const paidSet = useMemo(
     () => new Set(paidMembershipNumbers),
     [paidMembershipNumbers],
   );
-  const columnCount = 5 + (showDuesTools ? 1 : 0) + (enableBulkEmail ? 1 : 0);
+  const columnCount =
+    5 + (showDuesTools ? 1 : 0) + (enableRowSelection ? 1 : 0);
 
   useEffect(() => {
     setPage(1);
@@ -567,23 +547,6 @@ export const RosterTable = ({
   const pageEnd = Math.min(safePage * ROWS_PER_PAGE, sortedMembers.length);
   const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
 
-  const expandedMemberForEmail = useMemo(() => {
-    if (!canSendEmail || expandedKeys === 'all') {
-      return null;
-    }
-
-    for (const membershipNumber of expandedKeys as Set<string>) {
-      const member = members.find(
-        (row) => row.membershipNumber === membershipNumber,
-      );
-      if (member) {
-        return member;
-      }
-    }
-
-    return null;
-  }, [canSendEmail, expandedKeys, members]);
-
   const selectedMembers = useMemo(
     () =>
       members.filter((member) =>
@@ -675,7 +638,7 @@ export const RosterTable = ({
           textValue={`Details for ${item.member.displayName}`}
         >
           <Table.Cell colSpan={columnCount}>
-            <MemberDetails member={item.member} canSendEmail={canSendEmail} />
+            <MemberDetails member={item.member} />
           </Table.Cell>
         </Table.Row>
       );
@@ -686,16 +649,23 @@ export const RosterTable = ({
       (expandedKeys as Set<string>).has(item.membershipNumber);
     const duesStatus = getDuesStatus(item, paidSet);
     const isSelected = selectedMembershipNumbers.has(item.membershipNumber);
+    const selectedCellClass = isSelected ? 'roster-cell--selected' : undefined;
 
     return (
       <Table.Row
         id={item.id}
         textValue={item.displayName}
-        className='cursor-pointer touch-manipulation'
-        onAction={() => toggleRowExpanded(item.id)}
+        aria-selected={isSelected}
+        className='touch-manipulation'
       >
-        {enableBulkEmail ? (
-          <Table.Cell>
+        {enableRowSelection ? (
+          <Table.Cell
+            className={['w-10', selectedCellClass].filter(Boolean).join(' ')}
+            data-selected={isSelected || undefined}
+            onPointerDown={stopRowActivation}
+            onClick={stopRowActivation}
+            onMouseDown={stopRowActivation}
+          >
             <RosterCheckbox
               ariaLabel={`Select ${item.displayName}`}
               checked={isSelected}
@@ -705,7 +675,14 @@ export const RosterTable = ({
             />
           </Table.Cell>
         ) : null}
-        <Table.Cell textValue={item.membershipNumber}>
+        <Table.Cell
+          textValue={item.membershipNumber}
+          className={['cursor-pointer', selectedCellClass]
+            .filter(Boolean)
+            .join(' ')}
+          data-selected={isSelected || undefined}
+          onClick={() => toggleRowExpanded(item.id)}
+        >
           <span className='flex min-w-0 items-center gap-2'>
             <ChevronRightIcon
               className={`shrink-0 text-muted-foreground transition-transform duration-150 ${
@@ -717,20 +694,38 @@ export const RosterTable = ({
             </span>
           </span>
         </Table.Cell>
-        <Table.Cell textValue={item.displayName}>
+        <Table.Cell
+          textValue={item.displayName}
+          className={['cursor-pointer', selectedCellClass]
+            .filter(Boolean)
+            .join(' ')}
+          data-selected={isSelected || undefined}
+          onClick={() => toggleRowExpanded(item.id)}
+        >
           <span className='truncate'>{item.displayName}</span>
         </Table.Cell>
-        <Table.Cell textValue={item.memberClassLabel ?? ''}>
+        <Table.Cell
+          textValue={item.memberClassLabel ?? ''}
+          className={selectedCellClass}
+          data-selected={isSelected || undefined}
+        >
           {item.memberClassLabel ?? '—'}
         </Table.Cell>
         <Table.Cell
           textValue={item.primaryEmail ?? ''}
-          className='hidden md:table-cell'
+          className={['hidden md:table-cell', selectedCellClass]
+            .filter(Boolean)
+            .join(' ')}
+          data-selected={isSelected || undefined}
         >
           <span className='break-all'>{item.primaryEmail ?? '—'}</span>
         </Table.Cell>
         {showDuesTools ? (
-          <Table.Cell textValue={formatDuesStatus(duesStatus)}>
+          <Table.Cell
+            textValue={formatDuesStatus(duesStatus)}
+            className={selectedCellClass}
+            data-selected={isSelected || undefined}
+          >
             <span
               className={
                 duesStatus === 'paid'
@@ -744,7 +739,11 @@ export const RosterTable = ({
             </span>
           </Table.Cell>
         ) : null}
-        <Table.Cell textValue={item.active ? 'Active' : 'Inactive'}>
+        <Table.Cell
+          textValue={item.active ? 'Active' : 'Inactive'}
+          className={selectedCellClass}
+          data-selected={isSelected || undefined}
+        >
           {item.active ? 'Yes' : 'No'}
         </Table.Cell>
         <Table.Collection items={item.children}>{renderRow}</Table.Collection>
@@ -897,7 +896,7 @@ export const RosterTable = ({
           ) : null}
         </div>
 
-        {enableBulkEmail ? (
+        {enableRowSelection ? (
           <div className='flex flex-wrap items-center gap-3 border-b border-border px-4 py-2 text-sm'>
             <Button
               type='button'
@@ -928,33 +927,28 @@ export const RosterTable = ({
               {allPageSelected ? 'Deselect page' : 'Select page'}
             </Button>
             {selectedMembershipNumbers.size > 0 ? (
-              <span className='text-muted-foreground'>
-                {selectedMembershipNumbers.size} selected
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-
-        {enableBulkEmail && selectedMembers.length > 0 ? (
-          <BulkEmailForm
-            members={selectedMembers}
-            onClear={() => setSelectedMembershipNumbers(new Set())}
-          />
-        ) : null}
-
-        {expandedMemberForEmail &&
-        !(enableBulkEmail && selectedMembers.length > 0) ? (
-          <div className='border-b border-border bg-muted/20 p-4'>
-            <p className='mb-3 text-sm font-medium'>
-              Email {expandedMemberForEmail.displayName}
-              {expandedMemberForEmail.primaryEmail ? (
-                <span className='font-normal text-muted-foreground'>
-                  {' '}
-                  ({expandedMemberForEmail.primaryEmail})
+              <>
+                <span className='text-muted-foreground'>
+                  {selectedMembershipNumbers.size} selected
                 </span>
-              ) : null}
-            </p>
-            <MemberEmailForm member={expandedMemberForEmail} />
+                <Button
+                  type='button'
+                  variant='primary'
+                  size='sm'
+                  onPress={() => setEmailModalOpen(true)}
+                >
+                  Email selected
+                </Button>
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  onPress={() => setSelectedMembershipNumbers(new Set())}
+                >
+                  Clear selection
+                </Button>
+              </>
+            ) : null}
           </div>
         ) : null}
 
@@ -974,7 +968,7 @@ export const RosterTable = ({
               onSortChange={setSortDescriptor}
             >
               <Table.Header>
-                {enableBulkEmail ? (
+                {enableRowSelection ? (
                   <Table.Column className='w-10'>
                     <RosterCheckbox
                       ariaLabel='Select all members on this page'
@@ -1039,6 +1033,7 @@ export const RosterTable = ({
                 </Table.Column>
               </Table.Header>
               <Table.Body
+                key={[...selectedMembershipNumbers].sort().join(',')}
                 items={paginatedRows}
                 renderEmptyState={() => (
                   <div className='p-6 text-center text-muted-foreground'>
@@ -1095,6 +1090,14 @@ export const RosterTable = ({
           ) : null}
         </Table>
       </section>
+
+      {enableRowSelection ? (
+        <RosterEmailModal
+          members={selectedMembers}
+          isOpen={emailModalOpen}
+          onOpenChange={setEmailModalOpen}
+        />
+      ) : null}
     </div>
   );
 };

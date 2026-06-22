@@ -1,6 +1,4 @@
-export const dynamic = 'force-dynamic';
-
-import { PublicCalendarContent } from '@/components/calendar/PublicCalendarContent';
+import { NextResponse } from 'next/server';
 import { getCanonicalAppOrigin } from '@/lib/app-origin';
 import {
   loadCalendarPreviewEvents,
@@ -9,7 +7,9 @@ import {
 import { mintCalendarToken } from '@/lib/calendar/tokens';
 import { getMembershipNumber } from '@/lib/session';
 
-export default async function PublicCalendarPage() {
+export const dynamic = 'force-dynamic';
+
+export const GET = async (): Promise<NextResponse> => {
   const membershipNumber = await getMembershipNumber();
   const signedIn = Boolean(membershipNumber);
   const baseUrl = getCanonicalAppOrigin() ?? 'http://localhost:3000';
@@ -23,12 +23,5 @@ export default async function PublicCalendarPage() {
     await loadCalendarPreviewEvents({ includeBirthdays: signedIn }),
   );
 
-  return (
-    <PublicCalendarContent
-      baseUrl={baseUrl}
-      initialEvents={events}
-      initialSignedIn={signedIn}
-      initialBirthdayUrl={birthdayUrl}
-    />
-  );
-}
+  return NextResponse.json({ signedIn, events, birthdayUrl, baseUrl });
+};

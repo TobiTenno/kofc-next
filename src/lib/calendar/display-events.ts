@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { events, members } from '@/db/schema';
+import { parseMemberBirthMonthDay } from '@/lib/calendar/birth-date';
 import type {
   CalendarEventVariant,
   CalendarPreviewEvent,
@@ -223,20 +224,6 @@ const dbEvents = async (): Promise<CalendarPreviewEvent[]> => {
   }));
 };
 
-const parseBirthDate = (
-  value: string,
-): { month: number; day: number } | null => {
-  const match = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (!match) {
-    return null;
-  }
-
-  return {
-    month: Number(match[1]),
-    day: Number(match[2]),
-  };
-};
-
 const birthdayEvents = async (): Promise<CalendarPreviewEvent[]> => {
   const activeMembers = await db
     .select()
@@ -251,7 +238,7 @@ const birthdayEvents = async (): Promise<CalendarPreviewEvent[]> => {
       continue;
     }
 
-    const parsed = parseBirthDate(member.birthDate);
+    const parsed = parseMemberBirthMonthDay(member.birthDate);
     if (!parsed) {
       continue;
     }

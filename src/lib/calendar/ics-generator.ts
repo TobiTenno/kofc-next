@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import ical from 'ical-generator';
 import { db } from '@/db';
 import { events, members } from '@/db/schema';
+import { parseMemberBirthMonthDay } from '@/lib/calendar/birth-date';
 import { loadCouncilConfig } from '@/lib/council-config';
 import { formatMemberName } from '@/lib/utils';
 
@@ -104,7 +105,7 @@ export const buildBirthdaysCalendar = async (): Promise<string> => {
       continue;
     }
 
-    const parsed = parseBirthDate(member.birthDate);
+    const parsed = parseMemberBirthMonthDay(member.birthDate);
     if (!parsed) {
       continue;
     }
@@ -119,18 +120,4 @@ export const buildBirthdaysCalendar = async (): Promise<string> => {
   }
 
   return calendar.toString();
-};
-
-const parseBirthDate = (
-  value: string,
-): { month: number; day: number } | null => {
-  const match = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (!match) {
-    return null;
-  }
-
-  return {
-    month: Number(match[1]),
-    day: Number(match[2]),
-  };
 };

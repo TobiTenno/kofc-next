@@ -1,7 +1,12 @@
+import { createHash } from 'node:crypto';
+import fs from 'node:fs';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { appMeta, duesRates, permissions } from '@/db/schema';
 import { loadCouncilConfig, writeCouncilConfig } from '@/lib/council-config';
+import { getCouncilJsonPath } from '@/lib/council-paths';
+
+const councilJsonHashKey = 'council_json_hash';
 
 export type PermissionKey =
   | 'sendCouncilEmail'
@@ -81,11 +86,74 @@ export const isWebmaster = (membershipNumber: string): boolean => {
   return config.webmaster?.membershipNumber === membershipNumber;
 };
 
+export const hashCouncilJsonContent = (): string | null => {
+  const configPath = getCouncilJsonPath();
+  if (!fs.existsSync(configPath)) {
+    return null;
+  }
+
+  const content = fs.readFileSync(configPath, 'utf8');
+  return createHash('sha256').update(content).digest('hex');
+};
+
+/** Re-sync permissions/dues when mounted council.json changes (no restart). */
+export const ensureCouncilConfigSynced = async (): Promise<void> => {
+  const hash = hashCouncilJsonContent();
+  if (!hash) {
+    return;
+  }
+
+  const rows = await db
+    .select()
+    .from(appMeta)
+    .where(eq(appMeta.key, councilJsonHashKey))
+    .limit(1);
+
+  if (rows[0]?.value === hash) {
+    return;
+  }
+
+  await syncPermissionsFromJson();
+  await syncDuesFromJson();
+
+  await db
+    .insert(appMeta)
+    .values({ key: councilJsonHashKey, value: hash })
+    .onConflictDoUpdate({
+      target: appMeta.key,
+      set: { value: hash },
+    });
+};
+
+const permissionMembersFromConfig = (key: PermissionKey): string[] => {
+  const config = loadCouncilConfig();
+  const block = config.permissions ?? {
+    sendCouncilEmail: [],
+    managePermissions: [],
+    manageEvents: [],
+    manageGalleries: [],
+  };
+  const members = [...(block[key] ?? [])];
+  const webmaster = config.webmaster?.membershipNumber;
+
+  if (webmaster && !members.includes(webmaster)) {
+    members.push(webmaster);
+  }
+
+  return members;
+};
+
 export const hasPermission = async (
   membershipNumber: string,
   key: PermissionKey,
 ): Promise<boolean> => {
   if (isWebmaster(membershipNumber)) {
+    return true;
+  }
+
+  await ensureCouncilConfigSynced();
+
+  if (permissionMembersFromConfig(key).includes(membershipNumber)) {
     return true;
   }
 
@@ -138,6 +206,17 @@ export const updatePermissions = async (
     },
   };
   writeCouncilConfig(nextConfig);
+
+  const hash = hashCouncilJsonContent();
+  if (hash) {
+    await db
+      .insert(appMeta)
+      .values({ key: councilJsonHashKey, value: hash })
+      .onConflictDoUpdate({
+        target: appMeta.key,
+        set: { value: hash },
+      });
+  }
 };
 
 export const syncDuesFromJson = async (): Promise<void> => {

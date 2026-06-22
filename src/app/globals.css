@@ -155,6 +155,18 @@ html {
     border-color: var(--border);
   }
 
+  .roster-panel
+    .roster-table
+    :is(.roster-cell--selected, .table__cell[data-selected]) {
+    background: color-mix(in oklab, var(--primary) 12%, var(--card));
+  }
+
+  .roster-panel .roster-table input[type="checkbox"] {
+    appearance: auto;
+    width: 1rem;
+    height: 1rem;
+  }
+
   .roster-panel .roster-table .table__footer {
     border-top: 1px solid var(--border);
     background: var(--card);

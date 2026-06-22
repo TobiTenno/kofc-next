@@ -12,13 +12,19 @@ type SiteNavProps = {
   showPayDuesLink?: boolean;
 };
 
+type NavLink = {
+  href: string;
+  label: string;
+  prefetch?: boolean;
+};
+
 const navLinks = (
   membershipNumber: string | null,
   showPayDuesLink: boolean,
-) => [
+): NavLink[] => [
   { href: '/officers', label: 'Officers' },
   { href: '/about', label: 'About the Council' },
-  { href: '/calendar', label: 'Calendar' },
+  { href: '/calendar', label: 'Calendar', prefetch: false },
   ...(showPayDuesLink ? [{ href: '/dues/pay', label: 'Pay Dues' }] : []),
   ...(membershipNumber ? [] : [{ href: '/members/login', label: 'Sign in' }]),
 ];
@@ -78,7 +84,12 @@ export const SiteNav = ({
 
         <div className='hidden lg:flex lg:flex-wrap lg:items-center lg:justify-end lg:gap-x-3 lg:gap-y-2'>
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className={desktopLinkClass}>
+            <Link
+              key={link.href}
+              href={link.href}
+              prefetch={link.prefetch}
+              className={desktopLinkClass}
+            >
               {link.label}
             </Link>
           ))}
@@ -112,6 +123,7 @@ export const SiteNav = ({
               <li key={link.href}>
                 <Link
                   href={link.href}
+                  prefetch={link.prefetch}
                   className={mobileLinkClass}
                   aria-current={pathname === link.href ? 'page' : undefined}
                 >
