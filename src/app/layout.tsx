@@ -1,5 +1,4 @@
 import { ThemeProvider } from '@mui/material/styles';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Image from 'next/image';
@@ -8,6 +7,7 @@ import { SiteHeader } from '@/components/SiteHeader';
 import { loadCouncilConfig } from '@/lib/council-config';
 import { ColorSchemeProvider } from '@/providers/color-scheme';
 import CouncilProvider from '@/providers/council';
+import { AppRouterCacheProvider } from '@/providers/mui-cache';
 import theme from '../theme';
 import './globals.css';
 

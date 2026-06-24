@@ -19,7 +19,7 @@ const args = new Set(process.argv.slice(2));
 const openMode = args.has('--open');
 const buildOnly = args.has('--build-only');
 const baseUrl = 'http://127.0.0.1:3000';
-const standaloneDir = path.join(root, '.next/standalone');
+const standaloneDir = path.join(root, 'dist/standalone');
 
 const defaultCouncilJson = path.join(root, 'src/data/council.json.example');
 const defaultCouncilCsv = path.join(root, 'src/data/council.csv.example');
@@ -97,23 +97,13 @@ const assertFixturePaths = () => {
   console.log(`E2E council CSV: ${councilCsvPath}`);
 };
 
-const copyRecursive = (from, to) => {
-  fs.cpSync(from, to, { recursive: true, force: true });
-};
-
 const prepareStandalone = () => {
   const serverJs = path.join(standaloneDir, 'server.js');
   if (!fs.existsSync(serverJs)) {
     throw new Error(
-      'Missing .next/standalone/server.js — run production build first',
+      'Missing dist/standalone/server.js — run production build first',
     );
   }
-
-  copyRecursive(
-    path.join(root, '.next/static'),
-    path.join(standaloneDir, '.next/static'),
-  );
-  copyRecursive(path.join(root, 'public'), path.join(standaloneDir, 'public'));
 
   fs.mkdirSync(path.dirname(resolveDatabasePath()), { recursive: true });
   fs.mkdirSync(path.join(standaloneDir, 'data/cache/calendar'), {

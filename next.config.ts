@@ -1,4 +1,4 @@
-import type { NextConfig } from 'next';
+import type { NextConfig } from 'vinext';
 
 const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
   ? process.env.ALLOWED_DEV_ORIGINS.split(',')
@@ -8,9 +8,6 @@ const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  compiler: {
-    emotion: true,
-  },
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),
 };
 

@@ -23,9 +23,7 @@ ENV DATABASE_PATH=/app/data/app.db
 
 RUN mkdir -p /app/data/cache/calendar
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/dist/standalone ./
 
 EXPOSE 3000
 

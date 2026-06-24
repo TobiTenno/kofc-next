@@ -21,6 +21,8 @@ export const SiteHeader = async () => {
         councilName={council?.name}
         membershipNumber={membershipNumber}
         showPayDuesLink={isPayPalConfigured()}
+        memberLinks={memberContext?.links ?? null}
+        memberMeta={memberContext?.meta ?? null}
       />
       {memberContext ? <MemberSubNav context={memberContext} /> : null}
     </header>
