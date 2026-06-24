@@ -4,9 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
-import { ThemeToggle } from '@/components/ThemeToggle';
-import { SignOutButton } from '@/components/SignOutButton';
 import { MemberNavMetaPanel } from '@/components/MemberNavMetaPanel';
+import { SignOutButton } from '@/components/SignOutButton';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import type { MemberNavGroups, MemberNavMeta } from '@/lib/member-nav';
 
 type SiteNavProps = {

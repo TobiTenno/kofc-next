@@ -11,7 +11,7 @@
     "dev": "node scripts/check-node-version.mjs && vinext dev --hostname 0.0.0.0",
     "postinstall": "npm rebuild better-sqlite3 --foreground-scripts && cypress install",
     "lint": "biome check",
-    "lint:fix": "biome format --write",
+    "lint:fix": "biome check --write",
     "member:seed-password": "node scripts/check-node-version.mjs && npx tsx scripts/seed-member-password.ts",
     "prepare": "husky",
     "rebuild:native": "npm rebuild better-sqlite3 --foreground-scripts",
