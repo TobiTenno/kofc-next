@@ -24,7 +24,12 @@ export const SignOutButton = ({
   };
 
   return (
-    <button type='button' onClick={signOut} disabled={signingOut} className={className}>
+    <button
+      type='button'
+      onClick={signOut}
+      disabled={signingOut}
+      className={className}
+    >
       {signingOut ? 'Signing out…' : 'Sign out'}
     </button>
   );
