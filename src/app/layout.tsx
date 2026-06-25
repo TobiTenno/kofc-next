@@ -3,8 +3,10 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Image from 'next/image';
 import Script from 'next/script';
+import { PwaRegister } from '@/components/PwaRegister';
 import { SiteHeader } from '@/components/SiteHeader';
 import { loadCouncilConfig } from '@/lib/council-config';
+import { getPwaLabels, pwaThemeColorDark, pwaThemeColorLight } from '@/lib/pwa';
 import { ColorSchemeProvider } from '@/providers/color-scheme';
 import CouncilProvider from '@/providers/council';
 import { AppRouterCacheProvider } from '@/providers/mui-cache';
@@ -27,13 +29,28 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: pwaThemeColorLight },
+    { media: '(prefers-color-scheme: dark)', color: pwaThemeColorDark },
+  ],
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const councilConfig = loadCouncilConfig();
+  const { fullName, shortName, description } = getPwaLabels();
+
   return {
-    title: `Knights of Columbus - Council ${councilConfig?.council?.number ?? ''}`,
-    description: `Council ${councilConfig?.council?.number ?? ''}`,
+    title: fullName,
+    description,
+    applicationName: shortName,
+    manifest: '/manifest.webmanifest',
+    appleWebApp: {
+      capable: true,
+      title: shortName,
+      statusBarStyle: 'default',
+    },
+    formatDetection: {
+      telephone: false,
+    },
     robots: {
       index: true,
       follow: false,
@@ -111,6 +128,7 @@ export default async function RootLayout({
                   src='/color-scheme-init.js'
                   strategy='beforeInteractive'
                 />
+                <PwaRegister />
                 <div className='w-full min-w-0 justify-self-stretch'>
                   <SiteHeader />
                 </div>
