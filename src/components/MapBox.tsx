@@ -1,8 +1,8 @@
 'use client';
 
-import { geocode, type NominatimResponse } from 'nominatim-browser';
 import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, Marker, Popup, TileLayer } from 'react-leaflet';
+import { geocode } from '@/lib/openstreetmap';
 import { useConfig } from '@/providers/council';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-defaulticon-compatibility';
@@ -23,7 +23,7 @@ export default function MapBox() {
         q: `${council.address.street}${council.address.street2 ? ` , ${council.address.street2}` : ''} ${council.address.city}, ${council.address.state} ${council.address.zipCode}`,
         countrycodes: ['us'],
         limit: 1,
-      }).then((results: NominatimResponse[]) => {
+      }).then((results) => {
         if (results.length > 0) {
           setCenter([parseFloat(results[0].lat), parseFloat(results[0].lon)]);
           setResolved(results[0].display_name);

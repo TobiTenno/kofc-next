@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 const nvmrc = readFileSync('.nvmrc', 'utf8').trim();
-const expectedMajor = 22;
+const expectedMajor = 24;
 const major = Number(process.version.slice(1).split('.')[0]);
 
 if (major !== expectedMajor) {

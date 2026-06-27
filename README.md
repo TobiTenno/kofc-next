@@ -4,7 +4,7 @@ Next.js council site with member portal, Better Auth, calendar feeds, and dues.
 
 ## Setup
 
-Requires **Node 22** (`lts/jod`, see `.nvmrc`). Native modules (`better-sqlite3`) must match your active Node version.
+Requires **Node 24** (`lts/krypton`, see `.nvmrc`). Native modules (`better-sqlite3`) must match your active Node version.
 
 ```bash
 cp .env.example .env
@@ -75,7 +75,7 @@ Use your machine’s IP (check server logs if unsure). For member login from the
 
 ## Docker
 
-Uses `node:22-alpine` (Node 22 / `lts/jod`). Native modules such as `better-sqlite3` are compiled in the build stage.
+Uses `node:krypton-alpine` (Node 24 / `lts/krypton`). Native modules such as `better-sqlite3` are compiled in the build stage.
 
 ```bash
 docker compose up --build

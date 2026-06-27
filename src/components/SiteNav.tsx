@@ -120,11 +120,6 @@ export const SiteNav = ({
       aria-label='Site menu'
       className='fixed inset-0 z-[90] flex flex-col overflow-y-auto bg-blue-950 px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[calc(4.5rem+env(safe-area-inset-top))] text-white dark:bg-gray-950 sm:px-6 lg:hidden'
     >
-      {memberMeta ? (
-        <div className='mb-4 border-b border-white/10 pb-4'>
-          <MemberNavMetaPanel meta={memberMeta} variant='header' />
-        </div>
-      ) : null}
       <ul className='flex flex-col gap-0.5'>
         {links.map((link) => (
           <li key={link.href}>
@@ -212,6 +207,13 @@ export const SiteNav = ({
               alt={`${councilName ?? 'Council'} Logo`}
             />
           </Link>
+          {memberMeta ? (
+            <MemberNavMetaPanel
+              meta={memberMeta}
+              variant='header'
+              className='min-w-0 lg:hidden'
+            />
+          ) : null}
         </div>
 
         <div className='hidden lg:flex lg:flex-wrap lg:items-center lg:justify-end lg:gap-x-3 lg:gap-y-2'>

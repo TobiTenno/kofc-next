@@ -1,4 +1,4 @@
-FROM node:jod-alpine AS builder
+FROM node:krypton-alpine AS builder
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:jod-alpine AS runner
+FROM node:krypton-alpine AS runner
 
 LABEL org.opencontainers.image.source="https://github.com/TobiTenno/kofc-next"
 LABEL org.opencontainers.image.description="Knights of Columbus Council Site"
