@@ -11,8 +11,8 @@ export default defineConfig({
     screenshotOnRunFailure: true,
     defaultCommandTimeout: 15_000,
     env: {
-      TEST_MEMBER_NUMBER: '0000000',
-      TEST_MEMBER_PASSWORD: 'cypress-ci-password',
+      TEST_MEMBER_NUMBER: '1001001',
+      TEST_MEMBER_PASSWORD: 'password',
     },
   },
 });

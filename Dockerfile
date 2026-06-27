@@ -20,11 +20,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV DATABASE_PATH=/app/data/app.db
+ENV IMAGE_CACHE_DIR=/app/data/cache/images
 
-RUN mkdir -p /app/data/cache/calendar
+RUN mkdir -p /app/data/cache/calendar /app/data/cache/images
 
 COPY --from=builder /app/dist/standalone ./
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["node", "--max-http-header-size=32768", "server.js"]

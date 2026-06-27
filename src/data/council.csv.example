@@ -1,2 +1,7 @@
 Membership Number,Prefix,First Name,Middle Name,Last Name,Suffix,Member Type,Member Class,Nickname,Residence Phone,Cell Phone,Primary Email,1st Degree Date,2nd Degree Date,3rd Degree Date,4th Degree Date,Assembly Number,Birth Date
-0000000,,Example,,Member,,Member,Regular,,,,,,,,,,
+1001001,Sir,Example,,Admin,,Member,Regular,,5551001001,,example.admin@example.com,,,,,,
+1001002,,Robert,,Treasurer,,Member,Regular,,5551001002,,robert.treasurer@example.com,,,,,,
+1001003,,Stephen,,Secretary,,Member,Regular,,5551001003,,stephen.fs@example.com,,,,,,
+1001004,,Michael,,Recorder,,Member,Regular,,5551001004,,michael.recorder@example.com,,,,,,
+1001005,,David,,Deputy,,Member,Regular,,5551001005,,david.deputy@example.com,,,,,,
+1001006,,James,,Warden,,Member,Regular,,5551001006,,james.warden@example.com,,,,,,

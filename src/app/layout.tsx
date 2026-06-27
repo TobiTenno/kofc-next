@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Image from 'next/image';
 import Script from 'next/script';
+import { DevCookieCleanup } from '@/components/DevCookieCleanup';
 import { PwaRegister } from '@/components/PwaRegister';
 import { SiteHeader } from '@/components/SiteHeader';
 import { loadCouncilConfig } from '@/lib/council-config';
@@ -129,6 +130,9 @@ export default async function RootLayout({
                   strategy='beforeInteractive'
                 />
                 <PwaRegister />
+                {process.env.NODE_ENV === 'development' ? (
+                  <DevCookieCleanup />
+                ) : null}
                 <div className='w-full min-w-0 justify-self-stretch'>
                   <SiteHeader />
                 </div>

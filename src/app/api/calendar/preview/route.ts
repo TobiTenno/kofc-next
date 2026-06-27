@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getCanonicalAppOrigin } from '@/lib/app-origin';
+import { getCanonicalAppOrigin, getLocalDevOrigin } from '@/lib/app-origin';
 import {
   loadCalendarPreviewEvents,
   serializeCalendarPreviewEvents,
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export const GET = async (): Promise<NextResponse> => {
   const membershipNumber = await getMembershipNumber();
   const signedIn = Boolean(membershipNumber);
-  const baseUrl = getCanonicalAppOrigin() ?? 'http://localhost:3000';
+  const baseUrl = getCanonicalAppOrigin() ?? getLocalDevOrigin();
   const token = membershipNumber
     ? await mintCalendarToken({ membershipNumber, feed: 'birthdays' })
     : null;

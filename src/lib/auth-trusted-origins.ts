@@ -1,4 +1,8 @@
 import { getCanonicalAppOrigin, isLoopbackHost } from '@/lib/app-origin';
+import { DEV_SERVER_PORT } from '@/lib/dev-server';
+
+const devTrustedPort =
+  process.env.NODE_ENV === 'production' ? 3000 : DEV_SERVER_PORT;
 
 const addOrigin = (origins: Set<string>, value?: string | null): void => {
   const trimmed = value?.trim();
@@ -20,8 +24,8 @@ const addOrigin = (origins: Set<string>, value?: string | null): void => {
   origins.add(`https://${host}`);
 
   if (!host.includes(':')) {
-    origins.add(`http://${host}:3000`);
-    origins.add(`https://${host}:3000`);
+    origins.add(`http://${host}:${devTrustedPort}`);
+    origins.add(`https://${host}:${devTrustedPort}`);
   }
 };
 
@@ -49,8 +53,8 @@ export const getAuthTrustedOrigins = (): string[] => {
     try {
       const hostname = new URL(canonical).hostname;
       if (isLoopbackHost(hostname)) {
-        origins.add('http://localhost:3000');
-        origins.add('http://127.0.0.1:3000');
+        origins.add(`http://localhost:${devTrustedPort}`);
+        origins.add(`http://127.0.0.1:${devTrustedPort}`);
       }
     } catch {
       // ignore invalid canonical URL

@@ -11,8 +11,11 @@ cp .env.example .env
 nvm use
 npm install
 npm run db:migrate
+npm run seed:example
 npm run dev
 ```
+
+`seed:example` copies `src/data/council.json.example` and `council.csv.example` when your local files are missing, then seeds member **1001001** with password **password** (webmaster with all permissions in the example council).
 
 If you see `NODE_MODULE_VERSION` / `better_sqlite3.node` errors after switching Node or tooling runs `npm` under a different version:
 
@@ -31,25 +34,31 @@ On first start, the app syncs:
 Pre-seed a member password (no registration email):
 
 ```bash
-npm run member:seed-password -- 4329459 'your-password'
-npm run member:seed-password -- 4329459 'new-password' --reset
+npm run seed:example
+npm run member:seed-password -- 1001001 'password' --reset
 ```
 
-Uses roster email when present; otherwise `member-<#>@dev.local`. Sign in at `/members/login`.
+Example council member **1001001** / **password** is the webmaster with all permissions. Uses roster email when present; otherwise `member-<#>@dev.local`. Sign in at `/members/login`.
+
+### Dev server port
+
+Local dev uses a fixed high port (**47831**, `config/dev-server.json`) so cookies stay isolated from other apps on `:3000`. `npm run dev` sets `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to `http://localhost:47831` unless you override them in `.env`.
+
+Stale Better Auth cookies are pruned automatically in development (cache chunks, wrong HTTP/HTTPS scheme, oversized headers).
 
 ### Test on your phone (LAN)
 
-Dev server listens on all interfaces (`0.0.0.0`). Open `http://<your-computer-ip>:3000` on the phone.
+Dev server listens on all interfaces (`0.0.0.0`). Open `http://<your-computer-ip>:47831` on the phone.
 
 Next.js blocks client JavaScript from non-localhost origins unless you allow them. Without that, links work but buttons (menu, theme, forms) do not — the page never hydrates.
 
 Add your computer’s LAN IP to `.env` and restart `npm run dev`:
 
 ```bash
-ALLOWED_DEV_ORIGINS=192.168.1.2
+ALLOWED_DEV_ORIGINS=http://192.168.1.2:47831
 ```
 
-Use your machine’s IP (check server logs if unsure). For member login from the phone, also set `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to the same LAN URL.
+Use your machine’s IP (check server logs if unsure). For member login from the phone, also set `BETTER_AUTH_URL` and `NEXT_PUBLIC_APP_URL` to the same LAN URL (include port **47831**).
 
 ## Member portal
 
@@ -72,7 +81,9 @@ Uses `node:22-alpine` (Node 22 / `lts/jod`). Native modules such as `better-sqli
 docker compose up --build
 ```
 
-Mount `data/` for SQLite and calendar cache. Mount `council.json` and `council.csv`.
+Mount `data/` for SQLite, calendar cache, and optimized image cache (`data/cache/images`). Mount `council.json` and `council.csv`.
+
+Local static images (`next/image`) resize through `/api/image` and cache under `IMAGE_CACHE_DIR` (default `data/cache/images`). With SWAG, nginx also caches `/api/image` and `/_next/image` responses on disk.
 
 Production images are published to GitHub Container Registry on release:
 

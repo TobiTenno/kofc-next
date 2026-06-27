@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { MemberNavMetaPanel } from '@/components/MemberNavMetaPanel';
 import { SignOutButton } from '@/components/SignOutButton';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -61,14 +62,48 @@ export const SiteNav = ({
   const pathname = usePathname();
   const menuId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const links = navLinks(membershipNumber, showPayDuesLink);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const isActivePath = (href: string): boolean =>
     pathname === href || pathname.startsWith(`${href}/`);
 
+  // Close mobile menu after client navigations.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname drives close-on-navigate
   useEffect(() => {
     setMenuOpen(false);
-  }, []);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen) {
+      return;
+    }
+
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
 
   const desktopLinkClass =
     'rounded-lg px-3 py-2 text-base font-semibold text-white hover:bg-white/10 hover:text-white active:bg-white/15 whitespace-nowrap';
@@ -77,11 +112,94 @@ export const SiteNav = ({
   const mobileSignOutClass =
     'inline-flex min-h-11 w-full items-center rounded-lg px-3 py-3 text-base font-semibold text-white/70 hover:bg-red-500/20 hover:text-white active:bg-red-500/30 touch-manipulation whitespace-nowrap disabled:opacity-60';
 
+  const mobileMenu = menuOpen ? (
+    <div
+      id={menuId}
+      role='dialog'
+      aria-modal='true'
+      aria-label='Site menu'
+      className='fixed inset-0 z-[90] flex flex-col overflow-y-auto bg-blue-950 px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[calc(4.5rem+env(safe-area-inset-top))] text-white dark:bg-gray-950 sm:px-6 lg:hidden'
+    >
+      {memberMeta ? (
+        <div className='mb-4 border-b border-white/10 pb-4'>
+          <MemberNavMetaPanel meta={memberMeta} variant='header' />
+        </div>
+      ) : null}
+      <ul className='flex flex-col gap-0.5'>
+        {links.map((link) => (
+          <li key={link.href}>
+            <Link
+              href={link.href}
+              prefetch={link.prefetch}
+              className={mobileLinkClass}
+              aria-current={pathname === link.href ? 'page' : undefined}
+              onClick={() => setMenuOpen(false)}
+            >
+              {link.label}
+            </Link>
+          </li>
+        ))}
+        {memberLinks && memberLinks.member.length > 0 ? (
+          <>
+            <li
+              aria-hidden
+              className='mt-2 border-t border-white/10 px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-white/50'
+            >
+              Portal
+            </li>
+            {memberLinks.member.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className={mobileLinkClass}
+                  aria-current={isActivePath(link.href) ? 'page' : undefined}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </>
+        ) : null}
+        {memberLinks && memberLinks.admin.length > 0 ? (
+          <>
+            <li
+              aria-hidden
+              className='mt-2 border-t border-white/10 px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-white/50'
+            >
+              Admin
+            </li>
+            {memberLinks.admin.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className={mobileLinkClass}
+                  aria-current={isActivePath(link.href) ? 'page' : undefined}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </>
+        ) : null}
+        {membershipNumber ? (
+          <li className='mt-2 border-t border-white/10 pt-1'>
+            <SignOutButton
+              className={mobileSignOutClass}
+              onSignOut={() => setMenuOpen(false)}
+            />
+          </li>
+        ) : null}
+      </ul>
+    </div>
+  ) : null;
+
   return (
     <>
       <nav
         aria-label='Global'
-        className='flex w-full items-center gap-2 px-3 py-2 sm:px-6 lg:justify-between lg:gap-3 lg:px-8 lg:py-4'
+        className='relative z-[100] flex w-full items-center gap-2 px-3 py-2 sm:px-6 lg:justify-between lg:gap-3 lg:px-8 lg:py-4'
       >
         <div className='flex min-w-0 flex-1 items-center gap-2 lg:flex-none'>
           <Link href='/' className='shrink-0 -m-1 p-1 touch-manipulation'>
@@ -94,13 +212,6 @@ export const SiteNav = ({
               alt={`${councilName ?? 'Council'} Logo`}
             />
           </Link>
-          {memberMeta ? (
-            <MemberNavMetaPanel
-              meta={memberMeta}
-              variant='header'
-              className='min-w-0 lg:hidden'
-            />
-          ) : null}
         </div>
 
         <div className='hidden lg:flex lg:flex-wrap lg:items-center lg:justify-end lg:gap-x-3 lg:gap-y-2'>
@@ -134,81 +245,7 @@ export const SiteNav = ({
         </div>
       </nav>
 
-      {menuOpen ? (
-        <div
-          id={menuId}
-          className='border-t border-white/10 px-2 py-2 text-white lg:hidden'
-        >
-          <ul className='flex flex-col gap-0.5'>
-            {links.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  prefetch={link.prefetch}
-                  className={mobileLinkClass}
-                  aria-current={pathname === link.href ? 'page' : undefined}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-            {memberLinks && memberLinks.member.length > 0 ? (
-              <>
-                <li
-                  aria-hidden
-                  className='mt-2 border-t border-white/10 px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-white/50'
-                >
-                  Portal
-                </li>
-                {memberLinks.member.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className={mobileLinkClass}
-                      aria-current={
-                        isActivePath(link.href) ? 'page' : undefined
-                      }
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </>
-            ) : null}
-            {memberLinks && memberLinks.admin.length > 0 ? (
-              <>
-                <li
-                  aria-hidden
-                  className='mt-2 border-t border-white/10 px-3 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-white/50'
-                >
-                  Admin
-                </li>
-                {memberLinks.admin.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className={mobileLinkClass}
-                      aria-current={
-                        isActivePath(link.href) ? 'page' : undefined
-                      }
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </>
-            ) : null}
-            {membershipNumber ? (
-              <li className='mt-2 border-t border-white/10 pt-1'>
-                <SignOutButton
-                  className={mobileSignOutClass}
-                  onSignOut={() => setMenuOpen(false)}
-                />
-              </li>
-            ) : null}
-          </ul>
-        </div>
-      ) : null}
+      {mounted && mobileMenu ? createPortal(mobileMenu, document.body) : null}
     </>
   );
 };

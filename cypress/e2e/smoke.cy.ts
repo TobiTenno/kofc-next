@@ -12,6 +12,8 @@ describe('public site (example council.json)', () => {
 
     cy.visit('/officers');
     cy.contains('h2', 'Meet our officers');
+    cy.contains('Example Admin');
+    cy.contains('Financial Secretary');
   });
 
   it('loads the about page', () => {

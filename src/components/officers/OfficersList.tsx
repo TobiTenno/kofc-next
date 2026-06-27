@@ -7,6 +7,14 @@ import Link from 'next/link';
 import { useConfig } from '@/providers/council';
 import { ImageName } from '@/schema/council';
 
+/** Medal JPEGs in public/medals are 132×188. */
+const MEDAL_WIDTH = 132;
+const MEDAL_HEIGHT = 188;
+const MEDAL_DISPLAY_WIDTH = 61;
+const MEDAL_DISPLAY_HEIGHT = Math.round(
+  (MEDAL_DISPLAY_WIDTH * MEDAL_HEIGHT) / MEDAL_WIDTH,
+);
+
 type OfficersListProps = {
   showContactInfo: boolean;
 };
@@ -36,13 +44,21 @@ export const OfficersList = ({ showContactInfo }: OfficersListProps) => {
             {council?.officers?.filter(Boolean).map((officer) => (
               <li key={officer?.name}>
                 <div className='flex items-center gap-x-6 rounded-lg border border-gray-200 p-1'>
-                  <Image
-                    width={61}
-                    height={0}
-                    src={officer.avatar || ImageName[officer.position]}
-                    alt={officer.position}
-                    className='h-auto w-auto rounded-full object-bottom-center outline-1 -outline-offset-1 outline-white/10'
-                  />
+                  <div
+                    className='relative shrink-0 overflow-hidden rounded-full outline-1 -outline-offset-1 outline-white/10'
+                    style={{
+                      width: MEDAL_DISPLAY_WIDTH,
+                      height: MEDAL_DISPLAY_HEIGHT,
+                    }}
+                  >
+                    <Image
+                      src={officer.avatar || ImageName[officer.position]}
+                      alt={officer.position}
+                      fill
+                      sizes={`${MEDAL_DISPLAY_WIDTH}px`}
+                      className='object-cover object-bottom'
+                    />
+                  </div>
                   <div>
                     <h3 className='text-base/7 font-semibold tracking-tight dark:text-white not-dark:text-black'>
                       {officer.name}

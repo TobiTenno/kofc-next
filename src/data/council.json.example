@@ -27,15 +27,59 @@
         "time": "6:30 PM",
         "frequency": "monthly"
       }
-    }
+    },
+    "officers": [
+      {
+        "name": "Example Admin",
+        "position": "Grand Knight",
+        "termEnd": "2026-06-30",
+        "email": "example.admin@example.com",
+        "phone": "5551001001"
+      },
+      {
+        "name": "David Deputy",
+        "position": "Deputy Grand Knight",
+        "termEnd": "2026-06-30",
+        "email": "david.deputy@example.com",
+        "phone": "5551001005"
+      },
+      {
+        "name": "Stephen Secretary",
+        "position": "Financial Secretary",
+        "termEnd": "2026-06-30",
+        "email": "stephen.fs@example.com",
+        "phone": "5551001003"
+      },
+      {
+        "name": "Michael Recorder",
+        "position": "Recorder",
+        "termEnd": "2026-06-30",
+        "email": "michael.recorder@example.com",
+        "phone": "5551001004"
+      },
+      {
+        "name": "Robert Treasurer",
+        "position": "Treasurer",
+        "termEnd": "2026-06-30",
+        "email": "robert.treasurer@example.com",
+        "phone": "5551001002"
+      },
+      {
+        "name": "James Warden",
+        "position": "Warden",
+        "termEnd": "2026-06-30",
+        "email": "james.warden@example.com",
+        "phone": "5551001006"
+      }
+    ]
   },
   "webmaster": {
-    "membershipNumber": "0000000"
+    "membershipNumber": "1001001"
   },
   "permissions": {
-    "sendCouncilEmail": [],
-    "managePermissions": [],
-    "manageEvents": [],
-    "manageGalleries": []
+    "sendCouncilEmail": ["1001001"],
+    "managePermissions": ["1001001"],
+    "manageEvents": ["1001001"],
+    "manageGalleries": ["1001001"]
   }
 }

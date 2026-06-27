@@ -8,13 +8,14 @@
     "cypress:install": "cypress install",
     "cypress:open": "node scripts/run-e2e.mjs --open",
     "db:migrate": "node scripts/check-node-version.mjs && npx tsx src/db/migrate.ts",
-    "dev": "node scripts/check-node-version.mjs && vinext dev --hostname 0.0.0.0",
+    "dev": "node scripts/check-node-version.mjs && node scripts/run-dev.mjs",
     "postinstall": "npm rebuild better-sqlite3 --foreground-scripts && cypress install",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "member:seed-password": "node scripts/check-node-version.mjs && npx tsx scripts/seed-member-password.ts",
     "prepare": "husky",
     "rebuild:native": "npm rebuild better-sqlite3 --foreground-scripts",
+    "seed:example": "node scripts/seed-example-council.mjs",
     "start": "vinext start",
     "test:build": "node scripts/run-e2e.mjs --build-only",
     "test:e2e": "node scripts/run-e2e.mjs",
@@ -43,6 +44,7 @@
     "react-big-calendar": "^1.20.0",
     "react-dom": "^19.2.7",
     "react-leaflet": "^5.0.0",
+    "sharp": "^0.34.5",
     "zod": "^4.1.12"
   },
   "devDependencies": {

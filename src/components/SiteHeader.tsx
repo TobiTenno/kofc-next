@@ -16,7 +16,7 @@ export const SiteHeader = async () => {
     : null;
 
   return (
-    <header className='mx-auto w-full max-w-7xl min-w-0 overflow-hidden rounded-xl text-white dark:bg-gray-950 not-dark:bg-blue-950'>
+    <header className='relative z-[100] mx-auto w-full max-w-7xl min-w-0 rounded-xl text-white dark:bg-gray-950 not-dark:bg-blue-950'>
       <SiteNav
         councilName={council?.name}
         membershipNumber={membershipNumber}

@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { CalendarPreview } from '@/components/calendar/CalendarPreview';
 import { CalendarSubscribeLinks } from '@/components/calendar/CalendarSubscribeLinks';
-import { getCanonicalAppOrigin } from '@/lib/app-origin';
+import { getCanonicalAppOrigin, getLocalDevOrigin } from '@/lib/app-origin';
 import {
   loadCalendarPreviewEvents,
   serializeCalendarPreviewEvents,
@@ -12,7 +12,7 @@ import { getMembershipNumber } from '@/lib/session';
 
 export default async function MembersCalendarPage() {
   const membershipNumber = await getMembershipNumber();
-  const baseUrl = getCanonicalAppOrigin() ?? 'http://localhost:3000';
+  const baseUrl = getCanonicalAppOrigin() ?? getLocalDevOrigin();
   const token = membershipNumber
     ? await mintCalendarToken({ membershipNumber, feed: 'birthdays' })
     : null;

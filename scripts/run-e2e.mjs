@@ -24,8 +24,8 @@ const standaloneDir = path.join(root, 'dist/standalone');
 const defaultCouncilJson = path.join(root, 'src/data/council.json.example');
 const defaultCouncilCsv = path.join(root, 'src/data/council.csv.example');
 
-const TEST_MEMBER_NUMBER = '0000000';
-const TEST_MEMBER_PASSWORD = 'cypress-ci-password';
+const TEST_MEMBER_NUMBER = '1001001';
+const TEST_MEMBER_PASSWORD = 'password';
 
 const resolveDataPath = (envValue, fallback) => {
   const value = envValue?.trim() || fallback;

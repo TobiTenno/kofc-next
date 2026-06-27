@@ -1,3 +1,5 @@
+import { getDevServerOrigin } from '@/lib/dev-server';
+
 export const isLoopbackHost = (hostname: string): boolean =>
   hostname === 'localhost' ||
   hostname === '127.0.0.1' ||
@@ -49,6 +51,9 @@ export const buildExternalRequestUrl = (
   const host = getRequestHost(headers, fallbackUrl.host);
   return new URL(`${pathname}${search}`, `${protocol}//${host}`);
 };
+
+/** Local dev fallback origin (isolated port — see config/dev-server.json). */
+export const getLocalDevOrigin = (): string => getDevServerOrigin();
 
 /** Canonical browser origin from env (NEXT_PUBLIC_APP_URL preferred). */
 export const getCanonicalAppOrigin = (): string | null => {
