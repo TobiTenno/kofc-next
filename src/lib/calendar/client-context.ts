@@ -10,6 +10,8 @@ export type BrowserCalendarContext = {
   timeZone: string;
 };
 
+const CALENDAR_COOKIE_MAX_AGE_MS = 365 * 24 * 60 * 60 * 1000;
+
 export const getBrowserCalendarContext = (): BrowserCalendarContext => ({
   timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   locale: navigator.language || 'en-US',
@@ -22,14 +24,26 @@ export const calendarRequestHeaders = (
   [CALENDAR_LOCALE_HEADER]: context.locale,
 });
 
-const writeCookie = (name: string, value: string): void => {
-  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=31536000; samesite=lax`;
+const writeCookie = async (name: string, value: string): Promise<void> => {
+  if (typeof cookieStore === 'undefined') {
+    return;
+  }
+
+  await cookieStore.set({
+    name,
+    value,
+    path: '/',
+    expires: Date.now() + CALENDAR_COOKIE_MAX_AGE_MS,
+    sameSite: 'lax',
+  });
 };
 
 /** Persist browser TZ/locale so SSR can render calendar dates on the next request. */
-export const syncCalendarContextCookies = (
+export const syncCalendarContextCookies = async (
   context: BrowserCalendarContext = getBrowserCalendarContext(),
-): void => {
-  writeCookie(CALENDAR_TIMEZONE_COOKIE, context.timeZone);
-  writeCookie(CALENDAR_LOCALE_COOKIE, context.locale);
+): Promise<void> => {
+  await Promise.all([
+    writeCookie(CALENDAR_TIMEZONE_COOKIE, context.timeZone),
+    writeCookie(CALENDAR_LOCALE_COOKIE, context.locale),
+  ]);
 };

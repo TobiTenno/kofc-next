@@ -4,8 +4,8 @@ import { notFound } from 'next/navigation';
 import { PublicCalendarContent } from '@/components/calendar/PublicCalendarContent';
 import { getCanonicalAppOrigin, getLocalDevOrigin } from '@/lib/app-origin';
 import {
-  isCalendarViewSegment,
   type CalendarViewSegment,
+  isCalendarViewSegment,
 } from '@/lib/calendar/calendar-view-path';
 import { loadSerializedCalendarPreviewEvents } from '@/lib/calendar/request-context';
 import { mintCalendarToken } from '@/lib/calendar/tokens';

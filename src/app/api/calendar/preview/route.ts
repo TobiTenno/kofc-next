@@ -20,5 +20,11 @@ export const GET = async (): Promise<NextResponse> => {
     includeBirthdays: signedIn,
   });
 
-  return NextResponse.json({ signedIn, events, birthdayUrl, baseUrl, timeZone });
+  return NextResponse.json({
+    signedIn,
+    events,
+    birthdayUrl,
+    baseUrl,
+    timeZone,
+  });
 };

@@ -5,8 +5,8 @@ import { CalendarPreview } from '@/components/calendar/CalendarPreview';
 import { CalendarSubscribeLinks } from '@/components/calendar/CalendarSubscribeLinks';
 import { getCanonicalAppOrigin, getLocalDevOrigin } from '@/lib/app-origin';
 import {
-  isCalendarViewSegment,
   type CalendarViewSegment,
+  isCalendarViewSegment,
 } from '@/lib/calendar/calendar-view-path';
 import { loadSerializedCalendarPreviewEvents } from '@/lib/calendar/request-context';
 import { mintCalendarToken } from '@/lib/calendar/tokens';

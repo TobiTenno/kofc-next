@@ -16,21 +16,22 @@ export type CalendarRequestContext = {
   timeZone: string;
 };
 
-export const getCalendarRequestContext = async (): Promise<CalendarRequestContext> => {
-  const headerStore = await headers();
-  const cookieStore = await cookies();
+export const getCalendarRequestContext =
+  async (): Promise<CalendarRequestContext> => {
+    const headerStore = await headers();
+    const cookieStore = await cookies();
 
-  const timeZone = resolveCalendarTimeZone(
-    headerStore.get(CALENDAR_TIMEZONE_HEADER) ??
-      cookieStore.get(CALENDAR_TIMEZONE_COOKIE)?.value,
-  );
-  const locale = resolveCalendarLocale(
-    headerStore.get(CALENDAR_LOCALE_HEADER) ??
-      cookieStore.get(CALENDAR_LOCALE_COOKIE)?.value,
-  );
+    const timeZone = resolveCalendarTimeZone(
+      headerStore.get(CALENDAR_TIMEZONE_HEADER) ??
+        cookieStore.get(CALENDAR_TIMEZONE_COOKIE)?.value,
+    );
+    const locale = resolveCalendarLocale(
+      headerStore.get(CALENDAR_LOCALE_HEADER) ??
+        cookieStore.get(CALENDAR_LOCALE_COOKIE)?.value,
+    );
 
-  return { timeZone, locale };
-};
+    return { timeZone, locale };
+  };
 
 export const loadSerializedCalendarPreviewEvents = async (options?: {
   includeBirthdays?: boolean;

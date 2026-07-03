@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import { CalendarPreview } from '@/components/calendar/CalendarPreview';
 import { CalendarSubscribeLinks } from '@/components/calendar/CalendarSubscribeLinks';
+import { authClient } from '@/lib/auth-client';
+import type { SerializedCalendarPreviewEvent } from '@/lib/calendar/calendar-event-types';
 import {
   calendarRequestHeaders,
   syncCalendarContextCookies,
 } from '@/lib/calendar/client-context';
-import { authClient } from '@/lib/auth-client';
-import type { SerializedCalendarPreviewEvent } from '@/lib/calendar/calendar-event-types';
 
 type PublicCalendarContentProps = {
   baseUrl: string;
@@ -42,7 +42,7 @@ export const PublicCalendarContent = ({
   const [feedBaseUrl, setFeedBaseUrl] = useState(baseUrl);
 
   useEffect(() => {
-    syncCalendarContextCookies();
+    void syncCalendarContextCookies();
   }, []);
 
   useEffect(() => {

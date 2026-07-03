@@ -33,7 +33,5 @@ export const parseCalendarViewFromPathname = (
   return isCalendarViewSegment(segment) ? segment : null;
 };
 
-export const calendarPathWithView = (
-  basePath: string,
-  view: View,
-): string => `${basePath}/${view}`;
+export const calendarPathWithView = (basePath: string, view: View): string =>
+  `${basePath}/${view}`;

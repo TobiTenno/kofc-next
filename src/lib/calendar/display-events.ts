@@ -2,10 +2,6 @@ import { and, eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { events, members } from '@/db/schema';
 import { parseMemberBirthMonthDay } from '@/lib/calendar/birth-date';
-import type {
-  CalendarEventVariant,
-  CalendarPreviewEvent,
-} from '@/lib/calendar/calendar-event-types';
 import { parseCalendarDateLocal } from '@/lib/calendar/calendar-date-parse';
 import {
   addDaysToDateKey,
@@ -13,18 +9,21 @@ import {
   formatDateKeyInTimeZone,
   zonedWallTimeToDate,
 } from '@/lib/calendar/calendar-dates';
+import type {
+  CalendarEventVariant,
+  CalendarPreviewEvent,
+} from '@/lib/calendar/calendar-event-types';
 import { DEFAULT_CALENDAR_TIMEZONE } from '@/lib/calendar/timezone';
 import { loadCouncilConfig } from '@/lib/council-config';
 import { formatPostalAddress } from '@/lib/openstreetmap';
 import { formatMemberName } from '@/lib/utils';
 
+export { serializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-serialize';
 export type {
   CalendarEventVariant,
   CalendarPreviewEvent,
   SerializedCalendarPreviewEvent,
 } from '@/lib/calendar/calendar-event-types';
-
-export { serializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-serialize';
 export { deserializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-types';
 
 const weekdayIndex: Record<string, number> = {
@@ -37,8 +36,12 @@ const weekdayIndex: Record<string, number> = {
   saturday: 6,
 };
 
-const previewRangeYears = (timeZone: string): { startYear: number; endYear: number } => {
-  const year = Number(formatDateKeyInTimeZone(new Date(), timeZone).slice(0, 4));
+const previewRangeYears = (
+  timeZone: string,
+): { startYear: number; endYear: number } => {
+  const year = Number(
+    formatDateKeyInTimeZone(new Date(), timeZone).slice(0, 4),
+  );
   return { startYear: year - 1, endYear: year + 1 };
 };
 

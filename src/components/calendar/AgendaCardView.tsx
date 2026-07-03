@@ -1,8 +1,8 @@
 'use client';
 
 import { Chip, Description, Header, Label, ListBox } from '@heroui/react';
-import { useMemo } from 'react';
 import type { SyntheticEvent } from 'react';
+import { useMemo } from 'react';
 import {
   Navigate,
   type NavigateAction,
@@ -150,10 +150,7 @@ const AgendaCardView = ({
                 textValue={event.title}
                 className={`calendar-agenda-item items-start py-2 ${variantAccent[event.variant]}`}
                 onAction={() =>
-                  onSelectEvent?.(
-                    event,
-                    {} as SyntheticEvent<HTMLElement>,
-                  )
+                  onSelectEvent?.(event, {} as SyntheticEvent<HTMLElement>)
                 }
               >
                 <div className='grid min-w-0 flex-1 gap-1'>
@@ -183,7 +180,10 @@ const AgendaCardView = ({
   );
 };
 
-AgendaCardView.range = (start: Date, { length = DEFAULT_LENGTH, localizer }: TitleOptions) => {
+AgendaCardView.range = (
+  start: Date,
+  { length = DEFAULT_LENGTH, localizer }: TitleOptions,
+) => {
   const rangeEnd = localizer.add(start, length, 'day');
   return { start, end: rangeEnd };
 };
@@ -203,9 +203,15 @@ AgendaCardView.navigate = (
   }
 };
 
-AgendaCardView.title = (start: Date, { length = DEFAULT_LENGTH, localizer }: TitleOptions) => {
+AgendaCardView.title = (
+  start: Date,
+  { length = DEFAULT_LENGTH, localizer }: TitleOptions,
+) => {
   const rangeEnd = localizer.add(start, length, 'day');
-  return localizer.format({ start, end: rangeEnd }, 'agendaHeaderFormat') as string;
+  return localizer.format(
+    { start, end: rangeEnd },
+    'agendaHeaderFormat',
+  ) as string;
 };
 
 export const AgendaCardViewComponent = AgendaCardView as typeof AgendaCardView &

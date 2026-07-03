@@ -161,18 +161,18 @@ export const CalendarPreview = ({
   }, [initialEvents]);
 
   useEffect(() => {
-    const browserContext = getBrowserCalendarContext();
-    syncCalendarContextCookies(browserContext);
+    const syncCalendar = async (): Promise<void> => {
+      const browserContext = getBrowserCalendarContext();
+      await syncCalendarContextCookies(browserContext);
 
-    if (!refreshEventsFrom) {
-      return;
-    }
+      if (!refreshEventsFrom) {
+        return;
+      }
 
-    if (serverTimeZone && browserContext.timeZone === serverTimeZone) {
-      return;
-    }
+      if (serverTimeZone && browserContext.timeZone === serverTimeZone) {
+        return;
+      }
 
-    const refreshEvents = async (): Promise<void> => {
       const response = await fetch(refreshEventsFrom, {
         credentials: 'include',
         headers: calendarRequestHeaders(browserContext),
@@ -187,7 +187,7 @@ export const CalendarPreview = ({
       setEvents(payload.events);
     };
 
-    void refreshEvents();
+    void syncCalendar();
   }, [refreshEventsFrom, serverTimeZone]);
 
   useEffect(() => {
@@ -288,7 +288,10 @@ export const CalendarPreview = ({
           ) : (
             <div
               className='w-full rounded-md bg-muted/30'
-              style={{ minHeight: calendarMinHeight === 'auto' ? '420px' : calendarMinHeight }}
+              style={{
+                minHeight:
+                  calendarMinHeight === 'auto' ? '420px' : calendarMinHeight,
+              }}
               aria-hidden
             />
           )}
