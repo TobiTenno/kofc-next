@@ -1,36 +1,46 @@
 'use client';
 
-import { format, getDay, parse, startOfWeek } from 'date-fns';
-import { enUS } from 'date-fns/locale';
-import { useEffect, useMemo, useState } from 'react';
+import {
+  Button,
+  ButtonGroup,
+  Card,
+  ToggleButton,
+  ToggleButtonGroup,
+} from '@heroui/react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Calendar,
-  dateFnsLocalizer,
+  dayjsLocalizer,
   type EventPropGetter,
   type ToolbarProps,
   type View,
   Views,
 } from 'react-big-calendar';
+import { AgendaCardViewComponent } from '@/components/calendar/AgendaCardView';
 import { CalendarEventDialog } from '@/components/calendar/CalendarEventDialog';
+import { CalendarPreviewEventBlock } from '@/components/calendar/CalendarPreviewEventBlock';
 import type {
   CalendarEventVariant,
   CalendarPreviewEvent,
   SerializedCalendarPreviewEvent,
 } from '@/lib/calendar/calendar-event-types';
 import { deserializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-types';
+import {
+  calendarPathWithView,
+  parseCalendarViewFromPathname,
+} from '@/lib/calendar/calendar-view-path';
+import {
+  calendarRequestHeaders,
+  getBrowserCalendarContext,
+  syncCalendarContextCookies,
+} from '@/lib/calendar/client-context';
+import dayjs from '@/lib/calendar/dayjs';
 import '@/components/calendar/shadcn-big-calendar.css';
 
 type CalendarEvent = CalendarPreviewEvent;
 
-const locales = { 'en-US': enUS };
-
-const localizer = dateFnsLocalizer({
-  format,
-  parse,
-  startOfWeek: (date: Date) => startOfWeek(date, { weekStartsOn: 0 }),
-  getDay,
-  locales,
-});
+const localizer = dayjsLocalizer(dayjs);
 
 const MOBILE_CALENDAR_MAX_WIDTH = 1023;
 
@@ -59,57 +69,48 @@ const CalendarToolbar = ({
   const viewOptions = (views as View[]).filter((name) => name in viewLabels);
 
   return (
-    <div className='mb-4 grid gap-3'>
+    <div className='calendar-toolbar mb-4 grid gap-3'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
-        <div className='flex flex-wrap items-center gap-2'>
-          <button
-            type='button'
-            className='rounded border border-[var(--border)] bg-[var(--secondary)] px-3 py-1.5 text-sm font-medium hover:opacity-90'
-            onClick={() => onNavigate('TODAY')}
-          >
-            Today
-          </button>
-          <button
-            type='button'
-            className='rounded border border-[var(--border)] px-3 py-1.5 text-sm hover:bg-[var(--muted)]'
-            onClick={() => onNavigate('PREV')}
-          >
+        <ButtonGroup variant='secondary' size='sm'>
+          <Button onPress={() => onNavigate('TODAY')}>Today</Button>
+          <Button onPress={() => onNavigate('PREV')}>
+            <ButtonGroup.Separator />
             Back
-          </button>
-          <button
-            type='button'
-            className='rounded border border-[var(--border)] px-3 py-1.5 text-sm hover:bg-[var(--muted)]'
-            onClick={() => onNavigate('NEXT')}
-          >
+          </Button>
+          <Button onPress={() => onNavigate('NEXT')}>
+            <ButtonGroup.Separator />
             Next
-          </button>
-        </div>
-        <p className='text-base font-semibold'>{label}</p>
-        <div className='flex flex-wrap gap-1 rounded border border-[var(--border)] p-1'>
-          {viewOptions.map((name) => (
-            <button
-              key={name}
-              type='button'
-              className={`rounded px-3 py-1 text-sm ${
-                view === name
-                  ? 'bg-[var(--primary)] text-[var(--primary-foreground)]'
-                  : 'hover:bg-[var(--muted)]'
-              }`}
-              onClick={() => onView(name)}
-            >
+          </Button>
+        </ButtonGroup>
+
+        <p className='text-base font-semibold text-foreground'>{label}</p>
+
+        <ToggleButtonGroup
+          selectionMode='single'
+          selectedKeys={new Set([view])}
+          onSelectionChange={(keys) => {
+            if (keys === 'all') return;
+            const next = [...keys][0] as View | undefined;
+            if (next) onView(next);
+          }}
+          size='sm'
+        >
+          {viewOptions.map((name, index) => (
+            <ToggleButton key={name} id={name}>
+              {index > 0 ? <ToggleButtonGroup.Separator /> : null}
               {viewLabels[name]}
-            </button>
+            </ToggleButton>
           ))}
-        </div>
+        </ToggleButtonGroup>
       </div>
     </div>
   );
 };
 
-const legendStyles: Record<CalendarEventVariant, string> = {
-  primary: 'bg-[var(--primary)]',
-  secondary: 'bg-[var(--secondary)] border border-[var(--border)]',
-  outline: 'bg-[var(--muted)] border border-[var(--border)]',
+const legendSwatchClass: Record<CalendarEventVariant, string> = {
+  primary: 'calendar-legend-swatch--primary',
+  secondary: 'calendar-legend-swatch--secondary',
+  outline: 'calendar-legend-swatch--outline',
 };
 
 const legendItems: Array<{ label: string; variant: CalendarEventVariant }> = [
@@ -121,22 +122,97 @@ const legendItems: Array<{ label: string; variant: CalendarEventVariant }> = [
 ];
 
 type CalendarPreviewProps = {
+  calendarBasePath: string;
   events: SerializedCalendarPreviewEvent[];
+  refreshEventsFrom?: string;
+  serverTimeZone?: string;
   showBirthdayLegend?: boolean;
 };
 
 export const CalendarPreview = ({
-  events,
+  calendarBasePath,
+  events: initialEvents,
+  refreshEventsFrom,
+  serverTimeZone,
   showBirthdayLegend = false,
 }: CalendarPreviewProps) => {
-  const [view, setView] = useState<View>(defaultCalendarView);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const persistView = useCallback(
+    (nextView: View): void => {
+      router.replace(calendarPathWithView(calendarBasePath, nextView), {
+        scroll: false,
+      });
+    },
+    [calendarBasePath, router],
+  );
+
+  const [view, setView] = useState<View>(Views.MONTH);
   const [calendarReady, setCalendarReady] = useState(false);
   const [date, setDate] = useState(new Date());
+  const [events, setEvents] = useState(initialEvents);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
 
   useEffect(() => {
+    setEvents(initialEvents);
+  }, [initialEvents]);
+
+  useEffect(() => {
+    const browserContext = getBrowserCalendarContext();
+    syncCalendarContextCookies(browserContext);
+
+    if (!refreshEventsFrom) {
+      return;
+    }
+
+    if (serverTimeZone && browserContext.timeZone === serverTimeZone) {
+      return;
+    }
+
+    const refreshEvents = async (): Promise<void> => {
+      const response = await fetch(refreshEventsFrom, {
+        credentials: 'include',
+        headers: calendarRequestHeaders(browserContext),
+      });
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = (await response.json()) as {
+        events: SerializedCalendarPreviewEvent[];
+      };
+      setEvents(payload.events);
+    };
+
+    void refreshEvents();
+  }, [refreshEventsFrom, serverTimeZone]);
+
+  useEffect(() => {
+    const pathView = parseCalendarViewFromPathname(pathname, calendarBasePath);
+
+    if (pathView) {
+      setView(pathView);
+    } else {
+      const defaultView = defaultCalendarView();
+      setView(defaultView);
+      persistView(defaultView);
+    }
+
+    setCalendarReady(true);
+  }, [calendarBasePath, pathname, persistView]);
+
+  useEffect(() => {
+    if (!calendarReady) {
+      return;
+    }
+
+    if (parseCalendarViewFromPathname(pathname, calendarBasePath)) {
+      return;
+    }
+
     const media = window.matchMedia(
       `(max-width: ${MOBILE_CALENDAR_MAX_WIDTH}px)`,
     );
@@ -144,11 +220,14 @@ export const CalendarPreview = ({
       setView(media.matches ? Views.AGENDA : Views.MONTH);
     };
 
-    syncView();
-    setCalendarReady(true);
     media.addEventListener('change', syncView);
     return () => media.removeEventListener('change', syncView);
-  }, []);
+  }, [calendarBasePath, calendarReady, pathname]);
+
+  const handleViewChange = (nextView: View): void => {
+    setView(nextView);
+    persistView(nextView);
+  };
 
   const calendarEvents = useMemo(
     () => deserializeCalendarPreviewEvents(events),
@@ -163,47 +242,59 @@ export const CalendarPreview = ({
     ? legendItems
     : legendItems.filter((item) => item.label !== 'Birthday');
 
-  const calendarMinHeight = view === Views.AGENDA ? '420px' : '560px';
+  const calendarMinHeight = view === Views.AGENDA ? 'auto' : '560px';
 
   return (
     <div className='grid w-full gap-4'>
-      <div className='flex flex-wrap gap-3 text-sm'>
+      <div className='flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground'>
         {visibleLegend.map((item) => (
           <span key={item.label} className='flex items-center gap-2'>
             <span
-              className={`inline-block h-3 w-3 rounded-sm ${legendStyles[item.variant]}`}
+              className={`calendar-legend-swatch ${legendSwatchClass[item.variant]}`}
               aria-hidden
             />
             {item.label}
           </span>
         ))}
       </div>
-      <div className='w-full min-h-[420px] rounded-lg border border-[var(--border)] bg-[var(--card)] p-3 sm:min-h-[640px] sm:p-4'>
-        {calendarReady ? (
-          <Calendar
-            localizer={localizer}
-            events={calendarEvents}
-            view={view}
-            date={date}
-            onView={setView}
-            onNavigate={setDate}
-            views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
-            popup
-            showMultiDayTimes
-            className='w-full'
-            style={{ minHeight: calendarMinHeight, width: '100%' }}
-            components={{ toolbar: CalendarToolbar }}
-            eventPropGetter={eventPropGetter}
-            onSelectEvent={(event) => setSelectedEvent(event)}
-          />
-        ) : (
-          <div
-            className='w-full rounded-md bg-[var(--muted)]/30'
-            style={{ minHeight: calendarMinHeight }}
-            aria-hidden
-          />
-        )}
-      </div>
+
+      <Card>
+        <Card.Content className='calendar-shell pt-4'>
+          {calendarReady ? (
+            <Calendar
+              localizer={localizer}
+              events={calendarEvents}
+              view={view}
+              date={date}
+              onView={handleViewChange}
+              onNavigate={setDate}
+              views={{
+                month: true,
+                week: true,
+                day: true,
+                agenda: AgendaCardViewComponent,
+              }}
+              popup
+              showMultiDayTimes
+              className='w-full'
+              style={{ minHeight: calendarMinHeight, width: '100%' }}
+              components={{
+                toolbar: CalendarToolbar,
+                event: CalendarPreviewEventBlock,
+              }}
+              eventPropGetter={eventPropGetter}
+              onSelectEvent={(event) => setSelectedEvent(event)}
+            />
+          ) : (
+            <div
+              className='w-full rounded-md bg-muted/30'
+              style={{ minHeight: calendarMinHeight === 'auto' ? '420px' : calendarMinHeight }}
+              aria-hidden
+            />
+          )}
+        </Card.Content>
+      </Card>
+
       {selectedEvent ? (
         <CalendarEventDialog
           event={selectedEvent}

@@ -3,14 +3,20 @@
 import { useEffect, useState } from 'react';
 import { CalendarPreview } from '@/components/calendar/CalendarPreview';
 import { CalendarSubscribeLinks } from '@/components/calendar/CalendarSubscribeLinks';
+import {
+  calendarRequestHeaders,
+  syncCalendarContextCookies,
+} from '@/lib/calendar/client-context';
 import { authClient } from '@/lib/auth-client';
 import type { SerializedCalendarPreviewEvent } from '@/lib/calendar/calendar-event-types';
 
 type PublicCalendarContentProps = {
   baseUrl: string;
+  calendarBasePath: string;
   initialEvents: SerializedCalendarPreviewEvent[];
   initialSignedIn: boolean;
   initialBirthdayUrl: string | null;
+  serverTimeZone?: string;
 };
 
 type PreviewPayload = {
@@ -18,19 +24,26 @@ type PreviewPayload = {
   events: SerializedCalendarPreviewEvent[];
   birthdayUrl: string | null;
   baseUrl: string;
+  timeZone?: string;
 };
 
 export const PublicCalendarContent = ({
   baseUrl,
+  calendarBasePath,
   initialEvents,
   initialSignedIn,
   initialBirthdayUrl,
+  serverTimeZone,
 }: PublicCalendarContentProps) => {
   const { data: session, isPending } = authClient.useSession();
   const [events, setEvents] = useState(initialEvents);
   const [signedIn, setSignedIn] = useState(initialSignedIn);
   const [birthdayUrl, setBirthdayUrl] = useState(initialBirthdayUrl);
   const [feedBaseUrl, setFeedBaseUrl] = useState(baseUrl);
+
+  useEffect(() => {
+    syncCalendarContextCookies();
+  }, []);
 
   useEffect(() => {
     if (isPending) {
@@ -45,6 +58,7 @@ export const PublicCalendarContent = ({
     const loadMemberCalendar = async (): Promise<void> => {
       const response = await fetch('/api/calendar/preview', {
         credentials: 'include',
+        headers: calendarRequestHeaders(),
       });
       if (!response.ok) {
         return;
@@ -70,7 +84,13 @@ export const PublicCalendarContent = ({
           links below.
         </p>
       </div>
-      <CalendarPreview events={events} showBirthdayLegend={signedIn} />
+      <CalendarPreview
+        calendarBasePath={calendarBasePath}
+        events={events}
+        refreshEventsFrom='/api/calendar/preview'
+        serverTimeZone={serverTimeZone}
+        showBirthdayLegend={signedIn}
+      />
       <CalendarSubscribeLinks baseUrl={feedBaseUrl} birthdayUrl={birthdayUrl} />
       {signedIn ? null : (
         <p className='text-sm'>

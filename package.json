@@ -40,7 +40,7 @@
     "better-auth": "^1.6.20",
     "better-sqlite3": "^12.11.1",
     "csv-parse": "^7.0.0",
-    "date-fns": "^4.4.0",
+    "dayjs": "^1.11.21",
     "drizzle-orm": "^0.45.2",
     "ical-generator": "^11.0.0",
     "leaflet": "^1.9.4",

@@ -6,6 +6,14 @@ import type {
   CalendarEventVariant,
   CalendarPreviewEvent,
 } from '@/lib/calendar/calendar-event-types';
+import { parseCalendarDateLocal } from '@/lib/calendar/calendar-date-parse';
+import {
+  addDaysToDateKey,
+  formatDateKey,
+  formatDateKeyInTimeZone,
+  zonedWallTimeToDate,
+} from '@/lib/calendar/calendar-dates';
+import { DEFAULT_CALENDAR_TIMEZONE } from '@/lib/calendar/timezone';
 import { loadCouncilConfig } from '@/lib/council-config';
 import { formatPostalAddress } from '@/lib/openstreetmap';
 import { formatMemberName } from '@/lib/utils';
@@ -16,10 +24,8 @@ export type {
   SerializedCalendarPreviewEvent,
 } from '@/lib/calendar/calendar-event-types';
 
-export {
-  deserializeCalendarPreviewEvents,
-  serializeCalendarPreviewEvents,
-} from '@/lib/calendar/calendar-event-types';
+export { serializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-serialize';
+export { deserializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-types';
 
 const weekdayIndex: Record<string, number> = {
   sunday: 0,
@@ -31,8 +37,8 @@ const weekdayIndex: Record<string, number> = {
   saturday: 6,
 };
 
-const previewRangeYears = (): { startYear: number; endYear: number } => {
-  const year = new Date().getFullYear();
+const previewRangeYears = (timeZone: string): { startYear: number; endYear: number } => {
+  const year = Number(formatDateKeyInTimeZone(new Date(), timeZone).slice(0, 4));
   return { startYear: year - 1, endYear: year + 1 };
 };
 
@@ -80,17 +86,21 @@ const nthWeekdayOfMonth = (
   monthIndex: number,
   weekday: number,
   nth: number,
-): Date | null => {
-  const first = new Date(year, monthIndex, 1);
-  let day = 1 + ((weekday - first.getDay() + 7) % 7);
+): { year: number; month: number; day: number } | null => {
+  const first = new Date(Date.UTC(year, monthIndex, 1));
+  let day = 1 + ((weekday - first.getUTCDay() + 7) % 7);
   day += (nth - 1) * 7;
 
-  const date = new Date(year, monthIndex, day);
-  if (date.getMonth() !== monthIndex) {
+  const date = new Date(Date.UTC(year, monthIndex, day));
+  if (date.getUTCMonth() !== monthIndex) {
     return null;
   }
 
-  return date;
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+  };
 };
 
 const formatMeetingLocation = (): string | null => {
@@ -110,6 +120,8 @@ const expandMonthlyMeeting = (options: {
   variant: CalendarEventVariant;
   kind: CalendarPreviewEvent['kind'];
   location?: string | null;
+  councilTimeZone: string;
+  timeZone: string;
 }): CalendarPreviewEvent[] => {
   const schedule = parseOrdinalWeekday(options.day);
   const clock = parseMeetingTime(options.time);
@@ -117,25 +129,30 @@ const expandMonthlyMeeting = (options: {
     return [];
   }
 
-  const { startYear, endYear } = previewRangeYears();
+  const { startYear, endYear } = previewRangeYears(options.timeZone);
   const results: CalendarPreviewEvent[] = [];
 
   for (let year = startYear; year <= endYear; year += 1) {
     for (let month = 0; month < 12; month += 1) {
-      const day = nthWeekdayOfMonth(
+      const meetingDay = nthWeekdayOfMonth(
         year,
         month,
         schedule.weekday,
         schedule.nth,
       );
-      if (!day) {
+      if (!meetingDay) {
         continue;
       }
 
-      const start = new Date(day);
-      start.setHours(clock.hours, clock.minutes, 0, 0);
-      const end = new Date(start);
-      end.setHours(end.getHours() + 2);
+      const start = zonedWallTimeToDate(
+        options.councilTimeZone,
+        meetingDay.year,
+        meetingDay.month,
+        meetingDay.day,
+        clock.hours,
+        clock.minutes,
+      );
+      const end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
 
       results.push({
         id: `${options.id}-${year}-${month + 1}`,
@@ -152,7 +169,10 @@ const expandMonthlyMeeting = (options: {
   return results;
 };
 
-const councilMeetingEvents = (): CalendarPreviewEvent[] => {
+const councilMeetingEvents = (
+  councilTimeZone: string,
+  timeZone: string,
+): CalendarPreviewEvent[] => {
   const config = loadCouncilConfig();
   const council = config.council?.meetingTimes?.council;
   const officers = config.council?.meetingTimes?.officers;
@@ -173,6 +193,8 @@ const councilMeetingEvents = (): CalendarPreviewEvent[] => {
         variant: 'primary',
         kind: 'council-meeting',
         location: meetingLocation,
+        councilTimeZone,
+        timeZone,
       }),
     );
   }
@@ -187,6 +209,8 @@ const councilMeetingEvents = (): CalendarPreviewEvent[] => {
         variant: 'outline',
         kind: 'officers-meeting',
         location: meetingLocation,
+        councilTimeZone,
+        timeZone,
       }),
     );
   }
@@ -194,43 +218,60 @@ const councilMeetingEvents = (): CalendarPreviewEvent[] => {
   return rows;
 };
 
-const dbEventEnd = (start: Date, end: Date | null, allDay: boolean): Date => {
+const dbEventEnd = (
+  start: Date,
+  end: Date | null,
+  allDay: boolean,
+  timeZone: string,
+): Date => {
   if (end) {
     return end;
   }
 
   if (allDay) {
-    const dayEnd = new Date(start);
-    dayEnd.setHours(23, 59, 59, 999);
-    return dayEnd;
+    const startKey = formatDateKeyInTimeZone(start, timeZone);
+    const endKey = addDaysToDateKey(startKey, 1);
+    return parseCalendarDateLocal(endKey);
   }
 
   return new Date(start.getTime() + 60 * 60 * 1000);
 };
 
-const dbEvents = async (): Promise<CalendarPreviewEvent[]> => {
+const dbEvents = async (timeZone: string): Promise<CalendarPreviewEvent[]> => {
   const rows = await db.select().from(events).orderBy(events.startAt);
 
-  return rows.map((event) => ({
-    id: event.id,
-    title: event.title,
-    start: event.startAt,
-    end: dbEventEnd(event.startAt, event.endAt, event.allDay),
-    allDay: event.allDay,
-    variant: event.type === 'council' ? 'primary' : 'secondary',
-    kind: event.type === 'council' ? 'council-event' : 'member-event',
-    description: event.description,
-    location: event.location,
-  }));
+  return rows.map((event) => {
+    const allDay = event.allDay;
+    const start = event.startAt;
+    const end = dbEventEnd(event.startAt, event.endAt, allDay, timeZone);
+
+    return {
+      id: event.id,
+      title: event.title,
+      start,
+      end,
+      allDay,
+      startDateKey: allDay
+        ? formatDateKeyInTimeZone(start, timeZone)
+        : undefined,
+      endDateKey: allDay ? formatDateKeyInTimeZone(end, timeZone) : undefined,
+      variant: event.type === 'council' ? 'primary' : 'secondary',
+      kind: event.type === 'council' ? 'council-event' : 'member-event',
+      description: event.description,
+      location: event.location,
+    } satisfies CalendarPreviewEvent;
+  });
 };
 
-const birthdayEvents = async (): Promise<CalendarPreviewEvent[]> => {
+const birthdayEvents = async (
+  timeZone: string,
+): Promise<CalendarPreviewEvent[]> => {
   const activeMembers = await db
     .select()
     .from(members)
     .where(and(eq(members.active, true)));
 
-  const { startYear, endYear } = previewRangeYears();
+  const { startYear, endYear } = previewRangeYears(timeZone);
   const results: CalendarPreviewEvent[] = [];
 
   for (const member of activeMembers) {
@@ -244,14 +285,16 @@ const birthdayEvents = async (): Promise<CalendarPreviewEvent[]> => {
     }
 
     for (let year = startYear; year <= endYear; year += 1) {
-      const start = new Date(year, parsed.month - 1, parsed.day);
-      const end = new Date(year, parsed.month - 1, parsed.day, 23, 59, 59, 999);
+      const startDateKey = formatDateKey(year, parsed.month, parsed.day);
+      const endDateKey = addDaysToDateKey(startDateKey, 1);
 
       results.push({
         id: `birthday-${member.membershipNumber}-${year}`,
         title: `${formatMemberName(member)} Birthday`,
-        start,
-        end,
+        start: parseCalendarDateLocal(startDateKey),
+        end: parseCalendarDateLocal(endDateKey),
+        startDateKey,
+        endDateKey,
         allDay: true,
         variant: 'outline',
         kind: 'birthday',
@@ -264,11 +307,16 @@ const birthdayEvents = async (): Promise<CalendarPreviewEvent[]> => {
 
 export const loadCalendarPreviewEvents = async (options?: {
   includeBirthdays?: boolean;
+  timeZone?: string;
+  councilTimeZone?: string;
 }): Promise<CalendarPreviewEvent[]> => {
+  const timeZone = options?.timeZone ?? DEFAULT_CALENDAR_TIMEZONE;
+  const councilTimeZone = options?.councilTimeZone ?? DEFAULT_CALENDAR_TIMEZONE;
+
   const [meetings, storedEvents, birthdays] = await Promise.all([
-    Promise.resolve(councilMeetingEvents()),
-    dbEvents(),
-    options?.includeBirthdays ? birthdayEvents() : Promise.resolve([]),
+    Promise.resolve(councilMeetingEvents(councilTimeZone, timeZone)),
+    dbEvents(timeZone),
+    options?.includeBirthdays ? birthdayEvents(timeZone) : Promise.resolve([]),
   ]);
 
   return [...meetings, ...storedEvents, ...birthdays].sort(

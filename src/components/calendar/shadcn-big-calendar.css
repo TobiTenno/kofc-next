@@ -179,27 +179,31 @@ button.rbc-input::-moz-focus-inner {
 }
 .rbc-event,
 .rbc-slot-selection {
-  --event-bg: var(--primary);
-  --event-color: var(--primary-foreground);
-  --event-border: color-mix(in oklab, var(--primary) 90%, transparent);
+  --event-accent: #2563eb;
+  --event-bg: color-mix(in oklab, var(--event-accent) 13%, var(--background));
+  --event-color: var(--event-accent);
+  --event-time-color: var(--event-accent);
   background-color: var(--event-bg);
   color: var(--event-color);
-  padding: 3px 6px;
-  border-radius: calc(var(--radius) - 2px);
-  border: 1px solid var(--event-border);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: none;
+  border-left: 3px solid var(--event-accent);
   cursor: pointer;
   font-size: 0.8125rem;
-  line-height: 1.2;
+  line-height: 1.35;
   font-weight: 500;
-  transition:
-    background-color 150ms ease,
-    box-shadow 150ms ease,
-    transform 75ms ease,
-    border-color 150ms ease;
+  box-shadow: none;
+  transition: background-color 150ms ease;
   outline: none;
 }
+
+.dark .rbc-event,
+.dark .rbc-slot-selection {
+  --event-bg: color-mix(in oklab, var(--event-accent) 22%, var(--background));
+}
 .rbc-event:active {
-  transform: translateY(1px);
+  filter: brightness(0.97);
 }
 .rbc-slot-selecting .rbc-event {
   cursor: inherit;
@@ -213,14 +217,13 @@ button.rbc-input::-moz-focus-inner {
   box-shadow:
     0 0 0 2px var(--background),
     0 0 0 4px var(--ring);
-  border-color: var(--event-border);
   outline: none;
 }
 .rbc-event-label {
   display: none;
 }
 .rbc-event-overlaps {
-  box-shadow: -1px 1px 5px 0px var(--primary-foreground);
+  box-shadow: none;
 }
 .rbc-event-continues-prior {
   border-top-left-radius: 0;
@@ -503,37 +506,40 @@ button.rbc-input::-moz-focus-inner {
   right: 0;
 }
 .rbc-day-slot .rbc-event {
-  border: 1px solid var(--event-border);
-  display: -webkit-flex;
-  display: -ms-flexbox;
   display: flex;
   max-height: 100%;
   min-height: 20px;
-  -webkit-flex-flow: column wrap;
-  -ms-flex-flow: column wrap;
-  flex-flow: column wrap;
-  -webkit-align-items: flex-start;
-  -ms-flex-align: start;
+  flex-flow: column nowrap;
   align-items: flex-start;
+  gap: 1px;
   overflow: hidden;
   position: absolute;
+  padding: 6px 8px;
+  border-radius: 3px;
+  border-left-width: 3px;
 }
 .rbc-day-slot .rbc-event-label {
-  -webkit-flex: none;
-  -ms-flex: none;
+  display: block;
+  order: 2;
   flex: none;
-  padding-right: 5px;
-  width: auto;
+  width: 100%;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.25;
+  color: var(--event-time-color);
+  opacity: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .rbc-day-slot .rbc-event-content {
+  order: 1;
   width: 100%;
-  -webkit-flex: 1 1 0;
-  -ms-flex: 1 1 0px;
-  flex: 1 1 0;
-  word-wrap: break-word;
-  line-height: 1;
-  height: 100%;
-  min-height: 1em;
+  flex: 0 1 auto;
+  min-height: 0;
+  line-height: 1.25;
+  color: var(--event-color);
 }
 .rbc-day-slot .rbc-time-slot {
   border-top: 1px solid color-mix(in oklab, var(--border) 50%, transparent);
@@ -669,7 +675,7 @@ button.rbc-input::-moz-focus-inner {
   color: var(--foreground);
   overflow: hidden;
 }
-.rbc-toolbar button {
+.rbc-toolbar button:not([data-slot='button']):not([data-slot='toggle-button']) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -696,23 +702,23 @@ button.rbc-input::-moz-focus-inner {
   outline: none;
   user-select: none;
 }
-.rbc-toolbar button:hover {
+.rbc-toolbar button:not([data-slot='button']):not([data-slot='toggle-button']):hover {
   background-color: var(--muted);
   color: var(--foreground);
 }
-.rbc-toolbar button:focus-visible {
+.rbc-toolbar button:not([data-slot='button']):not([data-slot='toggle-button']):focus-visible {
   border-color: var(--ring);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
 }
-.rbc-toolbar button:active {
+.rbc-toolbar button:not([data-slot='button']):not([data-slot='toggle-button']):active {
   transform: translateY(1px);
 }
-.rbc-toolbar button.rbc-active {
+.rbc-toolbar button:not([data-slot='button']):not([data-slot='toggle-button']).rbc-active {
   color: var(--secondary-foreground);
   background-color: var(--secondary);
   border-color: var(--border);
 }
-.rbc-toolbar button.rbc-active:hover {
+.rbc-toolbar button:not([data-slot='button']):not([data-slot='toggle-button']).rbc-active:hover {
   background-color: color-mix(in oklab, var(--secondary) 80%, transparent);
 }
 .rbc-toolbar .rbc-btn-group {
@@ -800,45 +806,63 @@ button.rbc-input::-moz-focus-inner {
   border: none;
 }
 .rbc-event:hover {
-  --event-bg: color-mix(in oklab, var(--primary) 85%, transparent);
-  box-shadow: 0 1px 2px 0 color-mix(in oklab, black 12%, transparent);
+  --event-bg: color-mix(in oklab, var(--event-accent) 18%, var(--background));
+  box-shadow: none;
 }
+
 .rbc-event.event-variant-primary {
-  --event-bg: var(--primary);
-  --event-color: var(--primary-foreground);
-  --event-border: color-mix(in oklab, var(--primary) 90%, transparent);
+  --event-accent: #2563eb;
 }
-.rbc-event.event-variant-primary:hover {
-  --event-bg: color-mix(in oklab, var(--primary) 85%, transparent);
+
+.dark .rbc-event.event-variant-primary {
+  --event-accent: var(--primary);
 }
+
 .rbc-event.event-variant-secondary {
-  --event-bg: var(--secondary);
-  --event-color: var(--secondary-foreground);
-  --event-border: var(--border);
+  --event-accent: #0f766e;
 }
-.rbc-event.event-variant-secondary:hover {
-  --event-bg: color-mix(in oklab, var(--secondary) 80%, transparent);
+
+.dark .rbc-event.event-variant-secondary {
+  --event-accent: #14b8a6;
 }
+
 .rbc-event.event-variant-outline {
-  --event-bg: var(--background);
-  --event-color: var(--foreground);
-  --event-border: var(--border);
+  --event-accent: #78716c;
 }
-.rbc-event.event-variant-outline:hover {
-  --event-bg: var(--muted);
-  --event-color: var(--foreground);
-  --event-border: var(--border);
+
+.dark .rbc-event.event-variant-outline {
+  --event-accent: var(--muted-foreground);
 }
-.event-component {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
-  padding: 5px;
-  border-radius: calc(var(--radius) - 2px);
-  font-size: 0.8125rem;
+
+.rbc-event.rbc-event-allday {
+  border-left-width: 3px;
+  border-radius: 4px;
+  padding: 2px 8px 2px 6px;
+  min-height: 1.375rem;
+  font-size: 0.75rem;
   font-weight: 500;
+}
+
+.rbc-month-view .rbc-event {
+  border-left-width: 2px;
+  border-radius: 3px;
+  padding: 1px 6px 1px 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.calendar-event-block__title {
+  display: block;
   overflow: hidden;
-  white-space: nowrap;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  color: inherit;
+  font-weight: 500;
+}
+
+.calendar-event-block__time {
+  display: none;
 }
 .rbc-current-time-indicator {
   background-color: var(--destructive);
@@ -853,4 +877,201 @@ button.rbc-input::-moz-focus-inner {
   height: 100%;
   align-items: center;
   justify-content: center;
+}
+
+.calendar-agenda-list {
+  width: 100%;
+  padding-block: 0.25rem;
+}
+
+.calendar-agenda-list .header {
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.calendar-agenda-list .list-box-item.calendar-agenda-item {
+  margin-block: 0.125rem;
+  border-radius: 4px;
+  border: none;
+  border-left: 3px solid var(--event-accent, var(--border));
+  background-color: var(
+    --event-bg,
+    color-mix(in oklab, var(--event-accent, var(--border)) 12%, var(--background))
+  );
+  color: var(--event-accent, var(--foreground));
+}
+
+.calendar-agenda-list .list-box-item.calendar-agenda-item .label {
+  color: var(--event-accent, var(--foreground));
+}
+
+.calendar-agenda-list .list-box-item.calendar-agenda-item [data-slot='description'] {
+  color: var(--event-accent, var(--muted-foreground));
+  opacity: 0.92;
+}
+
+.calendar-agenda-list .list-box-item.calendar-agenda-item:hover,
+.calendar-agenda-list .list-box-item.calendar-agenda-item[data-hovered='true'] {
+  background-color: var(
+    --event-bg-hover,
+    color-mix(in oklab, var(--event-accent, var(--border)) 20%, var(--background))
+  );
+}
+
+.calendar-agenda-item--primary {
+  --event-accent: #2563eb;
+  --event-bg: color-mix(in oklab, #2563eb 12%, var(--background));
+  --event-bg-hover: color-mix(in oklab, #2563eb 18%, var(--background));
+}
+
+.dark .calendar-agenda-item--primary {
+  --event-accent: var(--primary);
+  --event-bg: color-mix(in oklab, var(--primary) 16%, var(--background));
+  --event-bg-hover: color-mix(in oklab, var(--primary) 22%, var(--background));
+}
+
+.calendar-agenda-item--secondary {
+  --event-accent: #0f766e;
+  --event-bg: color-mix(in oklab, #0f766e 11%, var(--background));
+  --event-bg-hover: color-mix(in oklab, #0f766e 17%, var(--background));
+}
+
+.dark .calendar-agenda-item--secondary {
+  --event-accent: #14b8a6;
+  --event-bg: color-mix(in oklab, #14b8a6 14%, var(--background));
+  --event-bg-hover: color-mix(in oklab, #14b8a6 20%, var(--background));
+}
+
+.calendar-agenda-item--outline {
+  --event-accent: #78716c;
+  --event-bg: color-mix(in oklab, #78716c 10%, var(--background));
+  --event-bg-hover: color-mix(in oklab, #78716c 16%, var(--background));
+}
+
+.dark .calendar-agenda-item--outline {
+  --event-accent: var(--muted-foreground);
+  --event-bg: color-mix(in oklab, var(--muted-foreground) 12%, var(--background));
+  --event-bg-hover: color-mix(in oklab, var(--muted-foreground) 18%, var(--background));
+}
+
+.calendar-legend-swatch {
+  display: inline-block;
+  height: 0.75rem;
+  width: 1rem;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: none;
+  border-left: 3px solid var(--legend-accent, var(--border));
+  background-color: var(--legend-bg, var(--background));
+}
+
+.calendar-legend-swatch--primary {
+  --legend-accent: #2563eb;
+  --legend-bg: color-mix(in oklab, #2563eb 13%, var(--background));
+}
+
+.dark .calendar-legend-swatch--primary {
+  --legend-accent: var(--primary);
+  --legend-bg: color-mix(in oklab, var(--primary) 18%, var(--background));
+}
+
+.calendar-legend-swatch--secondary {
+  --legend-accent: #0f766e;
+  --legend-bg: color-mix(in oklab, #0f766e 12%, var(--background));
+}
+
+.dark .calendar-legend-swatch--secondary {
+  --legend-accent: #14b8a6;
+  --legend-bg: color-mix(in oklab, #14b8a6 14%, var(--background));
+}
+
+.calendar-legend-swatch--outline {
+  --legend-accent: #78716c;
+  --legend-bg: color-mix(in oklab, #78716c 11%, var(--background));
+}
+
+.dark .calendar-legend-swatch--outline {
+  --legend-accent: var(--muted-foreground);
+  --legend-bg: color-mix(in oklab, var(--muted-foreground) 12%, var(--background));
+}
+
+/* HeroUI Card shell — one surface; event tints mix on surface not page bg */
+.calendar-shell {
+  --calendar-surface: var(--surface);
+  --event-surface: var(--calendar-surface);
+}
+
+.calendar-shell .rbc-calendar {
+  background-color: transparent;
+}
+
+.calendar-shell .rbc-day-bg {
+  background-color: var(--calendar-surface);
+}
+
+.calendar-shell .rbc-off-range-bg {
+  background: color-mix(in oklab, var(--calendar-surface) 68%, var(--background));
+}
+
+.calendar-shell .rbc-today {
+  background-color: var(--calendar-surface);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--calendar-surface) 0 10px,
+    color-mix(in oklab, var(--muted) 55%, var(--calendar-surface)) 10px 12px
+  );
+}
+
+.calendar-shell .rbc-time-header,
+.calendar-shell .rbc-time-gutter {
+  background-color: var(--calendar-surface);
+}
+
+.calendar-shell .rbc-event,
+.calendar-shell .rbc-slot-selection {
+  --event-bg: color-mix(in oklab, var(--event-accent) 13%, var(--event-surface));
+}
+
+.calendar-shell .rbc-event:hover {
+  --event-bg: color-mix(in oklab, var(--event-accent) 18%, var(--event-surface));
+}
+
+.dark .calendar-shell .rbc-event,
+.dark .calendar-shell .rbc-slot-selection {
+  --event-bg: color-mix(in oklab, var(--event-accent) 30%, var(--event-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--event-accent) 22%, transparent);
+}
+
+.dark .calendar-shell .rbc-event:hover {
+  --event-bg: color-mix(in oklab, var(--event-accent) 36%, var(--event-surface));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--event-accent) 28%, transparent);
+}
+
+.dark .calendar-shell .rbc-event.rbc-selected,
+.dark .calendar-shell .rbc-event:focus,
+.dark .calendar-shell .rbc-event:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, var(--event-accent) 32%, transparent),
+    0 0 0 2px var(--calendar-surface),
+    0 0 0 4px var(--ring);
+}
+
+.dark .calendar-shell .calendar-agenda-item--primary {
+  --event-bg: color-mix(in oklab, var(--primary) 22%, var(--event-surface));
+  --event-bg-hover: color-mix(in oklab, var(--primary) 28%, var(--event-surface));
+}
+
+.dark .calendar-shell .calendar-agenda-item--secondary {
+  --event-bg: color-mix(in oklab, #14b8a6 20%, var(--event-surface));
+  --event-bg-hover: color-mix(in oklab, #14b8a6 26%, var(--event-surface));
+}
+
+.dark .calendar-shell .calendar-agenda-item--outline {
+  --event-bg: color-mix(in oklab, var(--muted-foreground) 16%, var(--event-surface));
+  --event-bg-hover: color-mix(in oklab, var(--muted-foreground) 22%, var(--event-surface));
+}
+
+.dark .calendar-shell .calendar-agenda-list .list-box-item.calendar-agenda-item {
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--event-accent, var(--border)) 18%, transparent);
 }

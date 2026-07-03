@@ -184,7 +184,27 @@ html {
     color: var(--muted-foreground);
   }
 
-  /* HeroUI alerts — description text matches variant in dark mode */
+  /* HeroUI alerts — description text readable per theme */
+  .alert--success .alert__description {
+    @apply text-success;
+  }
+
+  .alert--danger .alert__description {
+    color: var(--destructive);
+  }
+
+  .alert--accent .alert__description {
+    @apply text-accent;
+  }
+
+  .alert--warning .alert__description {
+    @apply text-warning;
+  }
+
+  .alert--default .alert__description {
+    color: var(--foreground);
+  }
+
   .dark .alert--success .alert__description {
     @apply text-success-soft-foreground;
   }
@@ -215,4 +235,13 @@ html {
     border-radius: 0.5rem;
     background: rgb(255 255 255 / 0.05);
   }
+}
+
+/* HeroUI modals — above site header (z-100); body values readable in day mode */
+.modal__backdrop {
+  z-index: 110;
+}
+
+.modal__body dd {
+  color: var(--foreground);
 }

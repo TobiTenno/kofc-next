@@ -1,3 +1,5 @@
+import { parseCalendarDateLocal } from '@/lib/calendar/calendar-date-parse';
+
 export type CalendarEventVariant = 'primary' | 'secondary' | 'outline';
 
 export type CalendarEventKind =
@@ -13,6 +15,10 @@ export type CalendarPreviewEvent = {
   start: Date;
   end: Date;
   allDay?: boolean;
+  /** YYYY-MM-DD for all-day events (stable across server TZ). */
+  startDateKey?: string;
+  /** YYYY-MM-DD exclusive end for all-day events. */
+  endDateKey?: string;
   variant: CalendarEventVariant;
   kind: CalendarEventKind;
   description?: string | null;
@@ -31,29 +37,16 @@ export type SerializedCalendarPreviewEvent = {
   location?: string | null;
 };
 
-export const serializeCalendarPreviewEvents = (
-  rows: CalendarPreviewEvent[],
-): SerializedCalendarPreviewEvent[] =>
-  rows.map((event) => ({
-    id: event.id,
-    title: event.title,
-    start: event.start.toISOString(),
-    end: event.end.toISOString(),
-    allDay: event.allDay,
-    variant: event.variant,
-    kind: event.kind,
-    description: event.description ?? null,
-    location: event.location ?? null,
-  }));
-
 export const deserializeCalendarPreviewEvents = (
   rows: SerializedCalendarPreviewEvent[],
 ): CalendarPreviewEvent[] =>
   rows.map((event) => ({
     id: event.id,
     title: event.title,
-    start: new Date(event.start),
-    end: new Date(event.end),
+    start: event.allDay
+      ? parseCalendarDateLocal(event.start)
+      : new Date(event.start),
+    end: event.allDay ? parseCalendarDateLocal(event.end) : new Date(event.end),
     allDay: event.allDay,
     variant: event.variant,
     kind: event.kind,

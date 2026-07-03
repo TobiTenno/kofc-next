@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCanonicalAppOrigin, getLocalDevOrigin } from '@/lib/app-origin';
-import {
-  loadCalendarPreviewEvents,
-  serializeCalendarPreviewEvents,
-} from '@/lib/calendar/display-events';
+import { loadSerializedCalendarPreviewEvents } from '@/lib/calendar/request-context';
 import { mintCalendarToken } from '@/lib/calendar/tokens';
 import { getMembershipNumber } from '@/lib/session';
 
@@ -19,9 +16,9 @@ export const GET = async (): Promise<NextResponse> => {
   const birthdayUrl = token
     ? `${baseUrl}/api/calendar/birthdays.ics?token=${token}`
     : null;
-  const events = serializeCalendarPreviewEvents(
-    await loadCalendarPreviewEvents({ includeBirthdays: signedIn }),
-  );
+  const { events, timeZone } = await loadSerializedCalendarPreviewEvents({
+    includeBirthdays: signedIn,
+  });
 
-  return NextResponse.json({ signedIn, events, birthdayUrl, baseUrl });
+  return NextResponse.json({ signedIn, events, birthdayUrl, baseUrl, timeZone });
 };

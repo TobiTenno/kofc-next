@@ -107,7 +107,7 @@ export const GalleryLightbox = ({
     <Modal state={overlay}>
       <Modal.Backdrop
         variant='blur'
-        className='fixed inset-0 z-50 bg-black/90 p-0 sm:p-4'
+        className='fixed inset-0 z-[110] bg-black/90 p-0 sm:p-4'
       >
         <Modal.Container
           placement='center'
