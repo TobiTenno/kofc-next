@@ -87,12 +87,7 @@ export default function EventsAdminPage() {
         </Card.Header>
         <Card.Content>
           <Form onSubmit={create} className='grid gap-4'>
-            <TextField
-              fullWidth
-              isRequired
-              value={title}
-              onChange={setTitle}
-            >
+            <TextField fullWidth isRequired value={title} onChange={setTitle}>
               <Label>Title</Label>
               <Input />
             </TextField>

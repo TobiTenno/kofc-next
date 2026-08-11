@@ -35,9 +35,7 @@ export default function PermissionsAdminPage() {
         if (payload.permissions) {
           const next = emptyPermissionDrafts();
           for (const key of PERMISSION_KEYS) {
-            next[key] = formatMembershipNumbers(
-              payload.permissions[key] ?? [],
-            );
+            next[key] = formatMembershipNumbers(payload.permissions[key] ?? []);
           }
           setDrafts(next);
         }
