@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import path from 'node:path';
 import { parse } from 'csv-parse/sync';
 import { eq, notInArray } from 'drizzle-orm';
 import { db } from '@/db';
@@ -43,6 +44,37 @@ export const readCouncilCsv = (): CsvRow[] => {
     skip_empty_lines: true,
     trim: true,
   }) as CsvRow[];
+};
+
+export const writeCouncilCsv = (content: string): { rowCount: number } => {
+  const rows = parse(content, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  }) as CsvRow[];
+
+  if (rows.length === 0) {
+    throw new Error('CSV has no data rows');
+  }
+
+  const first = rows[0];
+  if (!first || !(csvColumns.membershipNumber in first)) {
+    throw new Error(
+      `CSV must include a “${csvColumns.membershipNumber}” column`,
+    );
+  }
+
+  const hasMembership = rows.some((row) =>
+    Boolean(row[csvColumns.membershipNumber]?.trim()),
+  );
+  if (!hasMembership) {
+    throw new Error('CSV has no membership numbers');
+  }
+
+  const target = csvPath();
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, content, 'utf8');
+  return { rowCount: rows.length };
 };
 
 export const hashCsvContent = (): string | null => {

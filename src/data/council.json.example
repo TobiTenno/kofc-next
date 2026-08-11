@@ -80,6 +80,8 @@
     "sendCouncilEmail": ["1001001"],
     "managePermissions": ["1001001"],
     "manageEvents": ["1001001"],
-    "manageGalleries": ["1001001"]
+    "manageGalleries": ["1001001"],
+    "manageRoster": ["1001001"],
+    "viewAuditLog": ["1001001"]
   }
 }

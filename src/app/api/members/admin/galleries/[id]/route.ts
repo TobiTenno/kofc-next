@@ -34,16 +34,20 @@ export const PATCH = async (
     active?: boolean;
   };
 
-  const updated = await updateGallery(id, {
-    ...(body.title !== undefined ? { title: body.title.trim() } : {}),
-    ...(body.description !== undefined
-      ? { description: body.description.trim() || null }
-      : {}),
-    ...(body.allowMemberUploads !== undefined
-      ? { allowMemberUploads: body.allowMemberUploads }
-      : {}),
-    ...(body.active !== undefined ? { active: body.active } : {}),
-  });
+  const updated = await updateGallery(
+    id,
+    {
+      ...(body.title !== undefined ? { title: body.title.trim() } : {}),
+      ...(body.description !== undefined
+        ? { description: body.description.trim() || null }
+        : {}),
+      ...(body.allowMemberUploads !== undefined
+        ? { allowMemberUploads: body.allowMemberUploads }
+        : {}),
+      ...(body.active !== undefined ? { active: body.active } : {}),
+    },
+    membershipNumber,
+  );
 
   return NextResponse.json({ ok: true, gallery: updated });
 };

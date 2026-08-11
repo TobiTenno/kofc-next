@@ -40,6 +40,6 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
   }
 
-  await updatePermissions(body.key, body.membershipNumbers);
+  await updatePermissions(body.key, body.membershipNumbers, membershipNumber);
   return NextResponse.json({ ok: true });
 };

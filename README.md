@@ -24,6 +24,20 @@ nvm use
 npm run rebuild:native
 ```
 
+### Database schema changes
+
+Schema lives in `src/db/schema.ts`. Versioned SQL is in `drizzle/` (Drizzle Kit). Do **not** hand-edit DDL in app code.
+
+```bash
+# 1. Edit src/db/schema.ts
+# 2. Generate a migration (commit the new files under drizzle/)
+npm run db:generate
+# 3. Apply locally (also runs on app startup)
+npm run db:migrate
+```
+
+Existing DBs already stamped with the baseline migration (`0000_baseline`) keep data; new DBs get full CREATE from that baseline. Deploy with the `drizzle/` folder so startup/`db:migrate` can apply pending files.
+
 On first start, the app syncs:
 
 - `src/data/council.json` permissions and dues into SQLite

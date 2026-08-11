@@ -153,6 +153,7 @@ export const hasPermission = async (
 export const updatePermissions = async (
   key: PermissionKey,
   membershipNumbers: string[],
+  actorMembershipNumber?: string | null,
 ): Promise<void> => {
   const now = new Date();
   await db
@@ -190,6 +191,14 @@ export const updatePermissions = async (
         set: { value: hash },
       });
   }
+
+  const { recordAuditEvent } = await import('@/lib/audit');
+  await recordAuditEvent({
+    actorMembershipNumber,
+    action: 'permissions.update',
+    summary: `Updated ${key} (${membershipNumbers.length} member${membershipNumbers.length === 1 ? '' : 's'})`,
+    metadata: { key, count: membershipNumbers.length },
+  });
 };
 
 export const syncDuesFromJson = async (): Promise<void> => {

@@ -119,5 +119,12 @@ export const completeRegistration = async (
     .set({ usedAt: now })
     .where(eq(registrationTokens.id, token.id));
 
+  const { recordAuditEvent } = await import('@/lib/audit');
+  await recordAuditEvent({
+    actorMembershipNumber: membershipNumber,
+    action: 'auth.register',
+    summary: `Registered portal login for ${membershipNumber}`,
+  });
+
   return NextResponse.json({ ok: true });
 };

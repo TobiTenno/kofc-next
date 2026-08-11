@@ -41,15 +41,25 @@ export type MemberNavContext = {
 export const buildMemberNavLinks = async (
   membershipNumber: string,
 ): Promise<MemberNavGroups> => {
-  const [canEmail, canPermissions, canEvents, canGalleries, isFs, showRoster] =
-    await Promise.all([
-      hasPermission(membershipNumber, 'sendCouncilEmail'),
-      hasPermission(membershipNumber, 'managePermissions'),
-      hasPermission(membershipNumber, 'manageEvents'),
-      hasPermission(membershipNumber, 'manageGalleries'),
-      isFinancialSecretary(membershipNumber),
-      canViewRoster(membershipNumber),
-    ]);
+  const [
+    canEmail,
+    canPermissions,
+    canEvents,
+    canGalleries,
+    canRoster,
+    canAudit,
+    isFs,
+    showRoster,
+  ] = await Promise.all([
+    hasPermission(membershipNumber, 'sendCouncilEmail'),
+    hasPermission(membershipNumber, 'managePermissions'),
+    hasPermission(membershipNumber, 'manageEvents'),
+    hasPermission(membershipNumber, 'manageGalleries'),
+    hasPermission(membershipNumber, 'manageRoster'),
+    hasPermission(membershipNumber, 'viewAuditLog'),
+    isFinancialSecretary(membershipNumber),
+    canViewRoster(membershipNumber),
+  ]);
 
   const galleriesEnabled = isImmichConfigured();
 
@@ -81,6 +91,14 @@ export const buildMemberNavLinks = async (
 
   if (canGalleries && galleriesEnabled) {
     admin.push({ href: '/members/admin/galleries', label: 'Galleries' });
+  }
+
+  if (canRoster) {
+    admin.push({ href: '/members/admin/roster', label: 'Roster' });
+  }
+
+  if (canAudit) {
+    admin.push({ href: '/members/admin/audit', label: 'Audit Log' });
   }
 
   if (isFs) {

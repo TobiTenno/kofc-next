@@ -7,6 +7,7 @@
     "build": "node scripts/check-node-version.mjs && vinext build",
     "cypress:install": "cypress install",
     "cypress:open": "node scripts/run-e2e.mjs --open",
+    "db:generate": "drizzle-kit generate",
     "db:migrate": "node scripts/check-node-version.mjs && npx tsx src/db/migrate.ts",
     "dev": "node scripts/check-node-version.mjs && node scripts/run-dev.mjs",
     "postinstall": "npm rebuild better-sqlite3 --foreground-scripts && cypress install",

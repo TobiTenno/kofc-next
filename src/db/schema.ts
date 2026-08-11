@@ -191,6 +191,15 @@ export const gallerySubmissions = sqliteTable('gallery_submissions', {
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
+export const auditLog = sqliteTable('audit_log', {
+  id: text('id').primaryKey(),
+  actorMembershipNumber: text('actor_membership_number'),
+  action: text('action').notNull(),
+  summary: text('summary').notNull(),
+  metadata: text('metadata'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+});
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),

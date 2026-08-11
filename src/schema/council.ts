@@ -100,6 +100,8 @@ export const CouncilConfigSchema = z.object({
       managePermissions: z.array(z.string()).default([]),
       manageEvents: z.array(z.string()).default([]),
       manageGalleries: z.array(z.string()).default([]),
+      manageRoster: z.array(z.string()).default([]),
+      viewAuditLog: z.array(z.string()).default([]),
     })
     .optional(),
   dues: z

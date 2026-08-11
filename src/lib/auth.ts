@@ -2,8 +2,10 @@ import type { BetterAuthOptions } from 'better-auth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { username } from 'better-auth/plugins';
+import { eq } from 'drizzle-orm';
 import { db } from '@/db';
-import { authSchema } from '@/db/schema';
+import { authSchema, user } from '@/db/schema';
+import { recordAuditEvent } from '@/lib/audit';
 import { getAuthTrustedOrigins } from '@/lib/auth-trusted-origins';
 
 const authOptions = {
@@ -32,6 +34,26 @@ const authOptions = {
     updateAge: 60 * 60 * 24,
     cookieCache: {
       enabled: false,
+    },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        after: async (session) => {
+          const accountUser = await db.query.user.findFirst({
+            where: eq(user.id, session.userId),
+          });
+          const membershipNumber = accountUser?.username ?? null;
+          await recordAuditEvent({
+            actorMembershipNumber: membershipNumber,
+            action: 'auth.login',
+            summary: membershipNumber
+              ? `Signed in as ${membershipNumber}`
+              : 'Signed in',
+            metadata: { userId: session.userId },
+          });
+        },
+      },
     },
   },
 } satisfies BetterAuthOptions;

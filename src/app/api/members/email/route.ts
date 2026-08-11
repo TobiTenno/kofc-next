@@ -2,6 +2,7 @@ import { inArray } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { members } from '@/db/schema';
+import { recordAuditEvent } from '@/lib/audit';
 import { sendCouncilBroadcast, sendEmail } from '@/lib/mailgun';
 import { canSendRosterEmail } from '@/lib/officers';
 import { getMembershipNumber } from '@/lib/session';
@@ -38,6 +39,19 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       ? [body.membershipNumber]
       : null;
 
+  const auditEmailSend = async (recipientCount: number): Promise<void> => {
+    await recordAuditEvent({
+      actorMembershipNumber: membershipNumber,
+      action: 'email.send',
+      summary: `Sent email to ${recipientCount} recipient${recipientCount === 1 ? '' : 's'}`,
+      metadata: {
+        recipientCount,
+        subjectLength: body.subject?.length ?? 0,
+        targeted: Boolean(membershipNumbers),
+      },
+    });
+  };
+
   if (membershipNumbers) {
     const matched = await db
       .select()
@@ -72,6 +86,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
         html,
       });
 
+      await auditEmailSend(1);
       return NextResponse.json({
         ok: true,
         recipientCount: 1,
@@ -87,6 +102,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       html,
     });
 
+    await auditEmailSend(recipients.length);
     return NextResponse.json({
       ok: true,
       recipientCount: recipients.length,
@@ -110,5 +126,6 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     html,
   });
 
+  await auditEmailSend(recipients.length);
   return NextResponse.json({ ok: true, recipientCount: recipients.length });
 };

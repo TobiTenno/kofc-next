@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { events } from '@/db/schema';
+import { recordAuditEvent } from '@/lib/audit';
 import { rebuildCalendarCache } from '@/lib/calendar/cache';
 import { hasPermission } from '@/lib/permissions-sync';
 import { getMembershipNumber } from '@/lib/session';
@@ -38,8 +39,9 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   const now = new Date();
+  const id = createId();
   await db.insert(events).values({
-    id: createId(),
+    id,
     title: body.title,
     description: body.description ?? null,
     location: body.location ?? null,
@@ -54,6 +56,12 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   });
 
   await rebuildCalendarCache();
+  await recordAuditEvent({
+    actorMembershipNumber: membershipNumber,
+    action: 'event.create',
+    summary: `Created ${body.type} event “${body.title}”`,
+    metadata: { id, type: body.type },
+  });
   return NextResponse.json({ ok: true });
 };
 
@@ -73,7 +81,19 @@ export const DELETE = async (request: Request): Promise<NextResponse> => {
     return NextResponse.json({ error: 'Missing id' }, { status: 400 });
   }
 
+  const existing = await db.query.events.findFirst({
+    where: eq(events.id, id),
+  });
+
   await db.delete(events).where(eq(events.id, id));
   await rebuildCalendarCache();
+  await recordAuditEvent({
+    actorMembershipNumber: membershipNumber,
+    action: 'event.delete',
+    summary: existing
+      ? `Deleted event “${existing.title}”`
+      : `Deleted event ${id}`,
+    metadata: { id },
+  });
   return NextResponse.json({ ok: true });
 };

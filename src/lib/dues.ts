@@ -133,6 +133,18 @@ export const recordPaypalPayment = async (options: {
     createdAt: now,
   });
 
+  const { recordAuditEvent } = await import('@/lib/audit');
+  await recordAuditEvent({
+    actorMembershipNumber: null,
+    action: 'dues.paypal_ipn',
+    summary: `PayPal dues payment for ${options.membershipNumber} (${options.councilYear})`,
+    metadata: {
+      membershipNumber: options.membershipNumber,
+      councilYear: options.councilYear,
+      amountCents: options.amountCents,
+    },
+  });
+
   return true;
 };
 
@@ -173,5 +185,18 @@ export const recordManualPayment = async (options: {
     markedByMembershipNumber: options.markedByMembershipNumber,
     paidAt: now,
     createdAt: now,
+  });
+
+  const { recordAuditEvent } = await import('@/lib/audit');
+  await recordAuditEvent({
+    actorMembershipNumber: options.markedByMembershipNumber,
+    action: 'dues.manual_payment',
+    summary: `Marked dues paid for ${options.membershipNumber} (${options.councilYear}, ${options.method})`,
+    metadata: {
+      membershipNumber: options.membershipNumber,
+      councilYear: options.councilYear,
+      method: options.method,
+      amountCents: options.amountCents,
+    },
   });
 };

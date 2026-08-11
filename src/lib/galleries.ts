@@ -76,6 +76,13 @@ export const createGallery = async (options: {
   };
 
   await db.insert(photoGalleries).values(record);
+  const { recordAuditEvent } = await import('@/lib/audit');
+  await recordAuditEvent({
+    actorMembershipNumber: options.createdBy,
+    action: 'gallery.create',
+    summary: `Created gallery “${record.title}”`,
+    metadata: { id: record.id, immichAlbumId: record.immichAlbumId },
+  });
   return record;
 };
 
@@ -87,6 +94,7 @@ export const updateGallery = async (
       'title' | 'description' | 'allowMemberUploads' | 'active'
     >
   >,
+  actorMembershipNumber?: string | null,
 ): Promise<GalleryRecord | null> => {
   const existing = await getGalleryById(id);
   if (!existing) {
@@ -99,11 +107,21 @@ export const updateGallery = async (
     .set({ ...patch, updatedAt: now })
     .where(eq(photoGalleries.id, id));
 
-  return {
+  const updated = {
     ...existing,
     ...patch,
     updatedAt: now,
   };
+
+  const { recordAuditEvent } = await import('@/lib/audit');
+  await recordAuditEvent({
+    actorMembershipNumber,
+    action: 'gallery.update',
+    summary: `Updated gallery “${updated.title}”`,
+    metadata: { id, patch },
+  });
+
+  return updated;
 };
 
 export const completeGalleryUpload = async (options: {
@@ -143,6 +161,18 @@ export const completeGalleryUpload = async (options: {
     membershipNumber: options.membershipNumber,
     filename: options.filename,
     createdAt: new Date(),
+  });
+
+  const { recordAuditEvent } = await import('@/lib/audit');
+  await recordAuditEvent({
+    actorMembershipNumber: options.membershipNumber,
+    action: 'gallery.upload',
+    summary: `Uploaded photo to “${options.gallery.title}”`,
+    metadata: {
+      galleryId: options.gallery.id,
+      assetId: options.assetId,
+      filename: options.filename,
+    },
   });
 
   return { assetId: options.assetId };
