@@ -16,22 +16,37 @@ export type { PermissionKey };
 
 const councilJsonHashKey = 'council_json_hash';
 
+/** Webmaster always has every permission key (matches hasPermission). */
+export const withWebmaster = (
+  membershipNumbers: string[],
+  webmaster = loadCouncilConfig().webmaster?.membershipNumber,
+): string[] => {
+  if (!webmaster || membershipNumbers.includes(webmaster)) {
+    return membershipNumbers;
+  }
+  return [...membershipNumbers, webmaster];
+};
+
+const permissionListsWithWebmaster = (
+  lists: Record<PermissionKey, string[]>,
+): Record<PermissionKey, string[]> => {
+  const next = emptyPermissionLists();
+  for (const key of PERMISSION_KEYS) {
+    next[key] = withWebmaster(lists[key] ?? []);
+  }
+  return next;
+};
+
 export const syncPermissionsFromJson = async (): Promise<void> => {
   const config = loadCouncilConfig();
   const now = new Date();
-  const permissionBlock = config.permissions ?? emptyPermissionLists();
-
-  if (config.webmaster?.membershipNumber) {
-    const webmaster = config.webmaster.membershipNumber;
-    for (const key of PERMISSION_KEYS) {
-      if (!permissionBlock[key].includes(webmaster)) {
-        permissionBlock[key] = [...permissionBlock[key], webmaster];
-      }
-    }
-  }
+  const permissionBlock = permissionListsWithWebmaster({
+    ...emptyPermissionLists(),
+    ...(config.permissions ?? {}),
+  });
 
   for (const key of PERMISSION_KEYS) {
-    const membershipNumbers = permissionBlock[key] ?? [];
+    const membershipNumbers = permissionBlock[key];
     await db
       .insert(permissions)
       .values({
@@ -47,6 +62,12 @@ export const syncPermissionsFromJson = async (): Promise<void> => {
         },
       });
   }
+
+  // Persist new/default keys (e.g. manageRoster) so council.json matches runtime.
+  writeCouncilConfig({
+    ...config,
+    permissions: permissionBlock,
+  });
 };
 
 export const getPermissionsFromDb = async (): Promise<
@@ -61,7 +82,7 @@ export const getPermissionsFromDb = async (): Promise<
     }
   }
 
-  return result;
+  return permissionListsWithWebmaster(result);
 };
 
 export const isWebmaster = (membershipNumber: string): boolean => {
@@ -86,39 +107,57 @@ export const ensureCouncilConfigSynced = async (): Promise<void> => {
     return;
   }
 
-  const rows = await db
-    .select()
-    .from(appMeta)
-    .where(eq(appMeta.key, councilJsonHashKey))
-    .limit(1);
+  const [hashRows, permissionKeyRows] = await Promise.all([
+    db
+      .select()
+      .from(appMeta)
+      .where(eq(appMeta.key, councilJsonHashKey))
+      .limit(1),
+    db.select({ key: permissions.key }).from(permissions),
+  ]);
 
-  if (rows[0]?.value === hash) {
+  const existingKeys = new Set(permissionKeyRows.map((row) => row.key));
+  const missingPermissionKey = PERMISSION_KEYS.some(
+    (key) => !existingKeys.has(key),
+  );
+
+  const configPath = getCouncilJsonPath();
+  let missingJsonPermissionKey = false;
+  if (fs.existsSync(configPath)) {
+    const raw = JSON.parse(fs.readFileSync(configPath, 'utf8')) as {
+      permissions?: Record<string, unknown>;
+    };
+    const rawPermissions = raw.permissions ?? {};
+    missingJsonPermissionKey = PERMISSION_KEYS.some(
+      (key) => !(key in rawPermissions),
+    );
+  }
+
+  if (
+    hashRows[0]?.value === hash &&
+    !missingPermissionKey &&
+    !missingJsonPermissionKey
+  ) {
     return;
   }
 
   await syncPermissionsFromJson();
   await syncDuesFromJson();
 
+  const nextHash = hashCouncilJsonContent() ?? hash;
   await db
     .insert(appMeta)
-    .values({ key: councilJsonHashKey, value: hash })
+    .values({ key: councilJsonHashKey, value: nextHash })
     .onConflictDoUpdate({
       target: appMeta.key,
-      set: { value: hash },
+      set: { value: nextHash },
     });
 };
 
 const permissionMembersFromConfig = (key: PermissionKey): string[] => {
   const config = loadCouncilConfig();
   const block = config.permissions ?? emptyPermissionLists();
-  const members = [...(block[key] ?? [])];
-  const webmaster = config.webmaster?.membershipNumber;
-
-  if (webmaster && !members.includes(webmaster)) {
-    members.push(webmaster);
-  }
-
-  return members;
+  return withWebmaster(block[key] ?? []);
 };
 
 export const hasPermission = async (
@@ -156,17 +195,18 @@ export const updatePermissions = async (
   actorMembershipNumber?: string | null,
 ): Promise<void> => {
   const now = new Date();
+  const nextMembers = withWebmaster(membershipNumbers);
   await db
     .insert(permissions)
     .values({
       key,
-      membershipNumbers: JSON.stringify(membershipNumbers),
+      membershipNumbers: JSON.stringify(nextMembers),
       updatedAt: now,
     })
     .onConflictDoUpdate({
       target: permissions.key,
       set: {
-        membershipNumbers: JSON.stringify(membershipNumbers),
+        membershipNumbers: JSON.stringify(nextMembers),
         updatedAt: now,
       },
     });
@@ -175,8 +215,9 @@ export const updatePermissions = async (
   const nextConfig = {
     ...config,
     permissions: {
-      ...(config.permissions ?? emptyPermissionLists()),
-      [key]: membershipNumbers,
+      ...emptyPermissionLists(),
+      ...(config.permissions ?? {}),
+      [key]: nextMembers,
     },
   };
   writeCouncilConfig(nextConfig);
@@ -196,8 +237,8 @@ export const updatePermissions = async (
   await recordAuditEvent({
     actorMembershipNumber,
     action: 'permissions.update',
-    summary: `Updated ${key} (${membershipNumbers.length} member${membershipNumbers.length === 1 ? '' : 's'})`,
-    metadata: { key, count: membershipNumbers.length },
+    summary: `Updated ${key} (${nextMembers.length} member${nextMembers.length === 1 ? '' : 's'})`,
+    metadata: { key, count: nextMembers.length },
   });
 };
 

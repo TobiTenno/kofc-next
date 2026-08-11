@@ -57,9 +57,14 @@ export default function PermissionsAdminPage() {
     });
 
     if (response.ok) {
+      const payload = (await response.json()) as {
+        membershipNumbers?: string[];
+      };
       setDrafts((current) => ({
         ...current,
-        [key]: formatMembershipNumbers(membershipNumbers),
+        [key]: formatMembershipNumbers(
+          payload.membershipNumbers ?? membershipNumbers,
+        ),
       }));
       setMessageTone('success');
       setMessage(`Saved ${PERMISSION_LABELS[key]}`);
@@ -73,7 +78,12 @@ export default function PermissionsAdminPage() {
 
   return (
     <div className='grid max-w-2xl gap-6'>
-      <h1 className='text-2xl font-bold'>Permissions</h1>
+      <div className='grid gap-1'>
+        <h1 className='text-2xl font-bold'>Permissions</h1>
+        <p className='text-sm text-muted-foreground'>
+          Webmaster always has every permission and stays on each list.
+        </p>
+      </div>
 
       {PERMISSION_KEYS.map((key) => (
         <Card key={key}>

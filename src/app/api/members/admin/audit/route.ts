@@ -13,7 +13,7 @@ export const GET = async (): Promise<NextResponse> => {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  const events = await listAuditEvents(100);
+  const events = await listAuditEvents(500);
   return NextResponse.json({
     events: events.map((event) => ({
       id: event.id,

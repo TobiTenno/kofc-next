@@ -94,7 +94,10 @@ export const buildMemberNavLinks = async (
   }
 
   if (canRoster) {
-    admin.push({ href: '/members/admin/roster', label: 'Roster' });
+    admin.push({
+      href: '/members/admin/roster-upload',
+      label: 'Roster Admin',
+    });
   }
 
   if (canAudit) {
