@@ -28,6 +28,8 @@ import type {
 import { deserializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-types';
 import {
   calendarPathWithView,
+  defaultCalendarViewSegment,
+  MOBILE_CALENDAR_MAX_WIDTH_PX,
   parseCalendarViewFromPathname,
 } from '@/lib/calendar/calendar-view-path';
 import {
@@ -41,15 +43,6 @@ import '@/components/calendar/shadcn-big-calendar.css';
 type CalendarEvent = CalendarPreviewEvent;
 
 const localizer = dayjsLocalizer(dayjs);
-
-const MOBILE_CALENDAR_MAX_WIDTH = 1023;
-
-const isMobileCalendarViewport = (): boolean =>
-  typeof window !== 'undefined' &&
-  window.matchMedia(`(max-width: ${MOBILE_CALENDAR_MAX_WIDTH}px)`).matches;
-
-const defaultCalendarView = (): View =>
-  isMobileCalendarViewport() ? Views.AGENDA : Views.MONTH;
 
 const viewLabels: Record<View, string> = {
   month: 'Month',
@@ -196,7 +189,7 @@ export const CalendarPreview = ({
     if (pathView) {
       setView(pathView);
     } else {
-      const defaultView = defaultCalendarView();
+      const defaultView = defaultCalendarViewSegment();
       setView(defaultView);
       persistView(defaultView);
     }
@@ -214,7 +207,7 @@ export const CalendarPreview = ({
     }
 
     const media = window.matchMedia(
-      `(max-width: ${MOBILE_CALENDAR_MAX_WIDTH}px)`,
+      `(max-width: ${MOBILE_CALENDAR_MAX_WIDTH_PX}px)`,
     );
     const syncView = (): void => {
       setView(media.matches ? Views.AGENDA : Views.MONTH);

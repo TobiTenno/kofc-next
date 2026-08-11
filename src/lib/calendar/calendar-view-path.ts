@@ -9,12 +9,23 @@ export const CALENDAR_VIEW_SEGMENTS = [
 
 export type CalendarViewSegment = (typeof CALENDAR_VIEW_SEGMENTS)[number];
 
+/** Desktop / SSR fallback when viewport is unknown. */
 export const DEFAULT_CALENDAR_VIEW_SEGMENT: CalendarViewSegment = 'month';
+
+export const MOBILE_CALENDAR_MAX_WIDTH_PX = 1023;
 
 export const isCalendarViewSegment = (
   value: string,
 ): value is CalendarViewSegment =>
   CALENDAR_VIEW_SEGMENTS.includes(value as CalendarViewSegment);
+
+export const isMobileCalendarViewport = (): boolean =>
+  typeof window !== 'undefined' &&
+  window.matchMedia(`(max-width: ${MOBILE_CALENDAR_MAX_WIDTH_PX}px)`).matches;
+
+/** Client-only: agenda on mobile, month on desktop. */
+export const defaultCalendarViewSegment = (): CalendarViewSegment =>
+  isMobileCalendarViewport() ? 'agenda' : DEFAULT_CALENDAR_VIEW_SEGMENT;
 
 export const parseCalendarViewFromPathname = (
   pathname: string,

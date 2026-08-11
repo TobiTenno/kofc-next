@@ -1,17 +1,32 @@
 'use client';
 
+import {
+  Alert,
+  Button,
+  Card,
+  Description,
+  Form,
+  Input,
+  Label,
+  TextField,
+} from '@heroui/react';
 import { useEffect, useState } from 'react';
 import {
   emptyPermissionDrafts,
   formatMembershipNumbers,
   PERMISSION_KEYS,
+  PERMISSION_LABELS,
   type PermissionKey,
   parseMembershipNumbers,
 } from '@/lib/utilities';
 
 export default function PermissionsAdminPage() {
   const [drafts, setDrafts] = useState(emptyPermissionDrafts);
+  const [savingKey, setSavingKey] = useState<PermissionKey | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
+    'success',
+  );
 
   useEffect(() => {
     void fetch('/api/members/admin/permissions')
@@ -20,7 +35,9 @@ export default function PermissionsAdminPage() {
         if (payload.permissions) {
           const next = emptyPermissionDrafts();
           for (const key of PERMISSION_KEYS) {
-            next[key] = formatMembershipNumbers(payload.permissions[key] ?? []);
+            next[key] = formatMembershipNumbers(
+              payload.permissions[key] ?? [],
+            );
           }
           setDrafts(next);
         }
@@ -28,6 +45,9 @@ export default function PermissionsAdminPage() {
   }, []);
 
   const save = async (key: PermissionKey): Promise<void> => {
+    setSavingKey(key);
+    setMessage(null);
+
     const membershipNumbers = parseMembershipNumbers(drafts[key]);
     const response = await fetch('/api/members/admin/permissions', {
       method: 'PUT',
@@ -43,40 +63,76 @@ export default function PermissionsAdminPage() {
         ...current,
         [key]: formatMembershipNumbers(membershipNumbers),
       }));
-      setMessage(`Saved ${key}`);
+      setMessageTone('success');
+      setMessage(`Saved ${PERMISSION_LABELS[key]}`);
     } else {
-      setMessage('Save failed');
+      setMessageTone('danger');
+      setMessage(`Could not save ${PERMISSION_LABELS[key]}`);
     }
+
+    setSavingKey(null);
   };
 
   return (
-    <div className='grid gap-6 max-w-2xl'>
+    <div className='grid max-w-2xl gap-6'>
       <h1 className='text-2xl font-bold'>Permissions</h1>
+
       {PERMISSION_KEYS.map((key) => (
-        <div key={key} className='grid gap-2'>
-          <label className='grid gap-1'>
-            <span className='font-semibold'>{key}</span>
-            <input
-              className='border rounded px-3 py-2'
-              value={drafts[key]}
-              onChange={(event) =>
-                setDrafts((current) => ({
-                  ...current,
-                  [key]: event.target.value,
-                }))
-              }
-            />
-          </label>
-          <button
-            type='button'
-            onClick={() => void save(key)}
-            className='rounded bg-blue-900 text-white px-4 py-2 w-fit'
-          >
-            Save
-          </button>
-        </div>
+        <Card key={key}>
+          <Card.Header>
+            <Card.Title>{PERMISSION_LABELS[key]}</Card.Title>
+            <Card.Description className='text-foreground/85'>
+              Grant access by membership number. Separate multiple numbers with
+              commas.
+            </Card.Description>
+          </Card.Header>
+          <Card.Content>
+            <Form
+              className='grid gap-4'
+              onSubmit={(event) => {
+                event.preventDefault();
+                void save(key);
+              }}
+            >
+              <TextField
+                fullWidth
+                name={key}
+                value={drafts[key]}
+                onChange={(value) =>
+                  setDrafts((current) => ({
+                    ...current,
+                    [key]: value,
+                  }))
+                }
+              >
+                <Label>Membership numbers</Label>
+                <Input placeholder='123456, 234567' />
+                <Description>
+                  Comma-separated council membership numbers with this
+                  permission.
+                </Description>
+              </TextField>
+              <Button
+                type='submit'
+                variant='primary'
+                isDisabled={savingKey === key}
+                fullWidth
+              >
+                {savingKey === key ? 'Saving…' : 'Save'}
+              </Button>
+            </Form>
+          </Card.Content>
+        </Card>
       ))}
-      {message ? <p>{message}</p> : null}
+
+      {message ? (
+        <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
+          <Alert.Indicator />
+          <Alert.Content>
+            <Alert.Description>{message}</Alert.Description>
+          </Alert.Content>
+        </Alert>
+      ) : null}
     </div>
   );
 }

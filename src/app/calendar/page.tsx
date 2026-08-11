@@ -1,8 +1,7 @@
 export const dynamic = 'force-dynamic';
 
-import { redirect } from 'next/navigation';
-import { DEFAULT_CALENDAR_VIEW_SEGMENT } from '@/lib/calendar/calendar-view-path';
+import { CalendarDefaultRedirect } from '@/components/calendar/CalendarDefaultRedirect';
 
 export default function PublicCalendarPage() {
-  redirect(`/calendar/${DEFAULT_CALENDAR_VIEW_SEGMENT}`);
+  return <CalendarDefaultRedirect basePath='/calendar' />;
 }

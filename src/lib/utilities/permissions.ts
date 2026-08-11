@@ -12,6 +12,13 @@ export const PERMISSION_KEYS = [
 
 export type PermissionKey = (typeof PERMISSION_KEYS)[number];
 
+export const PERMISSION_LABELS: Record<PermissionKey, string> = {
+  sendCouncilEmail: 'Send council email',
+  managePermissions: 'Manage permissions',
+  manageEvents: 'Manage events',
+  manageGalleries: 'Manage galleries',
+};
+
 export const emptyPermissionLists = (): Record<PermissionKey, string[]> => ({
   sendCouncilEmail: [],
   managePermissions: [],
