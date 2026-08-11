@@ -39,14 +39,31 @@ sqlite.pragma('busy_timeout = 5000');
 
 export const db = drizzle(sqlite, { schema });
 
-const migrationsFolder = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../../drizzle',
-);
+const resolveMigrationsFolder = (): string => {
+  const configured = process.env.DRIZZLE_MIGRATIONS_FOLDER?.trim();
+  const candidates = [
+    configured,
+    path.join(process.cwd(), 'drizzle'),
+    // Local source / tsx: src/db → ../../drizzle
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '../../drizzle'),
+    // Bundled standalone layouts sometimes nest one level deeper
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '../../../drizzle'),
+  ].filter((value): value is string => Boolean(value));
+
+  for (const folder of candidates) {
+    if (fs.existsSync(path.join(folder, 'meta', '_journal.json'))) {
+      return folder;
+    }
+  }
+
+  throw new Error(
+    `Can't find meta/_journal.json file (tried: ${candidates.join(', ')})`,
+  );
+};
 
 export const runMigrations = (): void => {
   ensureDatabaseDir();
-  migrate(db, { migrationsFolder });
+  migrate(db, { migrationsFolder: resolveMigrationsFolder() });
 };
 
 export { databasePath };

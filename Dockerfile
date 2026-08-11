@@ -25,6 +25,7 @@ ENV IMAGE_CACHE_DIR=/app/data/cache/images
 RUN mkdir -p /app/data/cache/calendar /app/data/cache/images
 
 COPY --from=builder /app/dist/standalone ./
+COPY --from=builder /app/drizzle ./drizzle
 
 EXPOSE 3000
 
