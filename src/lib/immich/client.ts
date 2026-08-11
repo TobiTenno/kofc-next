@@ -1,3 +1,5 @@
+import { getStoredImmichConfig, trimTrailingSlash } from '@/lib/immich/config';
+
 export type ImmichConfig = {
   apiBase: string;
   apiKey: string;
@@ -31,19 +33,15 @@ type ImmichSearchAssetsResponse = {
   };
 };
 
-const trimTrailingSlash = (value: string): string => value.replace(/\/$/, '');
-
 export const getImmichConfig = (): ImmichConfig | null => {
-  const url = process.env.IMMICH_URL?.trim();
-  const apiKey = process.env.IMMICH_API_KEY?.trim();
-
-  if (!url || !apiKey) {
+  const stored = getStoredImmichConfig();
+  if (!stored) {
     return null;
   }
 
   return {
-    apiBase: `${trimTrailingSlash(url)}/api`,
-    apiKey,
+    apiBase: `${trimTrailingSlash(stored.url)}/api`,
+    apiKey: stored.apiKey,
   };
 };
 
@@ -57,28 +55,28 @@ export type ImmichUploadSession = {
 };
 
 export const getImmichDeviceId = (): string =>
-  process.env.IMMICH_DEVICE_ID?.trim() || 'kofc-council';
+  getStoredImmichConfig()?.deviceId?.trim() || 'kofc-council';
 
 /** Upload-only key for browser direct uploads; falls back to admin key. */
 export const getImmichUploadApiKey = (): string | null => {
-  const config = getImmichConfig();
-  if (!config) {
+  const stored = getStoredImmichConfig();
+  if (!stored) {
     return null;
   }
 
-  return process.env.IMMICH_UPLOAD_API_KEY?.trim() || config.apiKey;
+  return stored.uploadApiKey?.trim() || stored.apiKey;
 };
 
 export const getImmichUploadSession = (): ImmichUploadSession | null => {
-  const baseUrl = process.env.IMMICH_URL?.trim();
+  const stored = getStoredImmichConfig();
   const apiKey = getImmichUploadApiKey();
 
-  if (!baseUrl || !apiKey) {
+  if (!stored?.url || !apiKey) {
     return null;
   }
 
   return {
-    uploadUrl: `${trimTrailingSlash(baseUrl)}/api/assets`,
+    uploadUrl: `${trimTrailingSlash(stored.url)}/api/assets`,
     apiKey,
     deviceId: getImmichDeviceId(),
     maxBytes: getMaxUploadBytes(),
@@ -86,7 +84,7 @@ export const getImmichUploadSession = (): ImmichUploadSession | null => {
 };
 
 export const getMaxUploadBytes = (): number => {
-  const megabytes = Number(process.env.IMMICH_MAX_UPLOAD_MB ?? '25');
+  const megabytes = getStoredImmichConfig()?.maxUploadMb ?? 25;
   if (!Number.isFinite(megabytes) || megabytes <= 0) {
     return 25 * 1024 * 1024;
   }

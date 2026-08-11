@@ -1,7 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { members } from '@/db/schema';
-import { getMemberPaymentStatus, isPayPalConfigured } from '@/lib/dues';
+import {
+  getMemberPaymentStatus,
+  isDuesConfigured,
+  isPayPalConfigured,
+} from '@/lib/dues';
 import { isImmichConfigured } from '@/lib/immich/client';
 import { canViewRoster, isFinancialSecretary } from '@/lib/officers';
 import { hasPermission } from '@/lib/permissions-sync';
@@ -47,18 +51,22 @@ export const buildMemberNavLinks = async (
     canEvents,
     canGalleries,
     canRoster,
+    canDues,
     canAudit,
     isFs,
     showRoster,
+    duesConfigured,
   ] = await Promise.all([
     hasPermission(membershipNumber, 'sendCouncilEmail'),
     hasPermission(membershipNumber, 'managePermissions'),
     hasPermission(membershipNumber, 'manageEvents'),
     hasPermission(membershipNumber, 'manageGalleries'),
     hasPermission(membershipNumber, 'manageRoster'),
+    hasPermission(membershipNumber, 'manageDues'),
     hasPermission(membershipNumber, 'viewAuditLog'),
     isFinancialSecretary(membershipNumber),
     canViewRoster(membershipNumber),
+    isDuesConfigured(),
   ]);
 
   const galleriesEnabled = isImmichConfigured();
@@ -69,7 +77,7 @@ export const buildMemberNavLinks = async (
     ...(galleriesEnabled
       ? [{ href: '/members/galleries', label: 'Galleries' }]
       : []),
-    { href: '/members/dues', label: 'Dues' },
+    ...(duesConfigured ? [{ href: '/members/dues', label: 'Dues' }] : []),
   ];
 
   if (canEmail) {
@@ -89,8 +97,12 @@ export const buildMemberNavLinks = async (
     admin.push({ href: '/members/admin/events', label: 'Events' });
   }
 
-  if (canGalleries && galleriesEnabled) {
+  if (canGalleries) {
     admin.push({ href: '/members/admin/galleries', label: 'Galleries' });
+    admin.push({
+      href: '/members/admin/galleries/settings',
+      label: 'Gallery Settings',
+    });
   }
 
   if (canRoster) {
@@ -100,12 +112,19 @@ export const buildMemberNavLinks = async (
     });
   }
 
-  if (canAudit) {
-    admin.push({ href: '/members/admin/audit', label: 'Audit Log' });
+  if (canDues || isFs) {
+    admin.push({ href: '/members/admin/dues', label: 'Dues Admin' });
   }
 
-  if (isFs) {
-    admin.push({ href: '/members/admin/dues', label: 'Dues Admin' });
+  if (canDues) {
+    admin.push({
+      href: '/members/admin/dues/settings',
+      label: 'Dues Settings',
+    });
+  }
+
+  if (canAudit) {
+    admin.push({ href: '/members/admin/audit', label: 'Audit Log' });
   }
 
   return { member, admin };
@@ -114,6 +133,10 @@ export const buildMemberNavLinks = async (
 const buildDuesMeta = async (
   membershipNumber: string,
 ): Promise<MemberNavDuesMeta | null> => {
+  if (!(await isDuesConfigured())) {
+    return null;
+  }
+
   const status = await getMemberPaymentStatus(membershipNumber);
 
   if (!status.councilYear && status.amountCents == null) {

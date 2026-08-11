@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 
 type MemberResult = {
@@ -44,18 +45,29 @@ export default function DuesAdminPage() {
   };
 
   return (
-    <div className='grid gap-6 max-w-3xl'>
-      <h1 className='text-2xl font-bold'>Financial Secretary — Dues</h1>
+    <div className='grid max-w-3xl gap-6'>
+      <div className='grid gap-1'>
+        <h1 className='text-2xl font-bold'>Dues Admin</h1>
+        <p className='text-sm text-muted-foreground'>
+          Mark members paid (manageDues or Financial Secretary).{' '}
+          <Link
+            href='/members/admin/dues/settings'
+            className='underline underline-offset-2'
+          >
+            Dues Settings
+          </Link>
+        </p>
+      </div>
       <form onSubmit={search} className='flex gap-3'>
         <input
-          className='border rounded px-3 py-2'
+          className='rounded border px-3 py-2'
           placeholder='Membership number or name'
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
         <button
           type='submit'
-          className='rounded bg-blue-900 text-white px-4 py-2'
+          className='rounded bg-blue-900 px-4 py-2 text-white'
         >
           Search
         </button>
@@ -64,7 +76,7 @@ export default function DuesAdminPage() {
         <label htmlFor='dues-method'>Method</label>
         <select
           id='dues-method'
-          className='border rounded px-3 py-2 w-fit'
+          className='w-fit rounded border px-3 py-2'
           value={method}
           onChange={(event) =>
             setMethod(
@@ -78,7 +90,7 @@ export default function DuesAdminPage() {
           <option value='other'>Other</option>
         </select>
         <input
-          className='border rounded px-3 py-2'
+          className='rounded border px-3 py-2'
           placeholder='Notes'
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
@@ -88,7 +100,7 @@ export default function DuesAdminPage() {
         {results.map((result) => (
           <li
             key={result.member.membershipNumber}
-            className='border rounded p-4 grid gap-2'
+            className='grid gap-2 rounded border p-4'
           >
             <p>
               {result.member.firstName} {result.member.lastName} (
@@ -103,7 +115,7 @@ export default function DuesAdminPage() {
             {!result.status.paid ? (
               <button
                 type='button'
-                className='rounded bg-green-800 text-white px-4 py-2 w-fit'
+                className='w-fit rounded bg-green-800 px-4 py-2 text-white'
                 onClick={() => void markPaid(result.member.membershipNumber)}
               >
                 Mark as paid

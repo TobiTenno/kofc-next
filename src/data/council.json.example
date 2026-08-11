@@ -82,6 +82,17 @@
     "manageEvents": ["1001001"],
     "manageGalleries": ["1001001"],
     "manageRoster": ["1001001"],
+    "manageDues": ["1001001"],
     "viewAuditLog": ["1001001"]
+  },
+  "dues": {
+    "councilYear": "2025-2026",
+    "currency": "USD",
+    "paypalBusinessEmail": "dues@example.com",
+    "rates": {
+      "R": 4000,
+      "L": 2000,
+      "H": 1000
+    }
   }
 }

@@ -9,6 +9,7 @@ export const PERMISSION_KEYS = [
   'manageEvents',
   'manageGalleries',
   'manageRoster',
+  'manageDues',
   'viewAuditLog',
 ] as const;
 
@@ -20,6 +21,7 @@ export const PERMISSION_LABELS: Record<PermissionKey, string> = {
   manageEvents: 'Manage events',
   manageGalleries: 'Manage galleries',
   manageRoster: 'Manage roster',
+  manageDues: 'Manage dues',
   viewAuditLog: 'View audit log',
 };
 
@@ -29,6 +31,7 @@ export const emptyPermissionLists = (): Record<PermissionKey, string[]> => ({
   manageEvents: [],
   manageGalleries: [],
   manageRoster: [],
+  manageDues: [],
   viewAuditLog: [],
 });
 
@@ -38,6 +41,7 @@ export const emptyPermissionDrafts = (): Record<PermissionKey, string> => ({
   manageEvents: '',
   manageGalleries: '',
   manageRoster: '',
+  manageDues: '',
   viewAuditLog: '',
 });
 

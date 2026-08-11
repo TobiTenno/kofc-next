@@ -3,11 +3,11 @@ import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { members } from '@/db/schema';
 import {
+  canManageDuesAdmin,
   getMemberDuesAmount,
   getMemberPaymentStatus,
   recordManualPayment,
 } from '@/lib/dues';
-import { isFinancialSecretary } from '@/lib/officers';
 import { getMembershipNumber } from '@/lib/session';
 
 export const GET = async (request: Request): Promise<NextResponse> => {
@@ -16,7 +16,7 @@ export const GET = async (request: Request): Promise<NextResponse> => {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!(await isFinancialSecretary(membershipNumber))) {
+  if (!(await canManageDuesAdmin(membershipNumber))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
@@ -54,7 +54,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  if (!(await isFinancialSecretary(membershipNumber))) {
+  if (!(await canManageDuesAdmin(membershipNumber))) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

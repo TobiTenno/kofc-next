@@ -101,6 +101,7 @@ export const CouncilConfigSchema = z.object({
       manageEvents: z.array(z.string()).default([]),
       manageGalleries: z.array(z.string()).default([]),
       manageRoster: z.array(z.string()).default([]),
+      manageDues: z.array(z.string()).default([]),
       viewAuditLog: z.array(z.string()).default([]),
     })
     .optional(),
@@ -110,6 +111,19 @@ export const CouncilConfigSchema = z.object({
       rates: z.record(z.string(), z.number().int().positive()),
       currency: z.string().default('USD'),
       paypalBusinessEmail: z.string().email(),
+    })
+    .optional(),
+  integrations: z
+    .object({
+      immich: z
+        .object({
+          url: z.string().url(),
+          apiKey: z.string().min(1),
+          uploadApiKey: z.string().optional(),
+          deviceId: z.string().optional(),
+          maxUploadMb: z.number().int().positive().optional(),
+        })
+        .optional(),
     })
     .optional(),
   complete: z.boolean().optional(),

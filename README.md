@@ -79,7 +79,8 @@ Use your machine’s IP (check server logs if unsure). For member login from the
 - `/members/login` — membership number + password
 - `/members/register` — verify email from roster, set password
 - Signed-in members use the portal sub-nav (roster, calendar, galleries, dues, admin)
-- `/members/admin/*` — permissions, events, galleries, Financial Secretary dues admin
+- `/members/admin/*` — permissions, events, galleries (+ Immich settings), roster upload, dues admin/settings, audit
+- Portal **Dues** only when dues year + rates are configured (Dues Settings)
 
 ## Public
 
@@ -203,7 +204,9 @@ Recipients come from the synced roster CSV (`primaryEmail`). Members without an 
 
 ### Immich photo galleries
 
-Optional. Tie council galleries to an [Immich](https://immich.app/) server. Galleries are hidden until `IMMICH_URL` and `IMMICH_API_KEY` are set.
+Optional. Tie council galleries to an [Immich](https://immich.app/) server. Member galleries stay hidden until Immich is configured.
+
+**Preferred setup:** `/members/admin/galleries/settings` (`manageGalleries`) writes Immich URL/keys into `council.json` (`integrations.immich`) and mirrors them in SQLite `app_meta`. Legacy `IMMICH_*` env vars still bootstrap on startup when no stored config exists (one-time migrate).
 
 #### One Immich server, many council sites
 
@@ -211,22 +214,22 @@ Immich has no API keys scoped to a single album — keys belong to an Immich **u
 
 1. In Immich **Administration → Users**, create one user per council (e.g. `council-1234`, `council-5678`).
 2. Sign in as each council user and create API keys (Account Settings → API Keys). Do **not** reuse one service account across councils.
-3. On each council site, set the same `IMMICH_URL` but that council’s own `IMMICH_API_KEY` and `IMMICH_UPLOAD_API_KEY`.
-4. Use a distinct `IMMICH_DEVICE_ID` per council (e.g. `kofc-council-1234`) so uploads can be validated on complete.
+3. On each council site, use the same Immich base URL but that council’s own API keys (Gallery Settings or migrated env).
+4. Use a distinct device ID per council (e.g. `kofc-council-1234`) so uploads can be validated on complete.
 
 Albums are the logical gallery boundary; **user accounts** enforce isolation between councils.
 
 #### Per-site setup
 
 1. Create API keys for this council’s Immich user:
-  - **Server key** (`IMMICH_API_KEY`): `album.read`, `album.create`, `albumAsset.create`, `asset.read`, `asset.download` (thumbnail proxy). Some Immich versions still require `all` on certain endpoints.
-  - **Upload key** (`IMMICH_UPLOAD_API_KEY`, recommended): `asset.upload` plus minimal read if your Immich version allows — otherwise `all` on this council-only user is acceptable.
-2. Set `IMMICH_URL` (e.g. `https://photos.example.com`) and keys in `.env`.
-3. Grant `manageGalleries` in `/members/admin/permissions` (webmaster has all permissions).
+  - **Server key**: `album.read`, `album.create`, `albumAsset.create`, `asset.read`, `asset.download` (thumbnail proxy). Some Immich versions still require `all` on certain endpoints.
+  - **Upload key** (recommended): `asset.upload` plus minimal read if your Immich version allows — otherwise `all` on this council-only user is acceptable.
+2. Open `/members/admin/galleries/settings` and save URL + keys (or set legacy `IMMICH_*` env once and restart to migrate).
+3. Grant `manageGalleries` in `/members/admin/permissions` (webmaster / managePermissions holders have all permissions).
 4. Create galleries at `/members/admin/galleries` — new Immich albums are created under this council’s user, or link an existing album ID owned by that user.
 5. Members browse `/members/galleries` and upload when a gallery allows it.
 
-**Upload flow:** browser uploads directly to Immich (`POST /api/assets`) with this site’s `IMMICH_DEVICE_ID`, then calls this app to attach the asset to the gallery album. On complete, the server verifies the asset is readable, matches `IMMICH_DEVICE_ID`, and is not already linked to a gallery. File bytes never pass through Next.js.
+**Upload flow:** browser uploads directly to Immich (`POST /api/assets`) with this site’s device ID, then calls this app to attach the asset to the gallery album. On complete, the server verifies the asset is readable, matches the device ID, and is not already linked to a gallery. File bytes never pass through Next.js.
 
 If the council site and Immich are on different origins, configure CORS on Immich's reverse proxy (example nginx location):
 
@@ -238,4 +241,8 @@ add_header Access-Control-Allow-Methods "POST, OPTIONS";
 
 Also allow large uploads on the Immich proxy (`client_max_body_size`, long timeouts) — see [Immich reverse proxy docs](https://immich.app/docs/administration/reverse-proxy).
 
-Upload size hint defaults to 25 MB (`IMMICH_MAX_UPLOAD_MB`). Thumbnails are still proxied through this app so the admin API key stays server-side.
+Upload size hint defaults to 25 MB (Gallery Settings / legacy `IMMICH_MAX_UPLOAD_MB`). Thumbnails are still proxied through this app so the admin API key stays server-side.
+
+### Dues
+
+Configure council year, PayPal business email, and class rates at `/members/admin/dues/settings` (`manageDues`). Portal **Dues** and the dues chip appear only after year + ≥1 rate are saved. Mark paid at `/members/admin/dues` (`manageDues` or Financial Secretary). `PAYPAL_BUSINESS_EMAIL` env still overrides the stored PayPal email for payments when set.

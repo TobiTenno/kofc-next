@@ -1,6 +1,7 @@
 import { runMigrations } from '@/db';
 import { rebuildCalendarCache } from '@/lib/calendar/cache';
 import { shouldSyncCsv, syncCouncilCsv } from '@/lib/csv-sync';
+import { ensureImmichConfigSynced } from '@/lib/immich/config';
 import { ensureCouncilConfigSynced } from '@/lib/permissions-sync';
 
 let started = false;
@@ -13,6 +14,7 @@ export const runStartupTasks = async (): Promise<void> => {
 
   runMigrations();
   await ensureCouncilConfigSynced();
+  await ensureImmichConfigSynced();
 
   if (await shouldSyncCsv()) {
     await syncCouncilCsv();

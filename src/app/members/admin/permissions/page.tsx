@@ -77,7 +77,7 @@ export default function PermissionsAdminPage() {
   };
 
   return (
-    <div className='grid max-w-2xl gap-6'>
+    <div className='grid max-w-5xl gap-6'>
       <div className='grid gap-1'>
         <h1 className='text-2xl font-bold'>Permissions</h1>
         <p className='text-sm text-muted-foreground'>
@@ -87,53 +87,55 @@ export default function PermissionsAdminPage() {
         </p>
       </div>
 
-      {PERMISSION_KEYS.map((key) => (
-        <Card key={key}>
-          <Card.Header>
-            <Card.Title>{PERMISSION_LABELS[key]}</Card.Title>
-            <Card.Description className='text-foreground/85'>
-              Grant access by membership number. Separate multiple numbers with
-              commas.
-            </Card.Description>
-          </Card.Header>
-          <Card.Content>
-            <Form
-              className='grid gap-4'
-              onSubmit={(event) => {
-                event.preventDefault();
-                void save(key);
-              }}
-            >
-              <TextField
-                fullWidth
-                name={key}
-                value={drafts[key]}
-                onChange={(value) =>
-                  setDrafts((current) => ({
-                    ...current,
-                    [key]: value,
-                  }))
-                }
+      <div className='grid gap-6 lg:grid-cols-2'>
+        {PERMISSION_KEYS.map((key) => (
+          <Card key={key}>
+            <Card.Header>
+              <Card.Title>{PERMISSION_LABELS[key]}</Card.Title>
+              <Card.Description className='text-foreground/85'>
+                Grant access by membership number. Separate multiple numbers
+                with commas.
+              </Card.Description>
+            </Card.Header>
+            <Card.Content>
+              <Form
+                className='grid gap-4'
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void save(key);
+                }}
               >
-                <Label>Membership numbers</Label>
-                <Input placeholder='123456, 234567' />
-                <Description>
-                  Comma-separated council membership numbers with this
-                  permission.
-                </Description>
-              </TextField>
-              <Button
-                type='submit'
-                variant='primary'
-                isDisabled={savingKey === key}
-                fullWidth
-              >
-                {savingKey === key ? 'Saving…' : 'Save'}
-              </Button>
-            </Form>
-          </Card.Content>
-        </Card>
-      ))}
+                <TextField
+                  fullWidth
+                  name={key}
+                  value={drafts[key]}
+                  onChange={(value) =>
+                    setDrafts((current) => ({
+                      ...current,
+                      [key]: value,
+                    }))
+                  }
+                >
+                  <Label>Membership numbers</Label>
+                  <Input placeholder='123456, 234567' />
+                  <Description>
+                    Comma-separated council membership numbers with this
+                    permission.
+                  </Description>
+                </TextField>
+                <Button
+                  type='submit'
+                  variant='primary'
+                  isDisabled={savingKey === key}
+                  fullWidth
+                >
+                  {savingKey === key ? 'Saving…' : 'Save'}
+                </Button>
+              </Form>
+            </Card.Content>
+          </Card>
+        ))}
+      </div>
 
       {message ? (
         <Alert status={messageTone === 'success' ? 'success' : 'danger'}>

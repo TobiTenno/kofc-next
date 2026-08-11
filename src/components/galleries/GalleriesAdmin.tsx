@@ -151,7 +151,15 @@ export const GalleriesAdmin = () => {
 
   return (
     <div className='grid max-w-2xl gap-6'>
-      <h1 className='text-2xl font-bold'>Galleries Admin</h1>
+      <div className='flex flex-wrap items-baseline justify-between gap-3'>
+        <h1 className='text-2xl font-bold'>Galleries Admin</h1>
+        <Link
+          href='/members/admin/galleries/settings'
+          className='text-sm underline underline-offset-2'
+        >
+          Gallery Settings
+        </Link>
+      </div>
 
       <Card>
         <Card.Header>

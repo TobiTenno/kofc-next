@@ -99,6 +99,31 @@ export const getPaypalBusinessEmail = (): string | null => {
 export const isPayPalConfigured = (): boolean =>
   getPaypalBusinessEmail() !== null;
 
+/** Council year + at least one dues rate — portal Dues visible when true. */
+export const isDuesConfigured = async (): Promise<boolean> => {
+  const councilYear = await getCurrentCouncilYear();
+  if (!councilYear) {
+    return false;
+  }
+
+  const rates = await db
+    .select({ memberClass: duesRates.memberClass })
+    .from(duesRates)
+    .limit(1);
+  return rates.length > 0;
+};
+
+export const canManageDuesAdmin = async (
+  membershipNumber: string,
+): Promise<boolean> => {
+  const { hasPermission } = await import('@/lib/permissions-sync');
+  const { isFinancialSecretary } = await import('@/lib/officers');
+  return (
+    (await hasPermission(membershipNumber, 'manageDues')) ||
+    (await isFinancialSecretary(membershipNumber))
+  );
+};
+
 export const recordPaypalPayment = async (options: {
   membershipNumber: string;
   councilYear: string;
