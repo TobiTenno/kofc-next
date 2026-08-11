@@ -105,12 +105,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -247,12 +243,8 @@
           "name": "calendar_tokens_membership_number_members_membership_number_fk",
           "tableFrom": "calendar_tokens",
           "tableTo": "members",
-          "columnsFrom": [
-            "membership_number"
-          ],
-          "columnsTo": [
-            "membership_number"
-          ],
+          "columnsFrom": ["membership_number"],
+          "columnsTo": ["membership_number"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -374,9 +366,7 @@
       "indexes": {
         "dues_payments_paypal_txn_id_unique": {
           "name": "dues_payments_paypal_txn_id_unique",
-          "columns": [
-            "paypal_txn_id"
-          ],
+          "columns": ["paypal_txn_id"],
           "isUnique": true
         }
       },
@@ -385,12 +375,8 @@
           "name": "dues_payments_membership_number_members_membership_number_fk",
           "tableFrom": "dues_payments",
           "tableTo": "members",
-          "columnsFrom": [
-            "membership_number"
-          ],
-          "columnsTo": [
-            "membership_number"
-          ],
+          "columnsFrom": ["membership_number"],
+          "columnsTo": ["membership_number"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -535,9 +521,7 @@
       "indexes": {
         "dues_subscriptions_paypal_subscription_id_unique": {
           "name": "dues_subscriptions_paypal_subscription_id_unique",
-          "columns": [
-            "paypal_subscription_id"
-          ],
+          "columns": ["paypal_subscription_id"],
           "isUnique": true
         }
       },
@@ -546,12 +530,8 @@
           "name": "dues_subscriptions_membership_number_members_membership_number_fk",
           "tableFrom": "dues_subscriptions",
           "tableTo": "members",
-          "columnsFrom": [
-            "membership_number"
-          ],
-          "columnsTo": [
-            "membership_number"
-          ],
+          "columnsFrom": ["membership_number"],
+          "columnsTo": ["membership_number"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -707,12 +687,8 @@
           "name": "gallery_submissions_gallery_id_photo_galleries_id_fk",
           "tableFrom": "gallery_submissions",
           "tableTo": "photo_galleries",
-          "columnsFrom": [
-            "gallery_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["gallery_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -720,12 +696,8 @@
           "name": "gallery_submissions_membership_number_members_membership_number_fk",
           "tableFrom": "gallery_submissions",
           "tableTo": "members",
-          "columnsFrom": [
-            "membership_number"
-          ],
-          "columnsTo": [
-            "membership_number"
-          ],
+          "columnsFrom": ["membership_number"],
+          "columnsTo": ["membership_number"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -988,9 +960,7 @@
       "indexes": {
         "photo_galleries_immich_album_id_unique": {
           "name": "photo_galleries_immich_album_id_unique",
-          "columns": [
-            "immich_album_id"
-          ],
+          "columns": ["immich_album_id"],
           "isUnique": true
         }
       },
@@ -1114,9 +1084,7 @@
       "indexes": {
         "session_token_unique": {
           "name": "session_token_unique",
-          "columns": [
-            "token"
-          ],
+          "columns": ["token"],
           "isUnique": true
         }
       },
@@ -1125,12 +1093,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1234,16 +1198,12 @@
       "indexes": {
         "user_email_unique": {
           "name": "user_email_unique",
-          "columns": [
-            "email"
-          ],
+          "columns": ["email"],
           "isUnique": true
         },
         "user_username_unique": {
           "name": "user_username_unique",
-          "columns": [
-            "username"
-          ],
+          "columns": ["username"],
           "isUnique": true
         }
       },
