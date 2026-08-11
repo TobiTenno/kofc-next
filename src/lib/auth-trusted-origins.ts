@@ -1,5 +1,6 @@
 import { getCanonicalAppOrigin, isLoopbackHost } from '@/lib/app-origin';
 import { DEV_SERVER_PORT } from '@/lib/dev-server';
+import { parseCommaSeparatedList } from '@/lib/utilities';
 
 const devTrustedPort =
   process.env.NODE_ENV === 'production' ? 3000 : DEV_SERVER_PORT;
@@ -37,13 +38,17 @@ export const getAuthTrustedOrigins = (): string[] => {
   addOrigin(origins, process.env.NEXT_PUBLIC_APP_URL);
 
   if (process.env.BETTER_AUTH_TRUSTED_ORIGINS) {
-    for (const entry of process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(',')) {
+    for (const entry of parseCommaSeparatedList(
+      process.env.BETTER_AUTH_TRUSTED_ORIGINS,
+    )) {
       addOrigin(origins, entry);
     }
   }
 
   if (process.env.ALLOWED_DEV_ORIGINS) {
-    for (const entry of process.env.ALLOWED_DEV_ORIGINS.split(',')) {
+    for (const entry of parseCommaSeparatedList(
+      process.env.ALLOWED_DEV_ORIGINS,
+    )) {
       addOrigin(origins, entry);
     }
   }

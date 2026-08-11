@@ -1,22 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-
-type PermissionKey =
-  | 'sendCouncilEmail'
-  | 'managePermissions'
-  | 'manageEvents'
-  | 'manageGalleries';
+import {
+  emptyPermissionDrafts,
+  formatMembershipNumbers,
+  parseMembershipNumbers,
+  PERMISSION_KEYS,
+  type PermissionKey,
+} from '@/lib/utilities';
 
 export default function PermissionsAdminPage() {
-  const [permissions, setPermissions] = useState<
-    Record<PermissionKey, string[]>
-  >({
-    sendCouncilEmail: [],
-    managePermissions: [],
-    manageEvents: [],
-    manageGalleries: [],
-  });
+  const [drafts, setDrafts] = useState(emptyPermissionDrafts);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,45 +18,55 @@ export default function PermissionsAdminPage() {
       .then((response) => response.json())
       .then((payload) => {
         if (payload.permissions) {
-          setPermissions(payload.permissions);
+          const next = emptyPermissionDrafts();
+          for (const key of PERMISSION_KEYS) {
+            next[key] = formatMembershipNumbers(
+              payload.permissions[key] ?? [],
+            );
+          }
+          setDrafts(next);
         }
       });
   }, []);
 
   const save = async (key: PermissionKey): Promise<void> => {
+    const membershipNumbers = parseMembershipNumbers(drafts[key]);
     const response = await fetch('/api/members/admin/permissions', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         key,
-        membershipNumbers: permissions[key],
+        membershipNumbers,
       }),
     });
 
-    setMessage(response.ok ? `Saved ${key}` : 'Save failed');
-  };
-
-  const updateList = (key: PermissionKey, value: string): void => {
-    setPermissions((current) => ({
-      ...current,
-      [key]: value
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
-    }));
+    if (response.ok) {
+      setDrafts((current) => ({
+        ...current,
+        [key]: formatMembershipNumbers(membershipNumbers),
+      }));
+      setMessage(`Saved ${key}`);
+    } else {
+      setMessage('Save failed');
+    }
   };
 
   return (
     <div className='grid gap-6 max-w-2xl'>
       <h1 className='text-2xl font-bold'>Permissions</h1>
-      {(Object.keys(permissions) as PermissionKey[]).map((key) => (
+      {PERMISSION_KEYS.map((key) => (
         <div key={key} className='grid gap-2'>
           <label className='grid gap-1'>
             <span className='font-semibold'>{key}</span>
             <input
               className='border rounded px-3 py-2'
-              value={permissions[key].join(', ')}
-              onChange={(event) => updateList(key, event.target.value)}
+              value={drafts[key]}
+              onChange={(event) =>
+                setDrafts((current) => ({
+                  ...current,
+                  [key]: event.target.value,
+                }))
+              }
             />
           </label>
           <button

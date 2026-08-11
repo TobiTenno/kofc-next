@@ -5,42 +5,32 @@ import { db } from '@/db';
 import { appMeta, duesRates, permissions } from '@/db/schema';
 import { loadCouncilConfig, writeCouncilConfig } from '@/lib/council-config';
 import { getCouncilJsonPath } from '@/lib/council-paths';
+import {
+  emptyPermissionLists,
+  isPermissionKey,
+  PERMISSION_KEYS,
+  type PermissionKey,
+} from '@/lib/utilities';
+
+export type { PermissionKey };
 
 const councilJsonHashKey = 'council_json_hash';
-
-export type PermissionKey =
-  | 'sendCouncilEmail'
-  | 'managePermissions'
-  | 'manageEvents'
-  | 'manageGalleries';
-
-const permissionKeys: PermissionKey[] = [
-  'sendCouncilEmail',
-  'managePermissions',
-  'manageEvents',
-  'manageGalleries',
-];
 
 export const syncPermissionsFromJson = async (): Promise<void> => {
   const config = loadCouncilConfig();
   const now = new Date();
-  const permissionBlock = config.permissions ?? {
-    sendCouncilEmail: [],
-    managePermissions: [],
-    manageEvents: [],
-    manageGalleries: [],
-  };
+  const permissionBlock = config.permissions ?? emptyPermissionLists();
 
   if (config.webmaster?.membershipNumber) {
     const webmaster = config.webmaster.membershipNumber;
-    for (const key of permissionKeys) {
+    for (const key of PERMISSION_KEYS) {
       if (!permissionBlock[key].includes(webmaster)) {
         permissionBlock[key] = [...permissionBlock[key], webmaster];
       }
     }
   }
 
-  for (const key of permissionKeys) {
+  for (const key of PERMISSION_KEYS) {
     const membershipNumbers = permissionBlock[key] ?? [];
     await db
       .insert(permissions)
@@ -63,18 +53,11 @@ export const getPermissionsFromDb = async (): Promise<
   Record<PermissionKey, string[]>
 > => {
   const rows = await db.select().from(permissions);
-  const result: Record<PermissionKey, string[]> = {
-    sendCouncilEmail: [],
-    managePermissions: [],
-    manageEvents: [],
-    manageGalleries: [],
-  };
+  const result = emptyPermissionLists();
 
   for (const row of rows) {
-    if (permissionKeys.includes(row.key as PermissionKey)) {
-      result[row.key as PermissionKey] = JSON.parse(
-        row.membershipNumbers,
-      ) as string[];
+    if (isPermissionKey(row.key)) {
+      result[row.key] = JSON.parse(row.membershipNumbers) as string[];
     }
   }
 
@@ -127,12 +110,7 @@ export const ensureCouncilConfigSynced = async (): Promise<void> => {
 
 const permissionMembersFromConfig = (key: PermissionKey): string[] => {
   const config = loadCouncilConfig();
-  const block = config.permissions ?? {
-    sendCouncilEmail: [],
-    managePermissions: [],
-    manageEvents: [],
-    manageGalleries: [],
-  };
+  const block = config.permissions ?? emptyPermissionLists();
   const members = [...(block[key] ?? [])];
   const webmaster = config.webmaster?.membershipNumber;
 
@@ -196,12 +174,7 @@ export const updatePermissions = async (
   const nextConfig = {
     ...config,
     permissions: {
-      ...(config.permissions ?? {
-        sendCouncilEmail: [],
-        managePermissions: [],
-        manageEvents: [],
-        manageGalleries: [],
-      }),
+      ...(config.permissions ?? emptyPermissionLists()),
       [key]: membershipNumbers,
     },
   };

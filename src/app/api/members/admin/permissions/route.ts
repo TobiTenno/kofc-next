@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import type { PermissionKey } from '@/lib/permissions-sync';
 import {
   getPermissionsFromDb,
   hasPermission,
   updatePermissions,
 } from '@/lib/permissions-sync';
 import { getMembershipNumber } from '@/lib/session';
+import type { PermissionKey } from '@/lib/utilities';
 
 export const GET = async (): Promise<NextResponse> => {
   const membershipNumber = await getMembershipNumber();
