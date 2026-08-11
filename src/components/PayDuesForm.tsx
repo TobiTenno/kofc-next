@@ -14,6 +14,7 @@ type LookupResult = {
   amountCents: number;
   councilYear: string;
   paypalBusinessEmail: string;
+  subscribeAvailable?: boolean;
 };
 
 export default function PayDuesForm({ appUrl }: { appUrl: string }) {
@@ -24,6 +25,7 @@ export default function PayDuesForm({ appUrl }: { appUrl: string }) {
   const [lastName, setLastName] = useState('');
   const [result, setResult] = useState<LookupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [subscribeBusy, setSubscribeBusy] = useState(false);
 
   useEffect(() => {
     const preset = searchParams.get('member');
@@ -52,6 +54,35 @@ export default function PayDuesForm({ appUrl }: { appUrl: string }) {
     }
 
     setResult(payload);
+  };
+
+  const startSubscribe = async (): Promise<void> => {
+    if (!result) {
+      return;
+    }
+    setSubscribeBusy(true);
+    setError(null);
+    try {
+      const response = await fetch('/api/dues/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          membershipNumber: result.member.membershipNumber,
+          lastName,
+        }),
+      });
+      const payload = (await response.json()) as {
+        approveUrl?: string;
+        error?: string;
+      };
+      if (!response.ok || !payload.approveUrl) {
+        setError(payload.error ?? 'Could not start subscription');
+        return;
+      }
+      window.location.href = payload.approveUrl;
+    } finally {
+      setSubscribeBusy(false);
+    }
   };
 
   const baseUrl = appUrl.replace(/\/$/, '');
@@ -98,49 +129,68 @@ export default function PayDuesForm({ appUrl }: { appUrl: string }) {
             Amount: ${(result.amountCents / 100).toFixed(2)} (
             {result.councilYear})
           </p>
-          <form
-            action='https://www.paypal.com/cgi-bin/webscr'
-            method='post'
-            target='_top'
-          >
-            <input type='hidden' name='cmd' value='_xclick' />
-            <input
-              type='hidden'
-              name='business'
-              value={result.paypalBusinessEmail}
-            />
-            <input
-              type='hidden'
-              name='amount'
-              value={(result.amountCents / 100).toFixed(2)}
-            />
-            <input type='hidden' name='currency_code' value='USD' />
-            <input
-              type='hidden'
-              name='item_name'
-              value={`Council dues ${result.councilYear}`}
-            />
-            <input
-              type='hidden'
-              name='custom'
-              value={`${result.member.membershipNumber}|${result.councilYear}`}
-            />
-            <input
-              type='hidden'
-              name='notify_url'
-              value={`${baseUrl}/api/dues/ipn`}
-            />
-            <input
-              type='hidden'
-              name='return'
-              value={`${baseUrl}/dues/thank-you`}
-            />
-            <input
-              type='image'
-              src='https://www.paypalobjects.com/en_US/i/btn/btn_payNow_LG.gif'
-              alt='Pay with PayPal'
-            />
-          </form>
+          <div className='grid gap-3 sm:grid-cols-2'>
+            <form
+              action='https://www.paypal.com/cgi-bin/webscr'
+              method='post'
+              target='_top'
+              className='grid gap-2'
+            >
+              <input type='hidden' name='cmd' value='_xclick' />
+              <input
+                type='hidden'
+                name='business'
+                value={result.paypalBusinessEmail}
+              />
+              <input
+                type='hidden'
+                name='amount'
+                value={(result.amountCents / 100).toFixed(2)}
+              />
+              <input type='hidden' name='currency_code' value='USD' />
+              <input
+                type='hidden'
+                name='item_name'
+                value={`Council dues ${result.councilYear}`}
+              />
+              <input
+                type='hidden'
+                name='custom'
+                value={`${result.member.membershipNumber}|${result.councilYear}`}
+              />
+              <input
+                type='hidden'
+                name='notify_url'
+                value={`${baseUrl}/api/dues/ipn`}
+              />
+              <input
+                type='hidden'
+                name='return'
+                value={`${baseUrl}/dues/thank-you`}
+              />
+              <p className='text-sm text-muted-foreground'>Pay once</p>
+              <input
+                type='image'
+                src='https://www.paypalobjects.com/en_US/i/btn/btn_payNow_LG.gif'
+                alt='Pay with PayPal'
+              />
+            </form>
+            {result.subscribeAvailable ? (
+              <div className='grid gap-2 content-start'>
+                <p className='text-sm text-muted-foreground'>
+                  Subscribe (auto-renew annually)
+                </p>
+                <button
+                  type='button'
+                  className='rounded bg-blue-900 px-4 py-2 text-white w-fit disabled:opacity-60'
+                  disabled={subscribeBusy}
+                  onClick={() => void startSubscribe()}
+                >
+                  {subscribeBusy ? 'Starting…' : 'Subscribe with PayPal'}
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </div>

@@ -126,17 +126,47 @@ export const duesPayments = sqliteTable('dues_payments', {
   memberClass: text('member_class').notNull(),
   amountCents: integer('amount_cents').notNull(),
   councilYear: text('council_year').notNull(),
-  source: text('source', { enum: ['paypal_ipn', 'manual'] }).notNull(),
+  source: text('source', {
+    enum: ['paypal_ipn', 'paypal_subscription', 'manual'],
+  }).notNull(),
   status: text('status', { enum: ['completed', 'refunded'] })
     .default('completed')
     .notNull(),
   paypalTxnId: text('paypal_txn_id').unique(),
+  paypalSubscriptionId: text('paypal_subscription_id'),
   payerEmail: text('payer_email'),
   method: text('method', { enum: ['paypal', 'cash', 'check', 'other'] }),
   notes: text('notes'),
   markedByMembershipNumber: text('marked_by_membership_number'),
   paidAt: integer('paid_at', { mode: 'timestamp_ms' }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+});
+
+export const duesSubscriptions = sqliteTable('dues_subscriptions', {
+  id: text('id').primaryKey(),
+  membershipNumber: text('membership_number')
+    .notNull()
+    .references(() => members.membershipNumber),
+  paypalSubscriptionId: text('paypal_subscription_id').notNull().unique(),
+  paypalPlanId: text('paypal_plan_id').notNull(),
+  status: text('status', {
+    enum: [
+      'approval_pending',
+      'approved',
+      'active',
+      'suspended',
+      'cancelled',
+      'expired',
+    ],
+  }).notNull(),
+  memberClass: text('member_class').notNull(),
+  amountCents: integer('amount_cents').notNull(),
+  payerEmail: text('payer_email'),
+  nextBillingAt: integer('next_billing_at', { mode: 'timestamp_ms' }),
+  lastPaymentAt: integer('last_payment_at', { mode: 'timestamp_ms' }),
+  lastSyncedAt: integer('last_synced_at', { mode: 'timestamp_ms' }),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
 export const calendarTokens = sqliteTable('calendar_tokens', {

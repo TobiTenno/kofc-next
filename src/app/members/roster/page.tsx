@@ -4,7 +4,10 @@ import { redirect } from 'next/navigation';
 import { RosterTable } from '@/components/roster/RosterTable';
 import { db } from '@/db';
 import { members } from '@/db/schema';
-import { getPaidMembershipNumbersForCouncilYear } from '@/lib/dues';
+import {
+  getPaidMembershipNumbersForCouncilYear,
+  isDuesConfigured,
+} from '@/lib/dues';
 import {
   canSendRosterEmail,
   canUseRosterAdminTools,
@@ -21,12 +24,16 @@ export default async function RosterPage() {
     redirect('/members/calendar');
   }
 
-  const [roster, canSendEmail, showDuesTools, councilYear] = await Promise.all([
-    db.select().from(members),
-    canSendRosterEmail(membershipNumber),
-    canUseRosterAdminTools(membershipNumber),
-    getCurrentCouncilYear(),
-  ]);
+  const [roster, canSendEmail, canUseDuesTools, duesConfigured, councilYear] =
+    await Promise.all([
+      db.select().from(members),
+      canSendRosterEmail(membershipNumber),
+      canUseRosterAdminTools(membershipNumber),
+      isDuesConfigured(),
+      getCurrentCouncilYear(),
+    ]);
+
+  const showDuesTools = canUseDuesTools && duesConfigured;
 
   const paidMembershipNumbers =
     showDuesTools && councilYear

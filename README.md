@@ -79,7 +79,7 @@ Use your machine’s IP (check server logs if unsure). For member login from the
 - `/members/login` — membership number + password
 - `/members/register` — verify email from roster, set password
 - Signed-in members use the portal sub-nav (roster, calendar, galleries, dues, admin)
-- `/members/admin/*` — permissions, events, galleries (+ Immich settings), roster upload, dues admin/settings, audit
+- `/members/admin/*` — permissions, events, galleries, roster upload, dues admin, audit (Immich/dues config via **Manage** modals)
 - Portal **Dues** only when dues year + rates are configured (Dues Settings)
 
 ## Public
@@ -155,6 +155,22 @@ CI E2E reads `src/data/council.json.example` and `src/data/council.csv.example` 
 
 See `[.env.example](.env.example)` for PayPal IPN, Better Auth, and Immich settings.
 
+### PayPal dues
+
+| Variable | Notes |
+| --- | --- |
+| `PAYPAL_BUSINESS_EMAIL` | Optional override for Buy Now / IPN business email (wins over `council.json`) |
+| `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | REST API — required for subscriptions + hourly status sync |
+| `PAYPAL_MODE` | `sandbox` (default) or `live` |
+| `PAYPAL_WEBHOOK_ID` | Webhook signature verify for `/api/dues/paypal/webhook` |
+| `PAYPAL_SUB_SYNC_INTERVAL_MS` | Optional; default `3600000` (hourly) |
+
+One-off: classic Buy Now + IPN (`/api/dues/ipn`). Auto-renew: REST Subscriptions; save dues settings with REST creds set to create per-class annual plans. Server reconciles subscription status hourly when REST creds are declared. FS/manageDues can force sync via **Settings → Sync subscriptions now** (`POST /api/cron/paypal/subscriptions`).
+
+### Installable PWA
+
+The site registers a service worker (`/sw.js`), serves `/manifest.webmanifest`, and shows an install / Add-to-Home-Screen hint. Use **HTTPS** in production (required for installability). Offline navigations fall back to `/offline`.
+
 ### Mailgun (registration + council email)
 
 Required for `/members/register` (verification codes) and council email (`/members/email`, roster single/bulk send). Without Mailgun, use [dev login without Mail](#dev-login-without-mail) instead of registration.
@@ -206,7 +222,7 @@ Recipients come from the synced roster CSV (`primaryEmail`). Members without an 
 
 Optional. Tie council galleries to an [Immich](https://immich.app/) server. Member galleries stay hidden until Immich is configured.
 
-**Preferred setup:** `/members/admin/galleries/settings` (`manageGalleries`) writes Immich URL/keys into `council.json` (`integrations.immich`) and mirrors them in SQLite `app_meta`. Legacy `IMMICH_*` env vars still bootstrap on startup when no stored config exists (one-time migrate).
+**Preferred setup:** Galleries Admin → **Manage** (`manageGalleries`) writes Immich URL/keys into `council.json` (`integrations.immich`) and mirrors them in SQLite `app_meta`. Legacy `IMMICH_*` env vars still bootstrap on startup when no stored config exists (one-time migrate).
 
 #### One Immich server, many council sites
 
@@ -214,7 +230,7 @@ Immich has no API keys scoped to a single album — keys belong to an Immich **u
 
 1. In Immich **Administration → Users**, create one user per council (e.g. `council-1234`, `council-5678`).
 2. Sign in as each council user and create API keys (Account Settings → API Keys). Do **not** reuse one service account across councils.
-3. On each council site, use the same Immich base URL but that council’s own API keys (Gallery Settings or migrated env).
+3. On each council site, use the same Immich base URL but that council’s own API keys (Galleries Admin → Manage, or migrated env).
 4. Use a distinct device ID per council (e.g. `kofc-council-1234`) so uploads can be validated on complete.
 
 Albums are the logical gallery boundary; **user accounts** enforce isolation between councils.
@@ -224,7 +240,7 @@ Albums are the logical gallery boundary; **user accounts** enforce isolation bet
 1. Create API keys for this council’s Immich user:
   - **Server key**: `album.read`, `album.create`, `albumAsset.create`, `asset.read`, `asset.download` (thumbnail proxy). Some Immich versions still require `all` on certain endpoints.
   - **Upload key** (recommended): `asset.upload` plus minimal read if your Immich version allows — otherwise `all` on this council-only user is acceptable.
-2. Open `/members/admin/galleries/settings` and save URL + keys (or set legacy `IMMICH_*` env once and restart to migrate).
+2. Open Galleries Admin → **Manage** and save URL + keys (or set legacy `IMMICH_*` env once and restart to migrate).
 3. Grant `manageGalleries` in `/members/admin/permissions` (webmaster / managePermissions holders have all permissions).
 4. Create galleries at `/members/admin/galleries` — new Immich albums are created under this council’s user, or link an existing album ID owned by that user.
 5. Members browse `/members/galleries` and upload when a gallery allows it.
@@ -241,8 +257,8 @@ add_header Access-Control-Allow-Methods "POST, OPTIONS";
 
 Also allow large uploads on the Immich proxy (`client_max_body_size`, long timeouts) — see [Immich reverse proxy docs](https://immich.app/docs/administration/reverse-proxy).
 
-Upload size hint defaults to 25 MB (Gallery Settings / legacy `IMMICH_MAX_UPLOAD_MB`). Thumbnails are still proxied through this app so the admin API key stays server-side.
+Upload size hint defaults to 25 MB (Galleries Admin → Manage / legacy `IMMICH_MAX_UPLOAD_MB`). Thumbnails are still proxied through this app so the admin API key stays server-side.
 
 ### Dues
 
-Configure council year, PayPal business email, and class rates at `/members/admin/dues/settings` (`manageDues`). Portal **Dues** and the dues chip appear only after year + ≥1 rate are saved. Mark paid at `/members/admin/dues` (`manageDues` or Financial Secretary). `PAYPAL_BUSINESS_EMAIL` env still overrides the stored PayPal email for payments when set.
+Configure council year, PayPal business email, and class rates from **Dues Admin → Manage** (`manageDues`). Portal **Dues** and the dues chip appear only after year + ≥1 rate are saved. Mark paid at `/members/admin/dues` (`manageDues` or Financial Secretary). `PAYPAL_BUSINESS_EMAIL` env still overrides the stored PayPal email for payments when set. With PayPal REST credentials, saving settings also syncs annual subscription plans per member class.

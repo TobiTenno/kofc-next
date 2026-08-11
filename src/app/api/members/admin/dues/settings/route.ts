@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server';
 import { recordAuditEvent } from '@/lib/audit';
 import { loadCouncilConfig, writeCouncilConfig } from '@/lib/council-config';
 import {
+  isPayPalRestEnvConfigured,
+  isPayPalSubscribeConfigured,
+} from '@/lib/dues';
+import {
+  getPaypalMode,
+  isPaypalRestConfigured,
+  persistPaypalPlans,
+  syncPaypalPlansForRates,
+} from '@/lib/paypal';
+import {
   getCurrentCouncilYear,
   hasPermission,
   syncDuesFromJson,
@@ -29,6 +39,13 @@ export const GET = async (): Promise<NextResponse> => {
       currency: dues?.currency ?? 'USD',
       paypalBusinessEmail: dues?.paypalBusinessEmail ?? '',
       rates: dues?.rates ?? {},
+      paypalProductId: dues?.paypalProductId ?? '',
+      paypalPlans: dues?.paypalPlans ?? {},
+    },
+    paypal: {
+      restConfigured: isPayPalRestEnvConfigured(),
+      subscriptionsReady: isPayPalSubscribeConfigured(),
+      mode: getPaypalMode(),
     },
   });
 };
@@ -90,6 +107,9 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
   }
 
   const config = loadCouncilConfig();
+  const previousPlans = config.dues?.paypalPlans ?? {};
+  const previousProductId = config.dues?.paypalProductId;
+
   writeCouncilConfig({
     ...config,
     dues: {
@@ -97,10 +117,36 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
       currency,
       paypalBusinessEmail,
       rates: cleanedRates,
+      paypalProductId: previousProductId,
+      paypalPlans: previousPlans,
     },
   });
 
   await syncDuesFromJson();
+
+  let paypalPlans = previousPlans;
+  let paypalProductId = previousProductId ?? '';
+  let planSyncError: string | null = null;
+
+  if (isPaypalRestConfigured()) {
+    try {
+      const synced = await syncPaypalPlansForRates({
+        rates: cleanedRates,
+        currency,
+        existingPlans: previousPlans,
+        existingProductId: previousProductId,
+      });
+      paypalProductId = synced.productId;
+      paypalPlans = synced.plans;
+      persistPaypalPlans({
+        productId: paypalProductId,
+        plans: paypalPlans,
+      });
+    } catch (error) {
+      planSyncError =
+        error instanceof Error ? error.message : 'PayPal plan sync failed';
+    }
+  }
 
   await recordAuditEvent({
     actorMembershipNumber: membershipNumber,
@@ -109,6 +155,8 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
     metadata: {
       councilYear,
       rateCount: Object.keys(cleanedRates).length,
+      paypalPlanCount: Object.keys(paypalPlans).length,
+      planSyncError,
     },
   });
 
@@ -118,6 +166,14 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
       currency,
       paypalBusinessEmail,
       rates: cleanedRates,
+      paypalProductId,
+      paypalPlans,
     },
+    paypal: {
+      restConfigured: isPayPalRestEnvConfigured(),
+      subscriptionsReady: isPayPalSubscribeConfigured(),
+      mode: getPaypalMode(),
+    },
+    planSyncError,
   });
 };

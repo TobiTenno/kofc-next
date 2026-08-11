@@ -2,6 +2,7 @@
 
 import { Alert } from '@heroui/react';
 import { useEffect, useState } from 'react';
+import { AdminPageSurface } from '@/components/AdminPageSurface';
 import {
   type AuditEventRow,
   AuditLogTable,
@@ -29,14 +30,11 @@ export default function AuditAdminPage() {
   }, []);
 
   return (
-    <div className='grid gap-6'>
-      <div className='grid gap-1'>
-        <h1 className='text-2xl font-bold'>Audit Log</h1>
-        <p className='text-sm text-muted-foreground'>
-          Recent admin and member actions across the council site.
-        </p>
-      </div>
-
+    <AdminPageSurface
+      title='Audit Log'
+      description='Recent admin and member actions across the council site.'
+      maxWidth='full'
+    >
       {error ? (
         <Alert status='danger'>
           <Alert.Indicator />
@@ -51,6 +49,6 @@ export default function AuditAdminPage() {
       ) : (
         <AuditLogTable events={events} />
       )}
-    </div>
+    </AdminPageSurface>
   );
 }

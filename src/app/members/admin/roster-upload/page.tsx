@@ -2,6 +2,7 @@
 
 import { Alert, Button, Card, Form, Label } from '@heroui/react';
 import { useRef, useState } from 'react';
+import { AdminPageSurface } from '@/components/AdminPageSurface';
 
 export default function RosterAdminPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,9 +83,7 @@ export default function RosterAdminPage() {
   };
 
   return (
-    <div className='grid max-w-2xl gap-6'>
-      <h1 className='text-2xl font-bold'>Roster Admin</h1>
-
+    <AdminPageSurface title='Roster Admin'>
       <Card>
         <Card.Header>
           <Card.Title>Upload roster CSV</Card.Title>
@@ -148,6 +147,6 @@ export default function RosterAdminPage() {
           </Alert.Content>
         </Alert>
       ) : null}
-    </div>
+    </AdminPageSurface>
   );
 }

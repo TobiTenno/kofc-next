@@ -6,8 +6,10 @@ import {
   canManageDuesAdmin,
   getMemberDuesAmount,
   getMemberPaymentStatus,
+  getMemberSubscription,
   recordManualPayment,
 } from '@/lib/dues';
+import { hasPermission } from '@/lib/permissions-sync';
 import { getMembershipNumber } from '@/lib/session';
 
 export const GET = async (request: Request): Promise<NextResponse> => {
@@ -21,8 +23,10 @@ export const GET = async (request: Request): Promise<NextResponse> => {
   }
 
   const query = new URL(request.url).searchParams.get('q')?.trim();
+  const canManageSettings = await hasPermission(membershipNumber, 'manageDues');
+
   if (!query) {
-    return NextResponse.json({ members: [] });
+    return NextResponse.json({ members: [], canManageSettings });
   }
 
   const rows = await db
@@ -42,10 +46,14 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       member,
       dues: await getMemberDuesAmount(member.membershipNumber),
       status: await getMemberPaymentStatus(member.membershipNumber),
+      subscription: await getMemberSubscription(member.membershipNumber),
     })),
   );
 
-  return NextResponse.json({ members: enriched });
+  return NextResponse.json({
+    members: enriched,
+    canManageSettings,
+  });
 };
 
 export const POST = async (request: Request): Promise<NextResponse> => {

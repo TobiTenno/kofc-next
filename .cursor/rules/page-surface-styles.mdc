@@ -1,0 +1,57 @@
+---
+description: Member/admin HeroUI surfaces; AdminPageSurface shell; settings modals via Manage+cog
+globs: src/app/members/**/*.tsx,src/components/**/*.tsx
+alwaysApply: false
+---
+
+# Page surface styles
+
+Member portal and admin pages use shared HeroUI admin shell + Card patterns.
+
+## Admin page shell
+
+Use [`AdminPageSurface`](src/components/AdminPageSurface.tsx) for admin routes:
+
+```tsx
+<AdminPageSurface
+  title="…"
+  description="…" // optional
+  onManage={() => setOpen(true)} // optional → cog + Manage
+  manageAriaLabel="Manage … settings"
+  maxWidth="2xl" // xl | 2xl | 3xl | 5xl | full
+>
+  {/* body: Cards, lists, alerts, modals */}
+</AdminPageSurface>
+```
+
+- Header via [`AdminPageHeader`](src/components/AdminPageHeader.tsx) (title | Manage upper right; description below)
+- Manage trigger: [`AdminManageButton`](src/components/AdminManageButton.tsx) — cog + **Manage**, not “Settings”
+- Put changeable page content in `children` only — do not re-hand-roll `grid max-w-* gap-6` + `h1` on admin pages
+
+## Body surfaces
+
+- Forms/settings sections: `Card` → `Card.Header` (`Card.Title`, `Card.Description` + `text-foreground/85`) → `Card.Content`
+- Forms: HeroUI `Form`, `TextField` + `Label` + `Input`, `Select` + `ListBox`, `Button variant="primary"`
+- Feedback: HeroUI `Alert` (success/danger)
+- Result/list rows: `Card` / `Card.Content`
+
+## Admin settings = modals
+
+- No separate Admin nav routes/pages for settings
+- Config lives in a modal on the parent admin page
+- Old `/settings` paths redirect to parent
+- Trigger via `onManage` on `AdminPageSurface` / `AdminPageHeader`
+
+## Don't
+
+- Raw bordered inputs / DIY `bg-blue-900` buttons when HeroUI exists
+- Title+description in one flex child beside Manage (wraps button under copy)
+- Label settings triggers “Settings” — use **Manage** + cog
+
+## Reference
+
+- [`src/components/AdminPageSurface.tsx`](src/components/AdminPageSurface.tsx)
+- [`src/components/AdminPageHeader.tsx`](src/components/AdminPageHeader.tsx)
+- [`src/components/AdminManageButton.tsx`](src/components/AdminManageButton.tsx)
+- [`src/app/members/admin/dues/page.tsx`](src/app/members/admin/dues/page.tsx)
+- [`src/components/galleries/GalleriesAdmin.tsx`](src/components/galleries/GalleriesAdmin.tsx)

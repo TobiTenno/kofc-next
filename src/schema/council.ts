@@ -111,6 +111,8 @@ export const CouncilConfigSchema = z.object({
       rates: z.record(z.string(), z.number().int().positive()),
       currency: z.string().default('USD'),
       paypalBusinessEmail: z.string().email(),
+      paypalProductId: z.string().optional(),
+      paypalPlans: z.record(z.string(), z.string()).optional(),
     })
     .optional(),
   integrations: z

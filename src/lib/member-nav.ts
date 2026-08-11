@@ -99,10 +99,6 @@ export const buildMemberNavLinks = async (
 
   if (canGalleries) {
     admin.push({ href: '/members/admin/galleries', label: 'Galleries' });
-    admin.push({
-      href: '/members/admin/galleries/settings',
-      label: 'Gallery Settings',
-    });
   }
 
   if (canRoster) {
@@ -114,13 +110,6 @@ export const buildMemberNavLinks = async (
 
   if (canDues || isFs) {
     admin.push({ href: '/members/admin/dues', label: 'Dues Admin' });
-  }
-
-  if (canDues) {
-    admin.push({
-      href: '/members/admin/dues/settings',
-      label: 'Dues Settings',
-    });
   }
 
   if (canAudit) {

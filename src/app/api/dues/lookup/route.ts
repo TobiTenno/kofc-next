@@ -2,7 +2,11 @@ import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
 import { db } from '@/db';
 import { members } from '@/db/schema';
-import { getMemberDuesAmount, getPaypalBusinessEmail } from '@/lib/dues';
+import {
+  getMemberDuesAmount,
+  getPaypalBusinessEmail,
+  isPayPalSubscribeConfigured,
+} from '@/lib/dues';
 
 export const POST = async (request: Request): Promise<NextResponse> => {
   const body = (await request.json()) as {
@@ -45,5 +49,6 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     amountCents: dues.amountCents,
     councilYear: dues.councilYear,
     paypalBusinessEmail,
+    subscribeAvailable: isPayPalSubscribeConfigured(),
   });
 };

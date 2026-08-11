@@ -14,6 +14,8 @@ import {
 } from '@heroui/react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AdminPageSurface } from '@/components/AdminPageSurface';
+import { GallerySettingsModal } from '@/components/galleries/GallerySettingsModal';
 
 const NEW_ALBUM_KEY = '__new__';
 
@@ -35,7 +37,13 @@ type ImmichAlbumOption = {
   thumbnailAssetId: string | null;
 };
 
-export const GalleriesAdmin = () => {
+export const GalleriesAdmin = ({
+  settingsOpen,
+  onSettingsOpenChange,
+}: {
+  settingsOpen: boolean;
+  onSettingsOpenChange: (open: boolean) => void;
+}) => {
   const [galleries, setGalleries] = useState<AdminGallery[]>([]);
   const [immichAlbums, setImmichAlbums] = useState<ImmichAlbumOption[]>([]);
   const [albumsLoading, setAlbumsLoading] = useState(true);
@@ -150,17 +158,11 @@ export const GalleriesAdmin = () => {
   };
 
   return (
-    <div className='grid max-w-2xl gap-6'>
-      <div className='flex flex-wrap items-baseline justify-between gap-3'>
-        <h1 className='text-2xl font-bold'>Galleries Admin</h1>
-        <Link
-          href='/members/admin/galleries/settings'
-          className='text-sm underline underline-offset-2'
-        >
-          Gallery Settings
-        </Link>
-      </div>
-
+    <AdminPageSurface
+      title='Galleries Admin'
+      manageAriaLabel='Manage gallery settings'
+      onManage={() => onSettingsOpenChange(true)}
+    >
       <Card>
         <Card.Header>
           <Card.Title>New gallery</Card.Title>
@@ -310,6 +312,14 @@ export const GalleriesAdmin = () => {
           </Alert.Content>
         </Alert>
       ) : null}
-    </div>
+
+      <GallerySettingsModal
+        isOpen={settingsOpen}
+        onOpenChange={onSettingsOpenChange}
+        onSaved={() => {
+          void loadImmichAlbums();
+        }}
+      />
+    </AdminPageSurface>
   );
 };

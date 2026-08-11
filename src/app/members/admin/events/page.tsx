@@ -12,6 +12,7 @@ import {
   TextField,
 } from '@heroui/react';
 import { useCallback, useEffect, useState } from 'react';
+import { AdminPageSurface } from '@/components/AdminPageSurface';
 
 type EventRow = {
   id: string;
@@ -75,9 +76,7 @@ export default function EventsAdminPage() {
   };
 
   return (
-    <div className='grid max-w-2xl gap-6'>
-      <h1 className='text-2xl font-bold'>Events Admin</h1>
-
+    <AdminPageSurface title='Events Admin'>
       <Card>
         <Card.Header>
           <Card.Title>New event</Card.Title>
@@ -174,6 +173,6 @@ export default function EventsAdminPage() {
           </Alert.Content>
         </Alert>
       ) : null}
-    </div>
+    </AdminPageSurface>
   );
 }

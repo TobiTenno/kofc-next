@@ -11,6 +11,7 @@ import {
   TextField,
 } from '@heroui/react';
 import { useEffect, useState } from 'react';
+import { AdminPageSurface } from '@/components/AdminPageSurface';
 import {
   emptyPermissionDrafts,
   formatMembershipNumbers,
@@ -77,16 +78,11 @@ export default function PermissionsAdminPage() {
   };
 
   return (
-    <div className='grid max-w-5xl gap-6'>
-      <div className='grid gap-1'>
-        <h1 className='text-2xl font-bold'>Permissions</h1>
-        <p className='text-sm text-muted-foreground'>
-          Webmaster always has every permission. Holders of Manage permissions
-          can edit every list below and use every permission-gated admin tool
-          (including new keys).
-        </p>
-      </div>
-
+    <AdminPageSurface
+      title='Permissions'
+      description='Webmaster always has every permission. Holders of Manage permissions can edit every list below and use every permission-gated admin tool (including new keys).'
+      maxWidth='5xl'
+    >
       <div className='grid gap-6 lg:grid-cols-2'>
         {PERMISSION_KEYS.map((key) => (
           <Card key={key}>
@@ -145,6 +141,6 @@ export default function PermissionsAdminPage() {
           </Alert.Content>
         </Alert>
       ) : null}
-    </div>
+    </AdminPageSurface>
   );
 }

@@ -89,6 +89,8 @@
     "councilYear": "2025-2026",
     "currency": "USD",
     "paypalBusinessEmail": "dues@example.com",
+    "paypalProductId": "",
+    "paypalPlans": {},
     "rates": {
       "R": 4000,
       "L": 2000,

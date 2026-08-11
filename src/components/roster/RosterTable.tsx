@@ -376,7 +376,7 @@ export const RosterTable = ({
     [paidMembershipNumbers],
   );
   const columnCount =
-    5 + (showDuesTools ? 1 : 0) + (enableRowSelection ? 1 : 0);
+    6 + (showDuesTools ? 1 : 0) + (enableRowSelection ? 1 : 0);
 
   useEffect(() => {
     setPage(1);
@@ -712,6 +712,15 @@ export const RosterTable = ({
           {item.memberClassLabel ?? '—'}
         </Table.Cell>
         <Table.Cell
+          textValue={item.highestDegree ?? ''}
+          className={['hidden sm:table-cell', selectedCellClass]
+            .filter(Boolean)
+            .join(' ')}
+          data-selected={isSelected || undefined}
+        >
+          {item.highestDegree ?? '—'}
+        </Table.Cell>
+        <Table.Cell
           textValue={item.primaryEmail ?? ''}
           className={['hidden md:table-cell', selectedCellClass]
             .filter(Boolean)
@@ -1001,6 +1010,17 @@ export const RosterTable = ({
                   {({ sortDirection }) => (
                     <Table.SortableColumnHeader sortDirection={sortDirection}>
                       Class
+                    </Table.SortableColumnHeader>
+                  )}
+                </Table.Column>
+                <Table.Column
+                  allowsSorting
+                  id='highestDegree'
+                  className='hidden sm:table-cell'
+                >
+                  {({ sortDirection }) => (
+                    <Table.SortableColumnHeader sortDirection={sortDirection}>
+                      Degree
                     </Table.SortableColumnHeader>
                   )}
                 </Table.Column>
