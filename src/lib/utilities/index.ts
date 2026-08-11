@@ -7,7 +7,7 @@ export {
   emptyPermissionLists,
   formatMembershipNumbers,
   isPermissionKey,
-  parseMembershipNumbers,
   PERMISSION_KEYS,
   type PermissionKey,
+  parseMembershipNumbers,
 } from '@/lib/utilities/permissions';

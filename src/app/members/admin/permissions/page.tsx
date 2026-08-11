@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import {
   emptyPermissionDrafts,
   formatMembershipNumbers,
-  parseMembershipNumbers,
   PERMISSION_KEYS,
   type PermissionKey,
+  parseMembershipNumbers,
 } from '@/lib/utilities';
 
 export default function PermissionsAdminPage() {
@@ -20,9 +20,7 @@ export default function PermissionsAdminPage() {
         if (payload.permissions) {
           const next = emptyPermissionDrafts();
           for (const key of PERMISSION_KEYS) {
-            next[key] = formatMembershipNumbers(
-              payload.permissions[key] ?? [],
-            );
+            next[key] = formatMembershipNumbers(payload.permissions[key] ?? []);
           }
           setDrafts(next);
         }
