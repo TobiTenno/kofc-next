@@ -81,7 +81,9 @@ export default function PermissionsAdminPage() {
       <div className='grid gap-1'>
         <h1 className='text-2xl font-bold'>Permissions</h1>
         <p className='text-sm text-muted-foreground'>
-          Webmaster always has every permission and stays on each list.
+          Webmaster always has every permission. Holders of Manage permissions
+          can edit every list below and use every permission-gated admin tool
+          (including new keys).
         </p>
       </div>
 

@@ -160,6 +160,34 @@ const permissionMembersFromConfig = (key: PermissionKey): string[] => {
   return withWebmaster(block[key] ?? []);
 };
 
+const membersForPermissionKey = async (
+  key: PermissionKey,
+): Promise<string[]> => {
+  const rows = await db
+    .select()
+    .from(permissions)
+    .where(eq(permissions.key, key))
+    .limit(1);
+
+  if (rows[0]) {
+    return withWebmaster(JSON.parse(rows[0].membershipNumbers) as string[]);
+  }
+
+  return permissionMembersFromConfig(key);
+};
+
+const memberListedForKey = async (
+  membershipNumber: string,
+  key: PermissionKey,
+): Promise<boolean> => {
+  if (permissionMembersFromConfig(key).includes(membershipNumber)) {
+    return true;
+  }
+
+  const allowed = await membersForPermissionKey(key);
+  return allowed.includes(membershipNumber);
+};
+
 export const hasPermission = async (
   membershipNumber: string,
   key: PermissionKey,
@@ -170,23 +198,16 @@ export const hasPermission = async (
 
   await ensureCouncilConfigSynced();
 
-  if (permissionMembersFromConfig(key).includes(membershipNumber)) {
+  // Anyone who can assign permissions can use every permission-gated feature
+  // (including newly added keys) and edit those lists in the Permissions UI.
+  if (
+    key !== 'managePermissions' &&
+    (await memberListedForKey(membershipNumber, 'managePermissions'))
+  ) {
     return true;
   }
 
-  const rows = await db
-    .select()
-    .from(permissions)
-    .where(eq(permissions.key, key))
-    .limit(1);
-
-  const row = rows[0];
-  if (!row) {
-    return false;
-  }
-
-  const allowed = JSON.parse(row.membershipNumbers) as string[];
-  return allowed.includes(membershipNumber);
+  return memberListedForKey(membershipNumber, key);
 };
 
 export const updatePermissions = async (

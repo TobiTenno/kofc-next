@@ -5,7 +5,7 @@ import {
   updatePermissions,
 } from '@/lib/permissions-sync';
 import { getMembershipNumber } from '@/lib/session';
-import type { PermissionKey } from '@/lib/utilities';
+import { isPermissionKey } from '@/lib/utilities';
 
 export const GET = async (): Promise<NextResponse> => {
   const membershipNumber = await getMembershipNumber();
@@ -32,12 +32,16 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
   }
 
   const body = (await request.json()) as {
-    key?: PermissionKey;
+    key?: string;
     membershipNumbers?: string[];
   };
 
   if (!body.key || !body.membershipNumbers) {
     return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  }
+
+  if (!isPermissionKey(body.key)) {
+    return NextResponse.json({ error: 'Unknown permission' }, { status: 400 });
   }
 
   await updatePermissions(body.key, body.membershipNumbers, membershipNumber);
