@@ -1,7 +1,6 @@
 'use client';
 
 import { Button } from '@heroui/react';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { authClient } from '@/lib/auth-client';
 
@@ -14,7 +13,6 @@ export const ImpersonationBanner = ({
   membershipNumber,
   displayName,
 }: ImpersonationBannerProps) => {
-  const router = useRouter();
   const [stopping, setStopping] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,8 +28,8 @@ export const ImpersonationBanner = ({
         setStopping(false);
         return;
       }
-      router.refresh();
-      router.push('/members');
+      // Full load so banner / nav clear with restored admin session.
+      window.location.replace('/members');
     } catch {
       setError('Could not stop impersonating');
       setStopping(false);

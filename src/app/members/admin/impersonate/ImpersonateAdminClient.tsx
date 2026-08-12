@@ -9,13 +9,11 @@ import {
   Label,
   TextField,
 } from '@heroui/react';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { AdminPageSurface } from '@/components/AdminPageSurface';
 import { authClient } from '@/lib/auth-client';
 
 export default function ImpersonateAdminClient() {
-  const router = useRouter();
   const [membershipNumber, setMembershipNumber] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -57,12 +55,8 @@ export default function ImpersonateAdminClient() {
       return;
     }
 
-    setMessageTone('success');
-    setMessage(
-      `Now viewing as #${resolvePayload.membershipNumber ?? membershipNumber}`,
-    );
-    router.refresh();
-    router.push('/members');
+    // Full load so SiteHeader / nav pick up new session cookie.
+    window.location.replace('/members');
   };
 
   return (
