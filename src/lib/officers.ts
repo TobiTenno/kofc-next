@@ -14,7 +14,15 @@ export const getFinancialSecretaryMembershipNumber = async (): Promise<
     (officer) => officer.position === Position.FinancialSecretary,
   );
 
-  if (!fsOfficer?.email) {
+  if (!fsOfficer) {
+    return null;
+  }
+
+  if (fsOfficer.membershipNumber?.trim()) {
+    return fsOfficer.membershipNumber.trim();
+  }
+
+  if (!fsOfficer.email) {
     return null;
   }
 
@@ -55,11 +63,19 @@ export const canSendRosterEmail = async (
   return hasPermission(membershipNumber, 'sendCouncilEmail');
 };
 
-/** Council roster — webmaster or current officer (matched via roster email). */
+/** Council roster — webmaster, FS, manageRoster, or current officer. */
 export const canViewRoster = async (
   membershipNumber: string,
 ): Promise<boolean> => {
   if (isWebmaster(membershipNumber)) {
+    return true;
+  }
+
+  if (await hasPermission(membershipNumber, 'manageRoster')) {
+    return true;
+  }
+
+  if (await isFinancialSecretary(membershipNumber)) {
     return true;
   }
 
@@ -75,6 +91,11 @@ export const getOfficerMembershipNumbers = async (): Promise<
   const mapping: Record<string, string> = {};
 
   for (const officer of officers) {
+    if (officer.membershipNumber?.trim()) {
+      mapping[officer.position] = officer.membershipNumber.trim();
+      continue;
+    }
+
     if (!officer.email) {
       continue;
     }

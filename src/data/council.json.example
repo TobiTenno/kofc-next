@@ -82,6 +82,7 @@
     "manageEvents": ["1001001"],
     "manageGalleries": ["1001001"],
     "manageRoster": ["1001001"],
+    "manageOfficers": ["1001001"],
     "manageDues": ["1001001"],
     "viewAuditLog": ["1001001"]
   },

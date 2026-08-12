@@ -79,7 +79,7 @@ Use your machine’s IP (check server logs if unsure). For member login from the
 - `/members/login` — membership number + password
 - `/members/register` — verify email from roster, set password
 - Signed-in members use the portal sub-nav (roster, calendar, galleries, dues, admin)
-- `/members/admin/*` — permissions, events, galleries, roster upload, dues admin, audit (Immich/dues config via **Manage** modals)
+- `/members/admin/*` — permissions, events, galleries, roster upload, officers, dues admin, audit (Immich/dues config via **Manage** modals)
 - Portal **Dues** only when dues year + rates are configured (Dues Settings)
 
 ## Public

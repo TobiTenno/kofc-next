@@ -33,6 +33,8 @@ export enum Position {
   DistrictDeputy = 'District Deputy',
 }
 
+export const ALL_OFFICER_POSITIONS = Object.values(Position) as Position[];
+
 export const ImageName: Record<Position, string> = {
   [Position.GrandKnight]: '/medals/grand_knight.jpg',
   [Position.DeputyGrandKnight]: '/medals/deputy_grand_knight.jpg',
@@ -82,6 +84,7 @@ export const CouncilSchema = z.object({
         termEnd: z.string().optional(),
         email: z.string().email().optional(),
         phone: z.string().min(10).max(15).optional(),
+        membershipNumber: z.string().min(1).optional(),
       }),
     )
     .optional(),
@@ -101,6 +104,7 @@ export const CouncilConfigSchema = z.object({
       manageEvents: z.array(z.string()).default([]),
       manageGalleries: z.array(z.string()).default([]),
       manageRoster: z.array(z.string()).default([]),
+      manageOfficers: z.array(z.string()).default([]),
       manageDues: z.array(z.string()).default([]),
       viewAuditLog: z.array(z.string()).default([]),
     })

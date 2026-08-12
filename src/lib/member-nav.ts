@@ -51,6 +51,7 @@ export const buildMemberNavLinks = async (
     canEvents,
     canGalleries,
     canRoster,
+    canOfficers,
     canDues,
     canAudit,
     isFs,
@@ -62,6 +63,7 @@ export const buildMemberNavLinks = async (
     hasPermission(membershipNumber, 'manageEvents'),
     hasPermission(membershipNumber, 'manageGalleries'),
     hasPermission(membershipNumber, 'manageRoster'),
+    hasPermission(membershipNumber, 'manageOfficers'),
     hasPermission(membershipNumber, 'manageDues'),
     hasPermission(membershipNumber, 'viewAuditLog'),
     isFinancialSecretary(membershipNumber),
@@ -105,6 +107,13 @@ export const buildMemberNavLinks = async (
     admin.push({
       href: '/members/admin/roster-upload',
       label: 'Roster Admin',
+    });
+  }
+
+  if (canOfficers) {
+    admin.push({
+      href: '/members/admin/officers',
+      label: 'Officers',
     });
   }
 
