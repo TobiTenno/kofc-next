@@ -51,3 +51,14 @@ export const maskMemberName = (member: {
 
 export const centsToDollars = (cents: number): string =>
   (cents / 100).toFixed(2);
+
+export const maskSecret = (value: string | undefined | null): string | null => {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.length <= 4) {
+    return '••••';
+  }
+  return `••••${trimmed.slice(-4)}`;
+};

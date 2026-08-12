@@ -41,7 +41,7 @@
   --secondary: #374151;
   --secondary-foreground: #f3f4f6;
   --muted: #374151;
-  --muted-foreground: #9ca3af;
+  --muted-foreground: #d1d5db;
   --border: #6b7280;
   --input: #6b7280;
   --ring: #60a5fa;
@@ -242,6 +242,20 @@ html {
   z-index: 110;
 }
 
+/*
+  HeroUI uses text-muted for secondary copy, but this app's --muted is a surface
+  (shadcn). Unlayered so it beats utility text-muted on .modal__body / .description.
+*/
+.modal__body,
+.drawer__body,
+.alert-dialog__body {
+  color: var(--foreground);
+}
+
 .modal__body dd {
   color: var(--foreground);
+}
+
+.description {
+  color: var(--muted-foreground);
 }

@@ -2,6 +2,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { appMeta } from '@/db/schema';
 import { loadCouncilConfig, writeCouncilConfig } from '@/lib/council-config';
+import { maskSecret } from '@/lib/utils';
 
 export type ImmichStoredConfig = {
   url: string;
@@ -26,17 +27,6 @@ const immichConfigMetaKey = 'immich_config';
 let cachedStored: ImmichStoredConfig | null | undefined;
 
 const trimTrailingSlash = (value: string): string => value.replace(/\/$/, '');
-
-const maskSecret = (value: string | undefined | null): string | null => {
-  const trimmed = value?.trim();
-  if (!trimmed) {
-    return null;
-  }
-  if (trimmed.length <= 4) {
-    return '••••';
-  }
-  return `••••${trimmed.slice(-4)}`;
-};
 
 const normalizeStored = (
   value: ImmichStoredConfig | null | undefined,
@@ -211,4 +201,4 @@ export const getImmichPublicSettings = (): ImmichPublicSettings => {
   return toImmichPublicSettings(null, 'none');
 };
 
-export { maskSecret, trimTrailingSlash };
+export { trimTrailingSlash };

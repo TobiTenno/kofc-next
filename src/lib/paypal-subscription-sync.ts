@@ -8,6 +8,7 @@ import {
   upsertDuesSubscription,
 } from '@/lib/dues';
 import {
+  getPaypalSubSyncIntervalMs,
   getPaypalSubscription,
   isPaypalRestConfigured,
   mapPaypalStatusToLocal,
@@ -175,21 +176,28 @@ export const runPaypalSubscriptionSyncSafe = async (): Promise<void> => {
   }
 };
 
-export const startPaypalSubscriptionSyncScheduler = (
-  intervalMs: number,
-): void => {
-  if (syncTimer || !isPaypalRestConfigured()) {
+export const startPaypalSubscriptionSyncScheduler = (): void => {
+  if (syncTimer) {
     return;
   }
 
+  const TICK_MS = 60_000;
+  let lastRunAt = 0;
+
   // Delay first tick so startup migrations settle.
   setTimeout(() => {
+    lastRunAt = Date.now();
     void runPaypalSubscriptionSyncSafe();
   }, 15_000);
 
   syncTimer = setInterval(() => {
+    const intervalMs = getPaypalSubSyncIntervalMs();
+    if (Date.now() - lastRunAt < intervalMs) {
+      return;
+    }
+    lastRunAt = Date.now();
     void runPaypalSubscriptionSyncSafe();
-  }, intervalMs);
+  }, TICK_MS);
 
   if (typeof syncTimer.unref === 'function') {
     syncTimer.unref();

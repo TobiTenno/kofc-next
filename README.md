@@ -159,11 +159,11 @@ See `[.env.example](.env.example)` for PayPal IPN, Better Auth, and Immich setti
 
 | Variable | Notes |
 | --- | --- |
-| `PAYPAL_BUSINESS_EMAIL` | Optional override for Buy Now / IPN business email (wins over `council.json`) |
-| `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | REST API — required for subscriptions + hourly status sync |
-| `PAYPAL_MODE` | `sandbox` (default) or `live` |
-| `PAYPAL_WEBHOOK_ID` | Webhook signature verify for `/api/dues/paypal/webhook` |
-| `PAYPAL_SUB_SYNC_INTERVAL_MS` | Optional; default `3600000` (hourly) |
+| `PAYPAL_BUSINESS_EMAIL` | Fallback Buy Now / IPN email if not set in Dues Settings |
+| `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` | Fallback REST credentials if not set in Dues Settings |
+| `PAYPAL_MODE` | Fallback `sandbox` (default) or `live` if not set in Dues Settings |
+| `PAYPAL_WEBHOOK_ID` | Fallback webhook ID if not set in Dues Settings |
+| `PAYPAL_SUB_SYNC_INTERVAL_MS` | Fallback sync interval; default `3600000` (hourly) |
 
 One-off: classic Buy Now + IPN (`/api/dues/ipn`). Auto-renew: REST Subscriptions; save dues settings with REST creds set to create per-class annual plans. Server reconciles subscription status hourly when REST creds are declared. FS/manageDues can force sync via **Settings → Sync subscriptions now** (`POST /api/cron/paypal/subscriptions`).
 
@@ -261,4 +261,4 @@ Upload size hint defaults to 25 MB (Galleries Admin → Manage / legacy `IMMICH_
 
 ### Dues
 
-Configure council year, PayPal business email, and class rates from **Dues Admin → Manage** (`manageDues`). Portal **Dues** and the dues chip appear only after year + ≥1 rate are saved. Mark paid at `/members/admin/dues` (`manageDues` or Financial Secretary). `PAYPAL_BUSINESS_EMAIL` env still overrides the stored PayPal email for payments when set. With PayPal REST credentials, saving settings also syncs annual subscription plans per member class.
+Configure council year, PayPal (business email + REST client ID/secret/mode/webhook/sync interval), and class rates from **Dues Admin → Manage** (`manageDues`). Portal **Dues** and the dues chip appear only after year + ≥1 rate are saved. Mark paid at `/members/admin/dues` (`manageDues` or Financial Secretary). Stored dues settings win over `PAYPAL_*` env (env is fallback). With PayPal REST credentials, saving settings also syncs annual subscription plans per member class.

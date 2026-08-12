@@ -117,6 +117,11 @@ export const CouncilConfigSchema = z.object({
       paypalBusinessEmail: z.string().email(),
       paypalProductId: z.string().optional(),
       paypalPlans: z.record(z.string(), z.string()).optional(),
+      paypalClientId: z.string().optional(),
+      paypalClientSecret: z.string().optional(),
+      paypalMode: z.enum(['sandbox', 'live']).optional(),
+      paypalWebhookId: z.string().optional(),
+      paypalSubSyncIntervalMs: z.number().int().positive().optional(),
     })
     .optional(),
   integrations: z

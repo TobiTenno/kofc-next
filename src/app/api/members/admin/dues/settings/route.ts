@@ -2,11 +2,8 @@ import { NextResponse } from 'next/server';
 import { recordAuditEvent } from '@/lib/audit';
 import { loadCouncilConfig, writeCouncilConfig } from '@/lib/council-config';
 import {
-  isPayPalRestEnvConfigured,
-  isPayPalSubscribeConfigured,
-} from '@/lib/dues';
-import {
-  getPaypalMode,
+  clearPaypalTokenCache,
+  getPaypalPublicSettings,
   isPaypalRestConfigured,
   persistPaypalPlans,
   syncPaypalPlansForRates,
@@ -32,6 +29,7 @@ export const GET = async (): Promise<NextResponse> => {
   const dues = config.dues;
   const councilYear =
     dues?.councilYear ?? (await getCurrentCouncilYear()) ?? '';
+  const paypal = getPaypalPublicSettings();
 
   return NextResponse.json({
     settings: {
@@ -41,11 +39,16 @@ export const GET = async (): Promise<NextResponse> => {
       rates: dues?.rates ?? {},
       paypalProductId: dues?.paypalProductId ?? '',
       paypalPlans: dues?.paypalPlans ?? {},
+      paypalClientId: paypal.clientId,
+      paypalClientSecretMasked: paypal.clientSecretMasked,
+      paypalMode: paypal.mode,
+      paypalWebhookIdMasked: paypal.webhookIdMasked,
+      paypalSubSyncIntervalMs: paypal.subSyncIntervalMs,
     },
     paypal: {
-      restConfigured: isPayPalRestEnvConfigured(),
-      subscriptionsReady: isPayPalSubscribeConfigured(),
-      mode: getPaypalMode(),
+      restConfigured: paypal.restConfigured,
+      subscriptionsReady: paypal.subscriptionsReady,
+      mode: paypal.mode,
     },
   });
 };
@@ -65,12 +68,31 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
     currency?: string;
     paypalBusinessEmail?: string;
     rates?: Record<string, number>;
+    paypalClientId?: string;
+    paypalClientSecret?: string;
+    paypalMode?: string;
+    paypalWebhookId?: string;
+    paypalSubSyncIntervalMs?: number | string;
   };
 
   const councilYear = body.councilYear?.trim() ?? '';
   const paypalBusinessEmail = body.paypalBusinessEmail?.trim() ?? '';
   const currency = body.currency?.trim() || 'USD';
   const rates = body.rates ?? {};
+  const paypalClientId = body.paypalClientId?.trim() ?? '';
+  const paypalClientSecret = body.paypalClientSecret?.trim() ?? '';
+  const paypalWebhookId = body.paypalWebhookId?.trim() ?? '';
+  const paypalModeRaw = body.paypalMode?.trim().toLowerCase();
+  const paypalMode =
+    paypalModeRaw === 'live' || paypalModeRaw === 'sandbox'
+      ? paypalModeRaw
+      : undefined;
+
+  const syncIntervalRaw = Number(body.paypalSubSyncIntervalMs);
+  const paypalSubSyncIntervalMs =
+    Number.isFinite(syncIntervalRaw) && syncIntervalRaw >= 60_000
+      ? Math.floor(syncIntervalRaw)
+      : undefined;
 
   if (!councilYear) {
     return NextResponse.json(
@@ -107,8 +129,21 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
   }
 
   const config = loadCouncilConfig();
-  const previousPlans = config.dues?.paypalPlans ?? {};
-  const previousProductId = config.dues?.paypalProductId;
+  const previous = config.dues;
+  const previousPlans = previous?.paypalPlans ?? {};
+  const previousProductId = previous?.paypalProductId;
+
+  const nextClientId = paypalClientId || undefined;
+  const nextClientSecret = paypalClientSecret || previous?.paypalClientSecret;
+  const nextWebhookId = paypalWebhookId || previous?.paypalWebhookId;
+  const nextMode = paypalMode ?? previous?.paypalMode ?? 'sandbox';
+  const nextSyncInterval =
+    paypalSubSyncIntervalMs ?? previous?.paypalSubSyncIntervalMs ?? 3_600_000;
+
+  const credentialsChanged =
+    nextClientId !== previous?.paypalClientId ||
+    nextClientSecret !== previous?.paypalClientSecret ||
+    nextMode !== previous?.paypalMode;
 
   writeCouncilConfig({
     ...config,
@@ -119,8 +154,17 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
       rates: cleanedRates,
       paypalProductId: previousProductId,
       paypalPlans: previousPlans,
+      paypalClientId: nextClientId,
+      paypalClientSecret: nextClientSecret,
+      paypalMode: nextMode,
+      paypalWebhookId: nextWebhookId,
+      paypalSubSyncIntervalMs: nextSyncInterval,
     },
   });
+
+  if (credentialsChanged) {
+    clearPaypalTokenCache();
+  }
 
   await syncDuesFromJson();
 
@@ -157,8 +201,12 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
       rateCount: Object.keys(cleanedRates).length,
       paypalPlanCount: Object.keys(paypalPlans).length,
       planSyncError,
+      paypalMode: nextMode ?? getPaypalPublicSettings().mode,
+      restConfigured: isPaypalRestConfigured(),
     },
   });
+
+  const paypal = getPaypalPublicSettings();
 
   return NextResponse.json({
     settings: {
@@ -168,11 +216,16 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
       rates: cleanedRates,
       paypalProductId,
       paypalPlans,
+      paypalClientId: paypal.clientId,
+      paypalClientSecretMasked: paypal.clientSecretMasked,
+      paypalMode: paypal.mode,
+      paypalWebhookIdMasked: paypal.webhookIdMasked,
+      paypalSubSyncIntervalMs: paypal.subSyncIntervalMs,
     },
     paypal: {
-      restConfigured: isPayPalRestEnvConfigured(),
-      subscriptionsReady: isPayPalSubscribeConfigured(),
-      mode: getPaypalMode(),
+      restConfigured: paypal.restConfigured,
+      subscriptionsReady: paypal.subscriptionsReady,
+      mode: paypal.mode,
     },
     planSyncError,
   });

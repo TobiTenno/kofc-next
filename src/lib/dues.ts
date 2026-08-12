@@ -121,12 +121,12 @@ export const getMemberSubscription = async (
 };
 
 export const getPaypalBusinessEmail = (): string | null => {
-  const fromEnv = process.env.PAYPAL_BUSINESS_EMAIL?.trim();
-  if (fromEnv) {
-    return fromEnv;
+  const fromConfig = loadCouncilConfig().dues?.paypalBusinessEmail?.trim();
+  if (fromConfig) {
+    return fromConfig;
   }
 
-  return loadCouncilConfig().dues?.paypalBusinessEmail?.trim() ?? null;
+  return process.env.PAYPAL_BUSINESS_EMAIL?.trim() || null;
 };
 
 export const isPayPalConfigured = (): boolean =>

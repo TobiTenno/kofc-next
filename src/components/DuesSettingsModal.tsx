@@ -7,7 +7,9 @@ import {
   Form,
   Input,
   Label,
+  ListBox,
   Modal,
+  Select,
   TextField,
   useOverlayState,
 } from '@heroui/react';
@@ -21,6 +23,11 @@ type DuesSettings = {
   rates: Record<string, number>;
   paypalProductId?: string;
   paypalPlans?: Record<string, string>;
+  paypalClientId?: string;
+  paypalClientSecretMasked?: string | null;
+  paypalMode?: 'sandbox' | 'live';
+  paypalWebhookIdMasked?: string | null;
+  paypalSubSyncIntervalMs?: number;
 };
 
 type PaypalMeta = {
@@ -37,6 +44,39 @@ const emptyRates = (): Record<string, string> => {
   return next;
 };
 
+const applySettingsToForm = (
+  settings: DuesSettings,
+  setters: {
+    setCouncilYear: (value: string) => void;
+    setCurrency: (value: string) => void;
+    setPaypalBusinessEmail: (value: string) => void;
+    setPaypalClientId: (value: string) => void;
+    setPaypalMode: (value: 'sandbox' | 'live') => void;
+    setPaypalSubSyncIntervalMs: (value: string) => void;
+    setPaypalClientSecretMasked: (value: string | null) => void;
+    setPaypalWebhookIdMasked: (value: string | null) => void;
+    setPaypalPlans: (value: Record<string, string>) => void;
+    setRateDrafts: (value: Record<string, string>) => void;
+  },
+): void => {
+  setters.setCouncilYear(settings.councilYear);
+  setters.setCurrency(settings.currency);
+  setters.setPaypalBusinessEmail(settings.paypalBusinessEmail);
+  setters.setPaypalClientId(settings.paypalClientId ?? '');
+  setters.setPaypalMode(settings.paypalMode ?? 'sandbox');
+  setters.setPaypalSubSyncIntervalMs(
+    String(settings.paypalSubSyncIntervalMs ?? 3_600_000),
+  );
+  setters.setPaypalClientSecretMasked(settings.paypalClientSecretMasked ?? null);
+  setters.setPaypalWebhookIdMasked(settings.paypalWebhookIdMasked ?? null);
+  setters.setPaypalPlans(settings.paypalPlans ?? {});
+  const next = emptyRates();
+  for (const [code, cents] of Object.entries(settings.rates)) {
+    next[code] = String(cents);
+  }
+  setters.setRateDrafts(next);
+};
+
 export const DuesSettingsModal = ({
   isOpen,
   onOpenChange,
@@ -48,6 +88,19 @@ export const DuesSettingsModal = ({
   const [councilYear, setCouncilYear] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [paypalBusinessEmail, setPaypalBusinessEmail] = useState('');
+  const [paypalClientId, setPaypalClientId] = useState('');
+  const [paypalClientSecret, setPaypalClientSecret] = useState('');
+  const [paypalClientSecretMasked, setPaypalClientSecretMasked] = useState<
+    string | null
+  >(null);
+  const [paypalMode, setPaypalMode] = useState<'sandbox' | 'live'>('sandbox');
+  const [paypalWebhookId, setPaypalWebhookId] = useState('');
+  const [paypalWebhookIdMasked, setPaypalWebhookIdMasked] = useState<
+    string | null
+  >(null);
+  const [paypalSubSyncIntervalMs, setPaypalSubSyncIntervalMs] = useState(
+    '3600000',
+  );
   const [rateDrafts, setRateDrafts] = useState(emptyRates);
   const [paypalPlans, setPaypalPlans] = useState<Record<string, string>>({});
   const [paypalMeta, setPaypalMeta] = useState<PaypalMeta | null>(null);
@@ -62,6 +115,10 @@ export const DuesSettingsModal = ({
     if (!isOpen) {
       return;
     }
+
+    setPaypalClientSecret('');
+    setPaypalWebhookId('');
+    setMessage(null);
 
     void fetch('/api/members/admin/dues/settings').then(async (response) => {
       const payload = (await response.json()) as {
@@ -78,16 +135,19 @@ export const DuesSettingsModal = ({
       if (!settings) {
         return;
       }
-      setCouncilYear(settings.councilYear);
-      setCurrency(settings.currency);
-      setPaypalBusinessEmail(settings.paypalBusinessEmail);
-      setPaypalPlans(settings.paypalPlans ?? {});
+      applySettingsToForm(settings, {
+        setCouncilYear,
+        setCurrency,
+        setPaypalBusinessEmail,
+        setPaypalClientId,
+        setPaypalMode,
+        setPaypalSubSyncIntervalMs,
+        setPaypalClientSecretMasked,
+        setPaypalWebhookIdMasked,
+        setPaypalPlans,
+        setRateDrafts,
+      });
       setPaypalMeta(payload.paypal ?? null);
-      const next = emptyRates();
-      for (const [code, cents] of Object.entries(settings.rates)) {
-        next[code] = String(cents);
-      }
-      setRateDrafts(next);
     });
   }, [isOpen]);
 
@@ -113,6 +173,11 @@ export const DuesSettingsModal = ({
         currency,
         paypalBusinessEmail,
         rates,
+        paypalClientId,
+        paypalClientSecret: paypalClientSecret.trim() || undefined,
+        paypalMode,
+        paypalWebhookId: paypalWebhookId.trim() || undefined,
+        paypalSubSyncIntervalMs: Number(paypalSubSyncIntervalMs),
       }),
     });
 
@@ -124,7 +189,20 @@ export const DuesSettingsModal = ({
     };
 
     if (response.ok && payload.settings) {
-      setPaypalPlans(payload.settings.paypalPlans ?? {});
+      applySettingsToForm(payload.settings, {
+        setCouncilYear,
+        setCurrency,
+        setPaypalBusinessEmail,
+        setPaypalClientId,
+        setPaypalMode,
+        setPaypalSubSyncIntervalMs,
+        setPaypalClientSecretMasked,
+        setPaypalWebhookIdMasked,
+        setPaypalPlans,
+        setRateDrafts,
+      });
+      setPaypalClientSecret('');
+      setPaypalWebhookId('');
       setPaypalMeta(payload.paypal ?? null);
       setMessageTone(payload.planSyncError ? 'danger' : 'success');
       setMessage(
@@ -178,8 +256,8 @@ export const DuesSettingsModal = ({
             </Modal.Header>
             <Modal.Body className='grid gap-4'>
               <p className='text-sm text-muted-foreground'>
-                Council year, PayPal business email, and class rates (cents).
-                Requires manageDues.
+                Council year, PayPal config, and class rates (cents). Requires
+                manageDues. Saved values apply immediately (no restart).
               </p>
 
               <Form onSubmit={save} className='grid gap-4'>
@@ -207,10 +285,107 @@ export const DuesSettingsModal = ({
                   <Label>PayPal business email</Label>
                   <Input type='email' placeholder='dues@example.com' />
                   <Description>
-                    Used for PayPal Buy Now / IPN. Can also be set via
-                    PAYPAL_BUSINESS_EMAIL env (env wins for payments).
+                    Used for PayPal Buy Now / IPN. Stored config wins over
+                    PAYPAL_BUSINESS_EMAIL env.
                   </Description>
                 </TextField>
+
+                <div className='grid gap-3'>
+                  <p className='text-sm font-medium'>PayPal REST API</p>
+
+                  <Select
+                    selectedKey={paypalMode}
+                    onSelectionChange={(key) => {
+                      if (key === 'live' || key === 'sandbox') {
+                        setPaypalMode(key);
+                      }
+                    }}
+                  >
+                    <Label>Mode</Label>
+                    <Select.Trigger>
+                      <Select.Value />
+                      <Select.Indicator />
+                    </Select.Trigger>
+                    <Select.Popover>
+                      <ListBox>
+                        <ListBox.Item id='sandbox' textValue='Sandbox'>
+                          Sandbox
+                        </ListBox.Item>
+                        <ListBox.Item id='live' textValue='Live'>
+                          Live
+                        </ListBox.Item>
+                      </ListBox>
+                    </Select.Popover>
+                  </Select>
+
+                  <TextField
+                    fullWidth
+                    value={paypalClientId}
+                    onChange={setPaypalClientId}
+                  >
+                    <Label>Client ID</Label>
+                    <Input
+                      autoComplete='off'
+                      placeholder='PAYPAL_CLIENT_ID'
+                    />
+                  </TextField>
+
+                  <TextField
+                    fullWidth
+                    value={paypalClientSecret}
+                    onChange={setPaypalClientSecret}
+                  >
+                    <Label>Client secret</Label>
+                    <Input
+                      type='password'
+                      autoComplete='off'
+                      placeholder={
+                        paypalClientSecretMasked
+                          ? `Current ${paypalClientSecretMasked}`
+                          : 'PAYPAL_CLIENT_SECRET'
+                      }
+                    />
+                    <Description>
+                      Leave blank to keep the current secret.
+                    </Description>
+                  </TextField>
+
+                  <TextField
+                    fullWidth
+                    value={paypalWebhookId}
+                    onChange={setPaypalWebhookId}
+                  >
+                    <Label>Webhook ID</Label>
+                    <Input
+                      autoComplete='off'
+                      placeholder={
+                        paypalWebhookIdMasked
+                          ? `Current ${paypalWebhookIdMasked}`
+                          : 'PAYPAL_WEBHOOK_ID'
+                      }
+                    />
+                    <Description>
+                      Leave blank to keep the current webhook ID.
+                    </Description>
+                  </TextField>
+
+                  <TextField
+                    fullWidth
+                    value={paypalSubSyncIntervalMs}
+                    onChange={setPaypalSubSyncIntervalMs}
+                  >
+                    <Label>Subscription sync interval (ms)</Label>
+                    <Input
+                      type='number'
+                      min={60000}
+                      step={60000}
+                      placeholder='3600000'
+                    />
+                    <Description>
+                      Minimum 60000 (1 minute). Default 3600000 (hourly).
+                    </Description>
+                  </TextField>
+                </div>
 
                 <div className='grid gap-3'>
                   <p className='text-sm font-medium'>Rates (amount in cents)</p>

@@ -1,5 +1,6 @@
 import { getCanonicalAppOrigin } from '@/lib/app-origin';
 import { loadCouncilConfig, writeCouncilConfig } from '@/lib/council-config';
+import { maskSecret } from '@/lib/utils';
 
 const DEFAULT_SYNC_INTERVAL_MS = 60 * 60 * 1000;
 
@@ -35,13 +36,39 @@ export type PaypalSubscriptionDetails = {
   };
 };
 
-export const isPaypalRestConfigured = (): boolean => {
-  const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
-  return Boolean(clientId && clientSecret);
+export type PaypalPublicSettings = {
+  clientId: string;
+  clientSecretMasked: string | null;
+  mode: 'sandbox' | 'live';
+  webhookIdMasked: string | null;
+  subSyncIntervalMs: number;
+  restConfigured: boolean;
+  subscriptionsReady: boolean;
 };
 
+const getDuesPaypal = () => loadCouncilConfig().dues;
+
+const trimOrNull = (value: string | undefined | null): string | null => {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+};
+
+export const getPaypalClientId = (): string | null =>
+  trimOrNull(getDuesPaypal()?.paypalClientId) ??
+  trimOrNull(process.env.PAYPAL_CLIENT_ID);
+
+export const getPaypalClientSecret = (): string | null =>
+  trimOrNull(getDuesPaypal()?.paypalClientSecret) ??
+  trimOrNull(process.env.PAYPAL_CLIENT_SECRET);
+
+export const isPaypalRestConfigured = (): boolean =>
+  Boolean(getPaypalClientId() && getPaypalClientSecret());
+
 export const getPaypalMode = (): 'sandbox' | 'live' => {
+  const fromConfig = getDuesPaypal()?.paypalMode;
+  if (fromConfig === 'live' || fromConfig === 'sandbox') {
+    return fromConfig;
+  }
   const mode = process.env.PAYPAL_MODE?.trim().toLowerCase();
   return mode === 'live' ? 'live' : 'sandbox';
 };
@@ -52,6 +79,15 @@ export const getPaypalApiBase = (): string =>
     : 'https://api-m.sandbox.paypal.com';
 
 export const getPaypalSubSyncIntervalMs = (): number => {
+  const fromConfig = getDuesPaypal()?.paypalSubSyncIntervalMs;
+  if (
+    typeof fromConfig === 'number' &&
+    Number.isFinite(fromConfig) &&
+    fromConfig >= 60_000
+  ) {
+    return fromConfig;
+  }
+
   const raw = process.env.PAYPAL_SUB_SYNC_INTERVAL_MS?.trim();
   if (!raw) {
     return DEFAULT_SYNC_INTERVAL_MS;
@@ -63,13 +99,13 @@ export const getPaypalSubSyncIntervalMs = (): number => {
 };
 
 export const getPaypalPlanIdForClass = (memberClass: string): string | null => {
-  const plans = loadCouncilConfig().dues?.paypalPlans;
+  const plans = getDuesPaypal()?.paypalPlans;
   const planId = plans?.[memberClass]?.trim();
   return planId || null;
 };
 
 export const hasPaypalPlansConfigured = (): boolean => {
-  const plans = loadCouncilConfig().dues?.paypalPlans;
+  const plans = getDuesPaypal()?.paypalPlans;
   if (!plans) {
     return false;
   }
@@ -79,9 +115,27 @@ export const hasPaypalPlansConfigured = (): boolean => {
 export const isPaypalSubscriptionsReady = (): boolean =>
   isPaypalRestConfigured() && hasPaypalPlansConfigured();
 
+export const clearPaypalTokenCache = (): void => {
+  tokenCache = null;
+};
+
+export const getPaypalWebhookId = (): string | null =>
+  trimOrNull(getDuesPaypal()?.paypalWebhookId) ??
+  trimOrNull(process.env.PAYPAL_WEBHOOK_ID);
+
+export const getPaypalPublicSettings = (): PaypalPublicSettings => ({
+  clientId: getPaypalClientId() ?? '',
+  clientSecretMasked: maskSecret(getPaypalClientSecret()),
+  mode: getPaypalMode(),
+  webhookIdMasked: maskSecret(getPaypalWebhookId()),
+  subSyncIntervalMs: getPaypalSubSyncIntervalMs(),
+  restConfigured: isPaypalRestConfigured(),
+  subscriptionsReady: isPaypalSubscriptionsReady(),
+});
+
 const getBasicAuthHeader = (): string => {
-  const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
-  const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
+  const clientId = getPaypalClientId();
+  const clientSecret = getPaypalClientSecret();
   if (!clientId || !clientSecret) {
     throw new Error('PayPal REST credentials are not configured');
   }
@@ -365,9 +419,6 @@ export const verifyPaypalWebhookSignature = async (
 
   return result.verification_status === 'SUCCESS';
 };
-
-export const getPaypalWebhookId = (): string | null =>
-  process.env.PAYPAL_WEBHOOK_ID?.trim() || null;
 
 export const getAppReturnBase = (): string => {
   const origin = getCanonicalAppOrigin();
