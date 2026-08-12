@@ -1,8 +1,8 @@
 {
   "council": {
+    "name": "Example Council",
     "id": "01947a93-8372-7681-88c9-52a8b2d41666",
     "number": 1234,
-    "name": "Example Council",
     "address": {
       "street": "123 Main St",
       "city": "Anytown",
@@ -10,11 +10,11 @@
       "zipCode": "12345"
     },
     "parish": {
-      "name": "Example Parish",
       "street": "123 Church St",
       "city": "Anytown",
       "state": "NY",
-      "zipCode": "12345"
+      "zipCode": "12345",
+      "name": "Example Parish"
     },
     "meetingTimes": {
       "council": {
@@ -77,25 +77,41 @@
     "membershipNumber": "1001001"
   },
   "permissions": {
-    "sendCouncilEmail": ["1001001"],
-    "managePermissions": ["1001001"],
-    "manageEvents": ["1001001"],
-    "manageGalleries": ["1001001"],
-    "manageRoster": ["1001001"],
-    "manageOfficers": ["1001001"],
-    "manageDues": ["1001001"],
-    "viewAuditLog": ["1001001"]
+    "sendCouncilEmail": [
+      "1001001"
+    ],
+    "managePermissions": [
+      "1001001"
+    ],
+    "manageEvents": [
+      "1001001"
+    ],
+    "manageGalleries": [
+      "1001001"
+    ],
+    "manageRoster": [
+      "1001001"
+    ],
+    "manageOfficers": [
+      "1001001"
+    ],
+    "manageDues": [
+      "1001001"
+    ],
+    "viewAuditLog": [
+      "1001001"
+    ]
   },
   "dues": {
     "councilYear": "2025-2026",
-    "currency": "USD",
-    "paypalBusinessEmail": "dues@example.com",
-    "paypalProductId": "",
-    "paypalPlans": {},
     "rates": {
       "R": 4000,
       "L": 2000,
       "H": 1000
-    }
+    },
+    "currency": "USD",
+    "paypalBusinessEmail": "dues@example.com",
+    "paypalProductId": "",
+    "paypalPlans": {}
   }
 }

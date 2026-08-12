@@ -9,6 +9,9 @@ const allowedDevOrigins = process.env.ALLOWED_DEV_ORIGINS
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Keep drizzle unbundled. Rolldown otherwise splits orm + schema into
+  // circular ESM chunks; Table is undefined → `.Symbol` crash on start.
+  serverExternalPackages: ['drizzle-orm'],
   images: {
     loader: 'custom',
     loaderFile: './src/lib/image-loader.ts',
