@@ -8,7 +8,7 @@ import {
 } from '@/lib/dues';
 import { isImmichConfigured } from '@/lib/immich/client';
 import { canViewRoster, isFinancialSecretary } from '@/lib/officers';
-import { hasPermission } from '@/lib/permissions-sync';
+import { hasPermission, isWebmaster } from '@/lib/permissions-sync';
 import { centsToDollars, formatMemberName } from '@/lib/utils';
 
 export type MemberNavLink = {
@@ -123,6 +123,13 @@ export const buildMemberNavLinks = async (
 
   if (canAudit) {
     admin.push({ href: '/members/admin/audit', label: 'Audit Log' });
+  }
+
+  if (isWebmaster(membershipNumber)) {
+    admin.push({
+      href: '/members/admin/impersonate',
+      label: 'Impersonate',
+    });
   }
 
   return { member, admin };

@@ -270,7 +270,7 @@ export default function OfficersAdminPage() {
                     }
                   >
                     <Label>Membership number</Label>
-                    <Input placeholder='2302265' />
+                    <Input placeholder='e.g. 0000000' />
                   </TextField>
                   <Button
                     type='button'

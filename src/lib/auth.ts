@@ -1,7 +1,7 @@
 import type { BetterAuthOptions } from 'better-auth';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { username } from 'better-auth/plugins';
+import { admin, username } from 'better-auth/plugins';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db';
 import { authSchema, user } from '@/db/schema';
@@ -28,6 +28,12 @@ const authOptions = {
       usernameNormalization: false,
       usernameValidator: (value) => /^\d+$/.test(value),
     }),
+    admin({
+      defaultRole: 'user',
+      adminRoles: ['admin'],
+      // Troubleshooting windows; webmaster can re-impersonate if needed.
+      impersonationSessionDuration: 60 * 60 * 4,
+    }),
   ],
   session: {
     expiresIn: 60 * 60 * 24 * 7,
@@ -40,6 +46,10 @@ const authOptions = {
     session: {
       create: {
         after: async (session) => {
+          // Impersonation creates a session too — skip login noise.
+          if (session.impersonatedBy) {
+            return;
+          }
           const accountUser = await db.query.user.findFirst({
             where: eq(user.id, session.userId),
           });

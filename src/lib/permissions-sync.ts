@@ -1,8 +1,8 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull, ne, or } from 'drizzle-orm';
 import { db } from '@/db';
-import { appMeta, duesRates, permissions } from '@/db/schema';
+import { appMeta, duesRates, permissions, user } from '@/db/schema';
 import { loadCouncilConfig, writeCouncilConfig } from '@/lib/council-config';
 import { getCouncilJsonPath } from '@/lib/council-paths';
 import {
@@ -90,6 +90,40 @@ export const isWebmaster = (membershipNumber: string): boolean => {
   return config.webmaster?.membershipNumber === membershipNumber;
 };
 
+/** Keep Better Auth `admin` role aligned with council.json webmaster. */
+export const syncWebmasterAuthRole = async (): Promise<void> => {
+  const webmaster = loadCouncilConfig().webmaster?.membershipNumber ?? null;
+
+  if (webmaster) {
+    await db
+      .update(user)
+      .set({ role: 'admin' })
+      .where(eq(user.username, webmaster));
+
+    await db
+      .update(user)
+      .set({ role: 'user' })
+      .where(and(eq(user.role, 'admin'), ne(user.username, webmaster)));
+
+    await db
+      .update(user)
+      .set({ role: 'user' })
+      .where(
+        and(
+          or(isNull(user.role), eq(user.role, '')),
+          ne(user.username, webmaster),
+        ),
+      );
+    return;
+  }
+
+  await db.update(user).set({ role: 'user' }).where(eq(user.role, 'admin'));
+  await db
+    .update(user)
+    .set({ role: 'user' })
+    .where(or(isNull(user.role), eq(user.role, '')));
+};
+
 export const hashCouncilJsonContent = (): string | null => {
   const configPath = getCouncilJsonPath();
   if (!fs.existsSync(configPath)) {
@@ -143,6 +177,7 @@ export const ensureCouncilConfigSynced = async (): Promise<void> => {
 
   await syncPermissionsFromJson();
   await syncDuesFromJson();
+  await syncWebmasterAuthRole();
 
   const nextHash = hashCouncilJsonContent() ?? hash;
   await db
