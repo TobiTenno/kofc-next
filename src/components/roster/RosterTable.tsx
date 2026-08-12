@@ -16,7 +16,7 @@ import {
   TextField,
   useOverlayState,
 } from '@heroui/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import type { RosterMemberRow } from '@/lib/roster';
 
@@ -55,6 +55,8 @@ type RosterTableProps = {
   paidMembershipNumbers?: string[];
   showDuesTools?: boolean;
 };
+
+const EMPTY_PAID_MEMBERSHIP_NUMBERS: string[] = [];
 
 const compareStrings = (left: string, right: string): number =>
   left.localeCompare(right, undefined, { sensitivity: 'base' });
@@ -374,7 +376,7 @@ export const RosterTable = ({
   canSendEmail = false,
   councilYear = null,
   members,
-  paidMembershipNumbers = [],
+  paidMembershipNumbers = EMPTY_PAID_MEMBERSHIP_NUMBERS,
   showDuesTools = false,
 }: RosterTableProps) => {
   const [query, setQuery] = useState('');
@@ -400,10 +402,6 @@ export const RosterTable = ({
   );
   const columnCount
     = 6 + (showDuesTools ? 1 : 0) + (enableRowSelection ? 1 : 0);
-
-  useEffect(() => {
-    setPage(1);
-  }, []);
 
   const filteredMembers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -562,12 +560,9 @@ export const RosterTable = ({
     Math.ceil(sortedMembers.length / ROWS_PER_PAGE),
   );
   const safePage = Math.min(page, totalPages);
-
-  useEffect(() => {
-    if (page !== safePage) {
-      setPage(safePage);
-    }
-  }, [page, safePage]);
+  if (page !== safePage) {
+    setPage(safePage);
+  }
 
   const paginatedRows = useMemo(() => {
     const start = (safePage - 1) * ROWS_PER_PAGE;

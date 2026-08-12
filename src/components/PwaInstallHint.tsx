@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 };
+
+const emptySubscribe = (): (() => void) => () => {};
 
 const isStandalone = (): boolean => {
   if (typeof window === 'undefined') {
@@ -31,26 +33,39 @@ const isIosSafari = (): boolean => {
   return iOS && webkit && !chromeIos;
 };
 
+const readDismissed = (): boolean => {
+  try {
+    return sessionStorage.getItem('pwa-install-dismissed') === '1';
+  }
+  catch {
+    return false;
+  }
+};
+
 export const PwaInstallHint = () => {
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(
     null,
   );
   const [showIosTip, setShowIosTip] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [didHydrate, setDidHydrate] = useState(false);
+
+  if (isClient && !didHydrate) {
+    setDidHydrate(true);
+    setDismissed(readDismissed());
+    if (!isStandalone() && isIosSafari()) {
+      setShowIosTip(true);
+    }
+  }
 
   useEffect(() => {
-    if (isStandalone()) {
+    if (isStandalone() || dismissed) {
       return;
-    }
-
-    try {
-      if (sessionStorage.getItem('pwa-install-dismissed') === '1') {
-        setDismissed(true);
-        return;
-      }
-    }
-    catch {
-      // ignore
     }
 
     const onBeforeInstall = (event: Event): void => {
@@ -60,14 +75,10 @@ export const PwaInstallHint = () => {
 
     globalThis.addEventListener('beforeinstallprompt', onBeforeInstall);
 
-    if (isIosSafari()) {
-      setShowIosTip(true);
-    }
-
     return () => {
       globalThis.removeEventListener('beforeinstallprompt', onBeforeInstall);
     };
-  }, []);
+  }, [dismissed]);
 
   const dismiss = (): void => {
     setDismissed(true);

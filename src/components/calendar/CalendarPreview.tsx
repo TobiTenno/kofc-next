@@ -8,7 +8,14 @@ import {
   ToggleButtonGroup,
 } from '@heroui/react';
 import { usePathname, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   Calendar,
   dayjsLocalizer,
@@ -145,22 +152,61 @@ export const CalendarPreview = ({
 
   const [view, setView] = useState<View>(Views.MONTH);
   const [calendarReady, setCalendarReady] = useState(false);
-  const [date, setDate] = useState(new Date());
+  const [date, setDate] = useState(() => new Date());
   const [events, setEvents] = useState(initialEvents);
+  const [prevInitialEvents, setPrevInitialEvents] = useState(initialEvents);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(
     null,
   );
+  const pathKey = `${pathname}|${calendarBasePath}`;
+  const [prevPathKey, setPrevPathKey] = useState(pathKey);
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
-  useEffect(() => {
+  if (initialEvents !== prevInitialEvents) {
+    setPrevInitialEvents(initialEvents);
     setEvents(initialEvents);
-  }, [initialEvents]);
+  }
+
+  const pathView = parseCalendarViewFromPathname(pathname, calendarBasePath);
+  if (pathKey !== prevPathKey) {
+    setPrevPathKey(pathKey);
+    if (pathView) {
+      setView(pathView);
+    }
+  }
+
+  if (isClient && !calendarReady) {
+    setCalendarReady(true);
+    if (!pathView) {
+      setView(defaultCalendarViewSegment());
+    }
+  }
+
+  const didPersistDefaultRef = useRef(false);
 
   useEffect(() => {
+    if (!calendarReady || didPersistDefaultRef.current) {
+      return;
+    }
+    if (parseCalendarViewFromPathname(pathname, calendarBasePath)) {
+      return;
+    }
+    didPersistDefaultRef.current = true;
+    persistView(view);
+  }, [calendarBasePath, calendarReady, pathname, persistView, view]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
     const syncCalendar = async (): Promise<void> => {
       const browserContext = getBrowserCalendarContext();
       await syncCalendarContextCookies(browserContext);
 
-      if (!refreshEventsFrom) {
+      if (!refreshEventsFrom || controller.signal.aborted) {
         return;
       }
 
@@ -171,6 +217,7 @@ export const CalendarPreview = ({
       const response = await fetch(refreshEventsFrom, {
         credentials: 'include',
         headers: calendarRequestHeaders(browserContext),
+        signal: controller.signal,
       });
       if (!response.ok) {
         return;
@@ -182,23 +229,14 @@ export const CalendarPreview = ({
       setEvents(payload.events);
     };
 
-    void syncCalendar();
+    void syncCalendar().catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+    });
+
+    return () => controller.abort();
   }, [refreshEventsFrom, serverTimeZone]);
-
-  useEffect(() => {
-    const pathView = parseCalendarViewFromPathname(pathname, calendarBasePath);
-
-    if (pathView) {
-      setView(pathView);
-    }
-    else {
-      const defaultView = defaultCalendarViewSegment();
-      setView(defaultView);
-      persistView(defaultView);
-    }
-
-    setCalendarReady(true);
-  }, [calendarBasePath, pathname, persistView]);
 
   useEffect(() => {
     if (!calendarReady) {

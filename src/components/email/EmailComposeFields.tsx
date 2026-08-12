@@ -1,4 +1,9 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import {
+  type Ref,
+  useEffect,
+  useImperativeHandle,
+  useState,
+} from 'react';
 
 export type EmailComposeFieldsHandle = {
   getValues: () => { subject: string; text: string };
@@ -9,27 +14,23 @@ type EmailComposeFieldsProps = {
   autoFocusSubject?: boolean;
   messageId?: string;
   messageMinHeightClass?: string;
+  ref?: Ref<EmailComposeFieldsHandle>;
   subjectId?: string;
 };
 
 const fieldLabelClass = 'text-sm font-medium text-foreground';
 const inputClass
-  = 'input input--primary input--full-width min-h-10 text-foreground';
+  = 'input input--primary input--full-width min-h-10 text-base';
 const textareaClass
-  = 'textarea textarea--primary textarea--full-width min-h-28 text-foreground';
+  = 'textarea textarea--primary textarea--full-width min-h-28 text-base';
 
-export const EmailComposeFields = forwardRef<
-  EmailComposeFieldsHandle,
-  EmailComposeFieldsProps
->(function EmailComposeFields(
-  {
-    autoFocusSubject = false,
-    messageId = 'email-message',
-    messageMinHeightClass = 'min-h-28',
-    subjectId = 'email-subject',
-  },
+export function EmailComposeFields({
+  autoFocusSubject = false,
+  messageId = 'email-message',
+  messageMinHeightClass = 'min-h-28',
   ref,
-) {
+  subjectId = 'email-subject',
+}: EmailComposeFieldsProps) {
   const [subject, setSubject] = useState('');
   const [text, setText] = useState('');
 
@@ -87,4 +88,4 @@ export const EmailComposeFields = forwardRef<
       </div>
     </>
   );
-});
+}

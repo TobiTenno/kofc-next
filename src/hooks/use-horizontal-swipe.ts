@@ -9,23 +9,23 @@ export const useHorizontalSwipe = (options: {
   onSwipeLeft: () => void;
   onSwipeRight: () => void;
 }) => {
-  const start = useRef<null | { x: number; y: number }>(null);
+  const startRef = useRef<null | { x: number; y: number }>(null);
 
   return {
     onTouchEnd: (event: React.TouchEvent) => {
-      if (options.enabled === false || !start.current) {
+      if (options.enabled === false || !startRef.current) {
         return;
       }
 
       const touch = event.changedTouches[0];
       if (!touch) {
-        start.current = null;
+        startRef.current = null;
         return;
       }
 
-      const deltaX = touch.clientX - start.current.x;
-      const deltaY = touch.clientY - start.current.y;
-      start.current = null;
+      const deltaX = touch.clientX - startRef.current.x;
+      const deltaY = touch.clientY - startRef.current.y;
+      startRef.current = null;
 
       if (
         Math.abs(deltaX) < SWIPE_THRESHOLD_PX
@@ -51,7 +51,7 @@ export const useHorizontalSwipe = (options: {
         return;
       }
 
-      start.current = { x: touch.clientX, y: touch.clientY };
+      startRef.current = { x: touch.clientX, y: touch.clientY };
     },
   };
 };

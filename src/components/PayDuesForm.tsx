@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import { maskMemberName } from '@/lib/utils';
 
@@ -20,20 +20,18 @@ type LookupResult = {
 
 export default function PayDuesForm({ appUrl }: { appUrl: string }) {
   const searchParams = useSearchParams();
-  const [membershipNumber, setMembershipNumber] = useState(
-    searchParams.get('member') ?? '',
-  );
+  const memberPreset = searchParams.get('member') ?? '';
+  const [membershipNumber, setMembershipNumber] = useState(memberPreset);
+  const [prevMemberPreset, setPrevMemberPreset] = useState(memberPreset);
   const [lastName, setLastName] = useState('');
   const [result, setResult] = useState<LookupResult | null>(null);
   const [error, setError] = useState<null | string>(null);
   const [subscribeBusy, setSubscribeBusy] = useState(false);
 
-  useEffect(() => {
-    const preset = searchParams.get('member');
-    if (preset) {
-      setMembershipNumber(preset);
-    }
-  }, [searchParams]);
+  if (memberPreset !== prevMemberPreset) {
+    setPrevMemberPreset(memberPreset);
+    setMembershipNumber(memberPreset);
+  }
 
   const lookup = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();

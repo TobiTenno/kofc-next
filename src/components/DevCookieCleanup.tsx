@@ -10,13 +10,21 @@ export const DevCookieCleanup = () => {
   const pathname = usePathname();
 
   // Re-prune on every client navigation — pathname drives the effect schedule.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: intentional per-route dev cleanup
   useEffect(() => {
+    const controller = new AbortController();
+
     void fetch('/api/dev/prune-cookies', {
       cache: 'no-store',
       credentials: 'include',
       method: 'POST',
+      signal: controller.signal,
+    }).catch((error: unknown) => {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
     });
+
+    return () => controller.abort();
   }, [pathname]);
 
   return null;

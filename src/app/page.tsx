@@ -32,33 +32,21 @@ export default function Home() {
                 width={512}
               />
               <Typography component='h1' gutterBottom variant='h4'>
-                Council #
-                {council.number}
+                {`Council #${council.number}`}
               </Typography>
               <Typography
                 classes='dark:text-white not-dark:text-black'
                 component='h2'
                 variant='h6'
               >
-                {council.number}
-                {' '}
-                -
-                {council.parish.name}
+                {`${council.number} - ${council.parish.name}`}
               </Typography>
               <Typography
                 classes='dark:text-white not-dark:text-black'
                 component='p'
                 variant='body2'
               >
-                Meeting at
-                {' '}
-                {council.meetingTimes.council.time}
-                {' '}
-                {council.meetingTimes.council.frequency}
-                {' '}
-                on the
-                {' '}
-                {council.meetingTimes.council.day}
+                {`Meeting at ${council.meetingTimes.council.time} ${council.meetingTimes.council.frequency} on the ${council.meetingTimes.council.day}`}
               </Typography>
             </div>
           </div>

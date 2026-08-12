@@ -31,36 +31,75 @@ export const GalleryDetail = () => {
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<null | string>(null);
 
-  const load = useCallback(async (): Promise<void> => {
-    setError(null);
+  const load = useCallback(
+    async (signal?: AbortSignal): Promise<void> => {
+      const response = await fetch(`/api/members/galleries/${galleryId}`, {
+        signal,
+      });
+      if (response.status === 404) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
 
-    const response = await fetch(`/api/members/galleries/${galleryId}`);
-    if (response.status === 404) {
-      setNotFound(true);
+      const payload = (await response.json()) as {
+        assets?: GalleryAsset[];
+        error?: string;
+        gallery?: GalleryDetail;
+      };
+
+      if (!response.ok) {
+        setError(payload.error ?? 'Could not load gallery');
+        setLoading(false);
+        return;
+      }
+
+      setError(null);
+      setGallery(payload.gallery ?? null);
+      setAssets(payload.assets ?? []);
       setLoading(false);
-      return;
-    }
-
-    const payload = (await response.json()) as {
-      assets?: GalleryAsset[];
-      error?: string;
-      gallery?: GalleryDetail;
-    };
-
-    if (!response.ok) {
-      setError(payload.error ?? 'Could not load gallery');
-      setLoading(false);
-      return;
-    }
-
-    setGallery(payload.gallery ?? null);
-    setAssets(payload.assets ?? []);
-    setLoading(false);
-  }, [galleryId]);
+    },
+    [galleryId],
+  );
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    const controller = new AbortController();
+
+    void fetch(`/api/members/galleries/${galleryId}`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (response.status === 404) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          assets?: GalleryAsset[];
+          error?: string;
+          gallery?: GalleryDetail;
+        };
+
+        if (!response.ok) {
+          setError(payload.error ?? 'Could not load gallery');
+          setLoading(false);
+          return;
+        }
+
+        setError(null);
+        setGallery(payload.gallery ?? null);
+        setAssets(payload.assets ?? []);
+        setLoading(false);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      });
+
+    return () => controller.abort();
+  }, [galleryId]);
 
   if (loading) {
     return <p>Loading…</p>;

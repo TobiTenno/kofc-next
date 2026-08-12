@@ -11,36 +11,45 @@ export const PwaRegister = () => {
     }
 
     let registration: ServiceWorkerRegistration | undefined;
+    let installingWorker: null | ServiceWorker = null;
 
     const onControllerChange = (): void => {
       // New SW took control — reload once to get fresh assets.
       location.reload();
     };
 
+    const onStateChange = (): void => {
+      if (
+        installingWorker?.state === 'installed'
+        && navigator.serviceWorker.controller
+      ) {
+        setUpdateReady(true);
+      }
+    };
+
+    const onUpdateFound = (): void => {
+      installingWorker = registration?.installing ?? null;
+      if (!installingWorker) {
+        return;
+      }
+      installingWorker.addEventListener('statechange', onStateChange);
+    };
+
+    const bindRegistration = (reg: ServiceWorkerRegistration): void => {
+      registration = reg;
+
+      if (reg.waiting) {
+        setUpdateReady(true);
+      }
+
+      // Listener removed in effect cleanup via `registration`.
+      // eslint-disable-next-line @eslint-react/web-api-no-leaked-event-listener -- cleaned up below
+      reg.addEventListener('updatefound', onUpdateFound);
+    };
+
     void navigator.serviceWorker
       .register('/sw.js', { scope: '/' })
-      .then((reg) => {
-        registration = reg;
-
-        if (reg.waiting) {
-          setUpdateReady(true);
-        }
-
-        reg.addEventListener('updatefound', () => {
-          const worker = reg.installing;
-          if (!worker) {
-            return;
-          }
-          worker.addEventListener('statechange', () => {
-            if (
-              worker.state === 'installed'
-              && navigator.serviceWorker.controller
-            ) {
-              setUpdateReady(true);
-            }
-          });
-        });
-      })
+      .then(bindRegistration)
       .catch(() => {});
 
     navigator.serviceWorker.addEventListener(
@@ -53,7 +62,8 @@ export const PwaRegister = () => {
         'controllerchange',
         onControllerChange,
       );
-      void registration;
+      registration?.removeEventListener('updatefound', onUpdateFound);
+      installingWorker?.removeEventListener('statechange', onStateChange);
     };
   }, []);
 

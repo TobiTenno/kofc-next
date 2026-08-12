@@ -11,7 +11,7 @@ import {
   Table,
   TextField,
 } from '@heroui/react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 const ROWS_PER_PAGE = 25;
 const SYSTEM_ACTOR = 'system';
@@ -166,18 +166,23 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
     1,
     Math.ceil(sortedEvents.length / ROWS_PER_PAGE),
   );
-  const safePage = Math.min(page, totalPages);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset page when filters change
-  useEffect(() => {
+  const filterKey = [
+    actionFilter,
+    actorFilter,
+    fromDate,
+    query,
+    toDate,
+  ].join('|');
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (filterKey !== prevFilterKey) {
+    setPrevFilterKey(filterKey);
     setPage(1);
-  }, [actionFilter, actorFilter, fromDate, query, toDate]);
+  }
 
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
+  const safePage = Math.min(page, totalPages);
+  if (page !== safePage) {
+    setPage(safePage);
+  }
 
   const pageStart
     = sortedEvents.length === 0 ? 0 : (safePage - 1) * ROWS_PER_PAGE + 1;

@@ -3,11 +3,11 @@
 import {
   createContext,
   type ReactNode,
-  useCallback,
-  useContext,
+  use,
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
 } from 'react';
 
 import {
@@ -24,13 +24,21 @@ type ColorSchemeContextValue = {
 
 const ColorSchemeContext = createContext<ColorSchemeContextValue | null>(null);
 
-export const ColorSchemeProvider = ({ children }: { children: ReactNode }) => {
-  const [preference, setPreferenceState]
-    = useState<ColorSchemePreference>('system');
+const emptySubscribe = (): (() => void) => () => {};
 
-  useEffect(() => {
-    setPreferenceState(readStoredColorScheme());
-  }, []);
+export const ColorSchemeProvider = ({ children }: { children: ReactNode }) => {
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+  const [preference, setPreference] = useState<ColorSchemePreference>('system');
+  const [didHydrate, setDidHydrate] = useState(false);
+
+  if (isClient && !didHydrate) {
+    setDidHydrate(true);
+    setPreference(readStoredColorScheme());
+  }
 
   useEffect(() => {
     applyColorScheme(preference);
@@ -46,24 +54,16 @@ export const ColorSchemeProvider = ({ children }: { children: ReactNode }) => {
     return () => media.removeEventListener('change', syncSystem);
   }, [preference]);
 
-  const setPreference = useCallback((next: ColorSchemePreference): void => {
-    setPreferenceState(next);
-  }, []);
-
   const value = useMemo(
     () => ({ preference, setPreference }),
-    [preference, setPreference],
+    [preference],
   );
 
-  return (
-    <ColorSchemeContext.Provider value={value}>
-      {children}
-    </ColorSchemeContext.Provider>
-  );
+  return <ColorSchemeContext value={value}>{children}</ColorSchemeContext>;
 };
 
 export const useColorScheme = (): ColorSchemeContextValue => {
-  const context = useContext(ColorSchemeContext);
+  const context = use(ColorSchemeContext);
   if (!context) {
     throw new Error('useColorScheme must be used within ColorSchemeProvider');
   }

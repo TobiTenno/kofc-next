@@ -67,7 +67,9 @@ export default function OfficersAdminPage() {
   );
 
   useEffect(() => {
-    void fetch('/api/members/admin/officers')
+    const controller = new AbortController();
+
+    void fetch('/api/members/admin/officers', { signal: controller.signal })
       .then(async (response) => {
         const payload = (await response.json()) as {
           error?: string;
@@ -87,7 +89,18 @@ export default function OfficersAdminPage() {
         }
         setOfficers((payload.officers ?? []).map(toDraft));
       })
-      .finally(() => setLoading(false));
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      });
+
+    return () => controller.abort();
   }, []);
 
   const updateOfficer = (index: number, patch: Partial<OfficerDraft>): void => {

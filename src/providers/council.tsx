@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, type ReactNode, useContext } from 'react';
+import { createContext, type ReactNode, use } from 'react';
 
 import type { CouncilConfig } from '@/types/council';
 
@@ -15,13 +15,11 @@ export default function CouncilProvider({
   children,
   value,
 }: CouncilProviderProps) {
-  return (
-    <CouncilContext.Provider value={value}>{children}</CouncilContext.Provider>
-  );
+  return <CouncilContext value={value}>{children}</CouncilContext>;
 }
 
 export const useConfig = (): CouncilConfig => {
-  const context = useContext(CouncilContext);
+  const context = use(CouncilContext);
   if (!context) {
     return {
       complete: false,

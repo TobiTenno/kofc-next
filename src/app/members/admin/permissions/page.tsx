@@ -31,7 +31,11 @@ export default function PermissionsAdminPage() {
   );
 
   useEffect(() => {
-    void fetch('/api/members/admin/permissions')
+    const controller = new AbortController();
+
+    void fetch('/api/members/admin/permissions', {
+      signal: controller.signal,
+    })
       .then(response => response.json())
       .then((payload) => {
         if (!payload.permissions) {
@@ -43,7 +47,14 @@ export default function PermissionsAdminPage() {
           next[key] = formatMembershipNumbers(payload.permissions[key] ?? []);
         }
         setDrafts(next);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
       });
+
+    return () => controller.abort();
   }, []);
 
   const save = async (key: PermissionKey): Promise<void> => {

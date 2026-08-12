@@ -35,15 +35,28 @@ export default function EventsAdminPage() {
     'success',
   );
 
-  const load = useCallback(async (): Promise<void> => {
-    const response = await fetch('/api/members/admin/events');
+  const load = useCallback(async (signal?: AbortSignal): Promise<void> => {
+    const response = await fetch('/api/members/admin/events', { signal });
     const payload = (await response.json()) as { events?: EventRow[] };
     setEvents(payload.events ?? []);
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    const controller = new AbortController();
+
+    void fetch('/api/members/admin/events', { signal: controller.signal })
+      .then(async (response) => {
+        const payload = (await response.json()) as { events?: EventRow[] };
+        setEvents(payload.events ?? []);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
 
   const create = async (event: React.FormEvent): Promise<void> => {
     event.preventDefault();

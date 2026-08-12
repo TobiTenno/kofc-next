@@ -15,7 +15,9 @@ export default function AuditAdminPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    void fetch('/api/members/admin/audit')
+    const controller = new AbortController();
+
+    void fetch('/api/members/admin/audit', { signal: controller.signal })
       .then(async (response) => {
         const payload = (await response.json()) as {
           error?: string;
@@ -27,7 +29,18 @@ export default function AuditAdminPage() {
         }
         setEvents(payload.events ?? []);
       })
-      .finally(() => setLoading(false));
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      });
+
+    return () => controller.abort();
   }, []);
 
   return (

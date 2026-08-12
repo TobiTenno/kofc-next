@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { MemberNavGroups, MemberNavMeta } from '@/lib/member-nav';
@@ -66,21 +66,23 @@ export const SiteNav = ({
   const pathname = usePathname();
   const menuId = useId();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const links = navLinks(membershipNumber, showPayDuesLink);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    if (menuOpen) {
+      setMenuOpen(false);
+    }
+  }
 
   const isActivePath = (href: string): boolean =>
     pathname === href || pathname.startsWith(`${href}/`);
-
-  // Close mobile menu after client navigations.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname drives close-on-navigate
-  useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
 
   useEffect(() => {
     if (!menuOpen) {

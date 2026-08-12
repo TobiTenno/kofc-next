@@ -80,10 +80,12 @@ const formatAgendaTime = (
   return localizer.format(start, 'agendaTimeFormat');
 };
 
+const EMPTY_AGENDA_EVENTS: CalendarPreviewEvent[] = [];
+
 const AgendaCardView = ({
   accessors,
   date,
-  events = [],
+  events = EMPTY_AGENDA_EVENTS,
   length = DEFAULT_LENGTH,
   localizer,
   onSelectEvent,

@@ -58,35 +58,99 @@ export const GalleriesAdmin = ({
   );
   const [submitting, setSubmitting] = useState(false);
 
-  const loadGalleries = useCallback(async (): Promise<void> => {
-    const response = await fetch('/api/members/admin/galleries');
-    const payload = (await response.json()) as { galleries?: AdminGallery[] };
-    setGalleries(payload.galleries ?? []);
-  }, []);
+  const loadGalleries = useCallback(
+    async (signal?: AbortSignal): Promise<void> => {
+      const response = await fetch('/api/members/admin/galleries', { signal });
+      const payload = (await response.json()) as { galleries?: AdminGallery[] };
+      setGalleries(payload.galleries ?? []);
+    },
+    [],
+  );
 
-  const loadImmichAlbums = useCallback(async (): Promise<void> => {
-    setAlbumsLoading(true);
-    const response = await fetch('/api/members/admin/galleries/immich-albums');
-    const payload = (await response.json()) as {
-      albums?: ImmichAlbumOption[];
-      error?: string;
-    };
+  const loadImmichAlbums = useCallback(
+    async (signal?: AbortSignal): Promise<void> => {
+      if (!signal) {
+        setAlbumsLoading(true);
+      }
+      try {
+        const response = await fetch(
+          '/api/members/admin/galleries/immich-albums',
+          { signal },
+        );
+        const payload = (await response.json()) as {
+          albums?: ImmichAlbumOption[];
+          error?: string;
+        };
 
-    if (response.ok) {
-      setImmichAlbums(payload.albums ?? []);
-    }
-    else {
-      setMessage(payload.error ?? 'Could not load Immich albums');
-      setMessageTone('danger');
-    }
-
-    setAlbumsLoading(false);
-  }, []);
+        if (response.ok) {
+          setImmichAlbums(payload.albums ?? []);
+        }
+        else {
+          setMessage(payload.error ?? 'Could not load Immich albums');
+          setMessageTone('danger');
+        }
+      }
+      catch (error: unknown) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        throw error;
+      }
+      finally {
+        if (!signal?.aborted) {
+          setAlbumsLoading(false);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    void loadGalleries();
-    void loadImmichAlbums();
-  }, [loadImmichAlbums, loadGalleries]);
+    const controller = new AbortController();
+
+    void fetch('/api/members/admin/galleries', { signal: controller.signal })
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          galleries?: AdminGallery[];
+        };
+        setGalleries(payload.galleries ?? []);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      });
+
+    void fetch('/api/members/admin/galleries/immich-albums', {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          albums?: ImmichAlbumOption[];
+          error?: string;
+        };
+
+        if (response.ok) {
+          setImmichAlbums(payload.albums ?? []);
+        }
+        else {
+          setMessage(payload.error ?? 'Could not load Immich albums');
+          setMessageTone('danger');
+        }
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setAlbumsLoading(false);
+        }
+      });
+
+    return () => controller.abort();
+  }, []);
 
   const selectedAlbum = useMemo(
     () => immichAlbums.find(album => album.id === albumChoice) ?? null,

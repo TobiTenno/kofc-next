@@ -50,8 +50,12 @@ export const GallerySettingsModal = ({
       return;
     }
 
-    void fetch('/api/members/admin/galleries/settings').then(
-      async (response) => {
+    const controller = new AbortController();
+
+    void fetch('/api/members/admin/galleries/settings', {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
         const payload = (await response.json()) as {
           error?: string;
           settings?: ImmichSettings;
@@ -69,8 +73,14 @@ export const GallerySettingsModal = ({
         setUrl(next.url);
         setDeviceId(next.deviceId);
         setMaxUploadMb(String(next.maxUploadMb));
-      },
-    );
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      });
+
+    return () => controller.abort();
   }, [isOpen]);
 
   const save = async (event: React.FormEvent): Promise<void> => {

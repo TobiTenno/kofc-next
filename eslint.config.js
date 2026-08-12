@@ -56,6 +56,11 @@ export default defineConfig([
       sourceType: 'module',
     },
     rules: {
+      '@eslint-react/dom-no-missing-button-type': 'error',
+      '@eslint-react/dom-no-missing-iframe-sandbox': 'error',
+      '@eslint-react/dom-no-unsafe-target-blank': 'error',
+      '@eslint-react/no-unstable-context-value': 'warn',
+      '@eslint-react/no-unstable-default-props': 'warn',
       '@stylistic/jsx-quotes': ['error', 'prefer-single'],
       '@stylistic/multiline-ternary': 'off',
       '@typescript-eslint/no-floating-promises': 'error',
@@ -74,8 +79,6 @@ export default defineConfig([
       ],
       '@typescript-eslint/require-await': 'off',
       'no-useless-assignment': 'off',
-      // Common for hydration / preference sync; keep visible as warn
-      'react-hooks/set-state-in-effect': 'warn',
       'unicorn/no-array-sort': 'off',
       'unicorn/no-declarations-before-early-exit': 'off',
       'unicorn/no-empty-file': 'off',
@@ -96,6 +99,7 @@ export default defineConfig([
     extends: [...tseslint.configs.recommendedTypeCheckedOnly],
     files: tsFiles,
     rules: {
+      '@eslint-react/no-leaked-conditional-rendering': 'error',
       '@typescript-eslint/no-misused-promises': [
         'error',
         { checksVoidReturn: { attributes: false } },

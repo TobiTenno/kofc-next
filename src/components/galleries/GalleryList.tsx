@@ -21,7 +21,9 @@ export const GalleryList = () => {
   const [error, setError] = useState<null | string>(null);
 
   useEffect(() => {
-    void fetch('/api/members/galleries')
+    const controller = new AbortController();
+
+    void fetch('/api/members/galleries', { signal: controller.signal })
       .then(async (response) => {
         const payload = (await response.json()) as {
           canManageGalleries?: boolean;
@@ -37,12 +39,19 @@ export const GalleryList = () => {
         setGalleries(payload.galleries ?? []);
         setCanManageGalleries(payload.canManageGalleries ?? false);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
         setError('Could not load galleries');
       })
       .finally(() => {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       });
+
+    return () => controller.abort();
   }, []);
 
   if (loading) {

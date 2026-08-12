@@ -48,14 +48,24 @@ export default function DuesAdminPage() {
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
-    void fetch('/api/members/admin/dues').then(async (response) => {
-      const payload = (await response.json()) as {
-        canManageSettings?: boolean;
-      };
-      if (response.ok) {
-        setCanManageSettings(Boolean(payload.canManageSettings));
-      }
-    });
+    const controller = new AbortController();
+
+    void fetch('/api/members/admin/dues', { signal: controller.signal })
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          canManageSettings?: boolean;
+        };
+        if (response.ok) {
+          setCanManageSettings(Boolean(payload.canManageSettings));
+        }
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+      });
+
+    return () => controller.abort();
   }, []);
 
   const search = async (event: React.FormEvent): Promise<void> => {

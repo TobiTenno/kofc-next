@@ -112,45 +112,64 @@ export const DuesSettingsModal = ({
   const [messageTone, setMessageTone] = useState<'danger' | 'success'>(
     'success',
   );
+  const [wasOpen, setWasOpen] = useState(false);
+
+  if (isOpen && !wasOpen) {
+    setWasOpen(true);
+    setPaypalClientSecret('');
+    setPaypalWebhookId('');
+    setMessage(null);
+  }
+  else if (!isOpen && wasOpen) {
+    setWasOpen(false);
+  }
 
   useEffect(() => {
     if (!isOpen) {
       return;
     }
 
-    setPaypalClientSecret('');
-    setPaypalWebhookId('');
-    setMessage(null);
+    const controller = new AbortController();
 
-    void fetch('/api/members/admin/dues/settings').then(async (response) => {
-      const payload = (await response.json()) as {
-        error?: string;
-        paypal?: PaypalMeta;
-        settings?: DuesSettings;
-      };
-      if (!response.ok) {
-        setMessageTone('danger');
-        setMessage(payload.error ?? 'Could not load dues settings');
-        return;
-      }
-      const settings = payload.settings;
-      if (!settings) {
-        return;
-      }
-      applySettingsToForm(settings, {
-        setCouncilYear,
-        setCurrency,
-        setPaypalBusinessEmail,
-        setPaypalClientId,
-        setPaypalClientSecretMasked,
-        setPaypalMode,
-        setPaypalPlans,
-        setPaypalSubSyncIntervalMs,
-        setPaypalWebhookIdMasked,
-        setRateDrafts,
+    void fetch('/api/members/admin/dues/settings', {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const payload = (await response.json()) as {
+          error?: string;
+          paypal?: PaypalMeta;
+          settings?: DuesSettings;
+        };
+        if (!response.ok) {
+          setMessageTone('danger');
+          setMessage(payload.error ?? 'Could not load dues settings');
+          return;
+        }
+        const settings = payload.settings;
+        if (!settings) {
+          return;
+        }
+        applySettingsToForm(settings, {
+          setCouncilYear,
+          setCurrency,
+          setPaypalBusinessEmail,
+          setPaypalClientId,
+          setPaypalClientSecretMasked,
+          setPaypalMode,
+          setPaypalPlans,
+          setPaypalSubSyncIntervalMs,
+          setPaypalWebhookIdMasked,
+          setRateDrafts,
+        });
+        setPaypalMeta(payload.paypal ?? null);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
       });
-      setPaypalMeta(payload.paypal ?? null);
-    });
+
+    return () => controller.abort();
   }, [isOpen]);
 
   const save = async (event: React.FormEvent): Promise<void> => {

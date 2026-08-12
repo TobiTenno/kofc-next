@@ -88,7 +88,8 @@ export function AppRouterCacheProvider({
       <>
         {globals.map(({ name, style }) => (
           <style
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: Emotion SSR styles
+            // Emotion SSR inject — trusted generated CSS, not user content
+            // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- Emotion SSR
             dangerouslySetInnerHTML={{ __html: style }}
             data-emotion={`${registry.cache.key}-global ${name}`}
             key={name}
@@ -97,7 +98,7 @@ export function AppRouterCacheProvider({
         ))}
         {styles ? (
           <style
-            // biome-ignore lint/security/noDangerouslySetInnerHtml: Emotion SSR styles
+            // eslint-disable-next-line @eslint-react/dom-no-dangerously-set-innerhtml -- Emotion SSR
             dangerouslySetInnerHTML={{ __html: styles }}
             data-emotion={dataEmotionAttribute}
             nonce={options?.nonce}
