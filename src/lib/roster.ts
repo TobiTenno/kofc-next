@@ -9,6 +9,8 @@ import { formatMemberName } from '@/lib/utils';
 
 export type RosterMember = {
   membershipNumber: string;
+  firstName: string;
+  lastName: string;
   displayName: string;
   memberClass: string | null;
   memberClassLabel: string | null;
@@ -33,6 +35,8 @@ export const serializeRosterMembers = (
 ): RosterMemberRow[] =>
   rows.map((member) => ({
     membershipNumber: member.membershipNumber,
+    firstName: member.firstName,
+    lastName: member.lastName,
     displayName: formatMemberName(member),
     memberClass: member.memberClass,
     memberClassLabel: formatMemberClass(member.memberClass),

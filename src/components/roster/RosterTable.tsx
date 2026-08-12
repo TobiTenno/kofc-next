@@ -467,7 +467,10 @@ export const RosterTable = ({
           );
           break;
         case 'displayName':
-          result = compareStrings(left.displayName, right.displayName);
+          result = compareStrings(left.lastName, right.lastName);
+          if (result === 0) {
+            result = compareStrings(left.firstName, right.firstName);
+          }
           break;
         case 'memberClassLabel':
           result = compareNullableStrings(
@@ -905,62 +908,6 @@ export const RosterTable = ({
           ) : null}
         </div>
 
-        {enableRowSelection ? (
-          <div className='flex flex-wrap items-center gap-3 border-b border-border px-4 py-2 text-sm'>
-            <Button
-              type='button'
-              variant='ghost'
-              size='sm'
-              onPress={() =>
-                setSelectionForMembershipNumbers(
-                  filteredMembershipNumbers,
-                  !allFilteredSelected,
-                )
-              }
-            >
-              {allFilteredSelected
-                ? 'Deselect all filtered'
-                : 'Select all filtered'}
-            </Button>
-            <Button
-              type='button'
-              variant='ghost'
-              size='sm'
-              onPress={() =>
-                setSelectionForMembershipNumbers(
-                  pageMembershipNumbers,
-                  !allPageSelected,
-                )
-              }
-            >
-              {allPageSelected ? 'Deselect page' : 'Select page'}
-            </Button>
-            {selectedMembershipNumbers.size > 0 ? (
-              <>
-                <span className='text-muted-foreground'>
-                  {selectedMembershipNumbers.size} selected
-                </span>
-                <Button
-                  type='button'
-                  variant='primary'
-                  size='sm'
-                  onPress={() => setEmailModalOpen(true)}
-                >
-                  Email selected
-                </Button>
-                <Button
-                  type='button'
-                  variant='ghost'
-                  size='sm'
-                  onPress={() => setSelectedMembershipNumbers(new Set())}
-                >
-                  Clear selection
-                </Button>
-              </>
-            ) : null}
-          </div>
-        ) : null}
-
         <p className='border-b border-border px-4 py-2 text-sm text-muted-foreground'>
           Showing {sortedMembers.length === 0 ? 0 : pageStart}–{pageEnd} of{' '}
           {sortedMembers.length} filtered ({members.length} total)
@@ -1112,11 +1059,69 @@ export const RosterTable = ({
       </section>
 
       {enableRowSelection ? (
-        <RosterEmailModal
-          members={selectedMembers}
-          isOpen={emailModalOpen}
-          onOpenChange={setEmailModalOpen}
-        />
+        <>
+          <div className='pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]'>
+            <div className='pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-2 rounded-lg border border-border bg-card/95 px-3 py-2 text-sm shadow-lg backdrop-blur-sm sm:gap-3 sm:px-4'>
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                onPress={() =>
+                  setSelectionForMembershipNumbers(
+                    filteredMembershipNumbers,
+                    !allFilteredSelected,
+                  )
+                }
+              >
+                {allFilteredSelected
+                  ? 'Deselect all filtered'
+                  : 'Select all filtered'}
+              </Button>
+              <Button
+                type='button'
+                variant='ghost'
+                size='sm'
+                onPress={() =>
+                  setSelectionForMembershipNumbers(
+                    pageMembershipNumbers,
+                    !allPageSelected,
+                  )
+                }
+              >
+                {allPageSelected ? 'Deselect page' : 'Select page'}
+              </Button>
+              {selectedMembershipNumbers.size > 0 ? (
+                <>
+                  <span className='text-muted-foreground'>
+                    {selectedMembershipNumbers.size} selected
+                  </span>
+                  <Button
+                    type='button'
+                    variant='primary'
+                    size='sm'
+                    onPress={() => setEmailModalOpen(true)}
+                  >
+                    Email selected
+                  </Button>
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    onPress={() => setSelectedMembershipNumbers(new Set())}
+                  >
+                    Clear selection
+                  </Button>
+                </>
+              ) : null}
+            </div>
+          </div>
+          <div className='h-16' aria-hidden />
+          <RosterEmailModal
+            members={selectedMembers}
+            isOpen={emailModalOpen}
+            onOpenChange={setEmailModalOpen}
+          />
+        </>
       ) : null}
     </div>
   );
