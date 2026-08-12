@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { members } from '@/db/schema';
 import { recordAuditEvent } from '@/lib/audit';
@@ -10,13 +11,13 @@ import { formatMemberName, normalizeEmail } from '@/lib/utils';
 import { ALL_OFFICER_POSITIONS, type Position } from '@/schema/council';
 
 export type OfficerDraft = {
+  avatar?: string;
+  email?: string;
+  membershipNumber?: string;
   name: string;
+  phone?: string;
   position: Position;
   termEnd?: string;
-  email?: string;
-  phone?: string;
-  membershipNumber?: string;
-  avatar?: string;
 };
 
 const isPosition = (value: string): value is Position =>
@@ -101,11 +102,11 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
     cleaned.push({
       name,
       position,
-      ...(termEnd ? { termEnd } : {}),
-      ...(email ? { email } : {}),
-      ...(phone ? { phone } : {}),
-      ...(memberNumber ? { membershipNumber: memberNumber } : {}),
-      ...(avatar ? { avatar } : {}),
+      ...(termEnd && { termEnd }),
+      ...(email && { email }),
+      ...(phone && { phone }),
+      ...(memberNumber && { membershipNumber: memberNumber }),
+      ...(avatar && { avatar }),
     });
   }
 
@@ -126,19 +127,21 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
   });
 
   await recordAuditEvent({
-    actorMembershipNumber: membershipNumber,
     action: 'officers.update',
-    summary: `Updated officers list (${cleaned.length} officers)`,
+    actorMembershipNumber: membershipNumber,
     metadata: {
       count: cleaned.length,
-      positions: cleaned.map((officer) => officer.position),
+      positions: cleaned.map(officer => officer.position),
     },
+    summary: `Updated officers list (${cleaned.length} officers)`,
   });
 
   return NextResponse.json({ officers: cleaned });
 };
 
-/** Lookup roster member to fill officer name/email/phone. */
+/**
+Lookup roster member to fill officer name/email/phone.
+*/
 export const POST = async (request: Request): Promise<NextResponse> => {
   const membershipNumber = await getMembershipNumber();
   if (!membershipNumber) {
@@ -168,9 +171,9 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   return NextResponse.json({
     member: {
+      email: member.primaryEmail ? normalizeEmail(member.primaryEmail) : null,
       membershipNumber: member.membershipNumber,
       name: formatMemberName(member),
-      email: member.primaryEmail ? normalizeEmail(member.primaryEmail) : null,
       phone: member.cellPhone ?? member.residencePhone ?? null,
     },
   });

@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { members } from '@/db/schema';
 import { loadCouncilConfig } from '@/lib/council-config';
@@ -7,11 +8,11 @@ import { normalizeEmail } from '@/lib/utils';
 import { Position } from '@/schema/council';
 
 export const getFinancialSecretaryMembershipNumber = async (): Promise<
-  string | null
+  null | string
 > => {
   const config = loadCouncilConfig();
   const fsOfficer = config.council?.officers?.find(
-    (officer) => officer.position === Position.FinancialSecretary,
+    officer => officer.position === Position.FinancialSecretary,
   );
 
   if (!fsOfficer) {
@@ -41,7 +42,9 @@ export const isFinancialSecretary = async (
   return fsNumber === membershipNumber;
 };
 
-/** Dues column, dues filter, and bulk roster email — financial secretary or webmaster. */
+/**
+Dues column, dues filter, and bulk roster email — financial secretary or webmaster.
+*/
 export const canUseRosterAdminTools = async (
   membershipNumber: string,
 ): Promise<boolean> => {
@@ -52,7 +55,9 @@ export const canUseRosterAdminTools = async (
   return isFinancialSecretary(membershipNumber);
 };
 
-/** Single or bulk roster email — admin tools or sendCouncilEmail permission. */
+/**
+Single or bulk roster email — admin tools or sendCouncilEmail permission.
+*/
 export const canSendRosterEmail = async (
   membershipNumber: string,
 ): Promise<boolean> => {
@@ -63,7 +68,9 @@ export const canSendRosterEmail = async (
   return hasPermission(membershipNumber, 'sendCouncilEmail');
 };
 
-/** Council roster — webmaster, FS, manageRoster, or current officer. */
+/**
+Council roster — webmaster, FS, manageRoster, or current officer.
+*/
 export const canViewRoster = async (
   membershipNumber: string,
 ): Promise<boolean> => {

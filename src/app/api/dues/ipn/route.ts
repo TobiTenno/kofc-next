@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import {
   getMemberDuesAmount,
   getPaypalBusinessEmail,
@@ -7,9 +8,9 @@ import {
 
 const verifyIpn = async (body: string): Promise<string> => {
   const response = await fetch('https://ipnpb.paypal.com/cgi-bin/webscr', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: `cmd=_notify-validate&${body}`,
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    method: 'POST',
   });
 
   return response.text();
@@ -32,16 +33,16 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   const paypalBusinessEmail = getPaypalBusinessEmail();
 
   if (
-    paymentStatus !== 'Completed' ||
-    !txnId ||
-    !custom ||
-    !paypalBusinessEmail ||
-    business !== paypalBusinessEmail
+    paymentStatus !== 'Completed'
+    || !txnId
+    || !custom
+    || !paypalBusinessEmail
+    || business !== paypalBusinessEmail
   ) {
     return new NextResponse('OK');
   }
 
-  const [membershipNumber, councilYear] = custom.split('|');
+  const [membershipNumber, councilYear] = custom.split('|', 2);
   if (!membershipNumber || !councilYear) {
     return new NextResponse('OK');
   }
@@ -52,12 +53,12 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   await recordPaypalPayment({
-    membershipNumber,
-    councilYear,
     amountCents: dues.amountCents,
+    councilYear,
     memberClass: dues.memberClass,
-    paypalTxnId: txnId,
+    membershipNumber,
     payerEmail,
+    paypalTxnId: txnId,
   });
 
   return new NextResponse('OK');

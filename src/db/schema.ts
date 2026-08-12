@@ -2,94 +2,94 @@ import { relations, sql } from 'drizzle-orm';
 import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const user = sqliteTable('user', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
+  banExpires: integer('ban_expires', { mode: 'timestamp_ms' }),
+  banned: integer('banned', { mode: 'boolean' }).default(false),
+  banReason: text('ban_reason'),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .notNull(),
+  displayUsername: text('display_username'),
   email: text('email').notNull().unique(),
   emailVerified: integer('email_verified', { mode: 'boolean' })
     .default(false)
     .notNull(),
+  id: text('id').primaryKey(),
   image: text('image'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' })
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .notNull(),
+  name: text('name').notNull(),
+  role: text('role').default('user'),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
     .$onUpdate(() => new Date())
     .notNull(),
   username: text('username').unique(),
-  displayUsername: text('display_username'),
-  role: text('role').default('user'),
-  banned: integer('banned', { mode: 'boolean' }).default(false),
-  banReason: text('ban_reason'),
-  banExpires: integer('ban_expires', { mode: 'timestamp_ms' }),
 });
 
 export const session = sqliteTable('session', {
-  id: text('id').primaryKey(),
-  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
-  token: text('token').notNull().unique(),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
-  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+  id: text('id').primaryKey(),
+  impersonatedBy: text('impersonated_by'),
   ipAddress: text('ip_address'),
+  token: text('token').notNull().unique(),
+  updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
   userAgent: text('user_agent'),
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  impersonatedBy: text('impersonated_by'),
 });
 
 export const account = sqliteTable('account', {
-  id: text('id').primaryKey(),
-  accountId: text('account_id').notNull(),
-  providerId: text('provider_id').notNull(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
   accessToken: text('access_token'),
-  refreshToken: text('refresh_token'),
-  idToken: text('id_token'),
   accessTokenExpiresAt: integer('access_token_expires_at', {
     mode: 'timestamp_ms',
   }),
+  accountId: text('account_id').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  id: text('id').primaryKey(),
+  idToken: text('id_token'),
+  password: text('password'),
+  providerId: text('provider_id').notNull(),
+  refreshToken: text('refresh_token'),
   refreshTokenExpiresAt: integer('refresh_token_expires_at', {
     mode: 'timestamp_ms',
   }),
   scope: text('scope'),
-  password: text('password'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
 });
 
 export const verification = sqliteTable('verification', {
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }),
+  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
-  value: text('value').notNull(),
-  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }),
+  value: text('value').notNull(),
 });
 
 export const members = sqliteTable('members', {
-  membershipNumber: text('membership_number').primaryKey(),
-  prefix: text('prefix'),
-  firstName: text('first_name').notNull(),
-  middleName: text('middle_name'),
-  lastName: text('last_name').notNull(),
-  suffix: text('suffix'),
-  memberType: text('member_type'),
-  memberClass: text('member_class'),
-  nickname: text('nickname'),
-  residencePhone: text('residence_phone'),
-  cellPhone: text('cell_phone'),
-  primaryEmail: text('primary_email'),
-  firstDegreeDate: text('first_degree_date'),
-  secondDegreeDate: text('second_degree_date'),
-  thirdDegreeDate: text('third_degree_date'),
-  fourthDegreeDate: text('fourth_degree_date'),
+  active: integer('active', { mode: 'boolean' }).default(true).notNull(),
   assemblyNumber: text('assembly_number'),
   birthDate: text('birth_date'),
-  active: integer('active', { mode: 'boolean' }).default(true).notNull(),
+  cellPhone: text('cell_phone'),
+  firstDegreeDate: text('first_degree_date'),
+  firstName: text('first_name').notNull(),
+  fourthDegreeDate: text('fourth_degree_date'),
+  lastName: text('last_name').notNull(),
+  memberClass: text('member_class'),
+  membershipNumber: text('membership_number').primaryKey(),
+  memberType: text('member_type'),
+  middleName: text('middle_name'),
+  nickname: text('nickname'),
+  prefix: text('prefix'),
+  primaryEmail: text('primary_email'),
+  residencePhone: text('residence_phone'),
+  secondDegreeDate: text('second_degree_date'),
+  suffix: text('suffix'),
   syncedAt: integer('synced_at', { mode: 'timestamp_ms' }).notNull(),
+  thirdDegreeDate: text('third_degree_date'),
 });
 
 export const permissions = sqliteTable('permissions', {
@@ -99,58 +99,65 @@ export const permissions = sqliteTable('permissions', {
 });
 
 export const events = sqliteTable('events', {
-  id: text('id').primaryKey(),
-  title: text('title').notNull(),
-  description: text('description'),
-  location: text('location'),
-  startAt: integer('start_at', { mode: 'timestamp_ms' }).notNull(),
-  endAt: integer('end_at', { mode: 'timestamp_ms' }),
   allDay: integer('all_day', { mode: 'boolean' }).default(false).notNull(),
-  type: text('type', { enum: ['council', 'member'] }).notNull(),
-  recurrenceRule: text('recurrence_rule'),
-  createdBy: text('created_by'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  createdBy: text('created_by'),
+  description: text('description'),
+  endAt: integer('end_at', { mode: 'timestamp_ms' }),
+  id: text('id').primaryKey(),
+  location: text('location'),
+  recurrenceRule: text('recurrence_rule'),
+  startAt: integer('start_at', { mode: 'timestamp_ms' }).notNull(),
+  title: text('title').notNull(),
+  type: text('type', { enum: ['council', 'member'] }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
 export const duesRates = sqliteTable('dues_rates', {
-  memberClass: text('member_class').primaryKey(),
   amountCents: integer('amount_cents').notNull(),
   councilYear: text('council_year').notNull(),
+  memberClass: text('member_class').primaryKey(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
 export const duesPayments = sqliteTable('dues_payments', {
+  amountCents: integer('amount_cents').notNull(),
+  councilYear: text('council_year').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   id: text('id').primaryKey(),
+  markedByMembershipNumber: text('marked_by_membership_number'),
+  memberClass: text('member_class').notNull(),
   membershipNumber: text('membership_number')
     .notNull()
     .references(() => members.membershipNumber),
-  memberClass: text('member_class').notNull(),
-  amountCents: integer('amount_cents').notNull(),
-  councilYear: text('council_year').notNull(),
+  method: text('method', { enum: ['paypal', 'cash', 'check', 'other'] }),
+  notes: text('notes'),
+  paidAt: integer('paid_at', { mode: 'timestamp_ms' }).notNull(),
+  payerEmail: text('payer_email'),
+  paypalSubscriptionId: text('paypal_subscription_id'),
+  paypalTxnId: text('paypal_txn_id').unique(),
   source: text('source', {
     enum: ['paypal_ipn', 'paypal_subscription', 'manual'],
   }).notNull(),
   status: text('status', { enum: ['completed', 'refunded'] })
     .default('completed')
     .notNull(),
-  paypalTxnId: text('paypal_txn_id').unique(),
-  paypalSubscriptionId: text('paypal_subscription_id'),
-  payerEmail: text('payer_email'),
-  method: text('method', { enum: ['paypal', 'cash', 'check', 'other'] }),
-  notes: text('notes'),
-  markedByMembershipNumber: text('marked_by_membership_number'),
-  paidAt: integer('paid_at', { mode: 'timestamp_ms' }).notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
 export const duesSubscriptions = sqliteTable('dues_subscriptions', {
+  amountCents: integer('amount_cents').notNull(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   id: text('id').primaryKey(),
+  lastPaymentAt: integer('last_payment_at', { mode: 'timestamp_ms' }),
+  lastSyncedAt: integer('last_synced_at', { mode: 'timestamp_ms' }),
+  memberClass: text('member_class').notNull(),
   membershipNumber: text('membership_number')
     .notNull()
     .references(() => members.membershipNumber),
-  paypalSubscriptionId: text('paypal_subscription_id').notNull().unique(),
+  nextBillingAt: integer('next_billing_at', { mode: 'timestamp_ms' }),
+  payerEmail: text('payer_email'),
   paypalPlanId: text('paypal_plan_id').notNull(),
+  paypalSubscriptionId: text('paypal_subscription_id').notNull().unique(),
   status: text('status', {
     enum: [
       'approval_pending',
@@ -161,33 +168,26 @@ export const duesSubscriptions = sqliteTable('dues_subscriptions', {
       'expired',
     ],
   }).notNull(),
-  memberClass: text('member_class').notNull(),
-  amountCents: integer('amount_cents').notNull(),
-  payerEmail: text('payer_email'),
-  nextBillingAt: integer('next_billing_at', { mode: 'timestamp_ms' }),
-  lastPaymentAt: integer('last_payment_at', { mode: 'timestamp_ms' }),
-  lastSyncedAt: integer('last_synced_at', { mode: 'timestamp_ms' }),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
 export const calendarTokens = sqliteTable('calendar_tokens', {
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
+  feed: text('feed').notNull(),
   id: text('id').primaryKey(),
   membershipNumber: text('membership_number')
     .notNull()
     .references(() => members.membershipNumber),
   tokenHash: text('token_hash').notNull(),
-  feed: text('feed').notNull(),
-  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
 export const registrationTokens = sqliteTable('registration_tokens', {
+  code: text('code').notNull(),
+  email: text('email').notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
   id: text('id').primaryKey(),
   membershipNumber: text('membership_number').notNull(),
-  email: text('email').notNull(),
-  code: text('code').notNull(),
-  expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
   usedAt: integer('used_at', { mode: 'timestamp_ms' }),
 });
 
@@ -197,44 +197,44 @@ export const appMeta = sqliteTable('app_meta', {
 });
 
 export const photoGalleries = sqliteTable('photo_galleries', {
-  id: text('id').primaryKey(),
-  title: text('title').notNull(),
-  description: text('description'),
-  immichAlbumId: text('immich_album_id').notNull().unique(),
+  active: integer('active', { mode: 'boolean' }).default(true).notNull(),
   allowMemberUploads: integer('allow_member_uploads', { mode: 'boolean' })
     .default(true)
     .notNull(),
-  active: integer('active', { mode: 'boolean' }).default(true).notNull(),
-  createdBy: text('created_by'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  createdBy: text('created_by'),
+  description: text('description'),
+  id: text('id').primaryKey(),
+  immichAlbumId: text('immich_album_id').notNull().unique(),
+  title: text('title').notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
 export const gallerySubmissions = sqliteTable('gallery_submissions', {
-  id: text('id').primaryKey(),
+  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  filename: text('filename'),
   galleryId: text('gallery_id')
     .notNull()
     .references(() => photoGalleries.id, { onDelete: 'cascade' }),
+  id: text('id').primaryKey(),
   immichAssetId: text('immich_asset_id').notNull(),
   membershipNumber: text('membership_number')
     .notNull()
     .references(() => members.membershipNumber),
-  filename: text('filename'),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
 });
 
 export const auditLog = sqliteTable('audit_log', {
-  id: text('id').primaryKey(),
-  actorMembershipNumber: text('actor_membership_number'),
   action: text('action').notNull(),
-  summary: text('summary').notNull(),
-  metadata: text('metadata'),
+  actorMembershipNumber: text('actor_membership_number'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' }).notNull(),
+  id: text('id').primaryKey(),
+  metadata: text('metadata'),
+  summary: text('summary').notNull(),
 });
 
 export const userRelations = relations(user, ({ many }) => ({
-  sessions: many(session),
   accounts: many(account),
+  sessions: many(session),
 }));
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -246,8 +246,8 @@ export const accountRelations = relations(account, ({ one }) => ({
 }));
 
 export const authSchema = {
-  user,
-  session,
   account,
+  session,
+  user,
   verification,
 };

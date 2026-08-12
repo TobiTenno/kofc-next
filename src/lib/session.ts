@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from 'next/cache';
 import { headers } from 'next/headers';
+
 import { auth } from '@/lib/auth';
 
 export const getSession = async () => {
@@ -9,7 +10,7 @@ export const getSession = async () => {
   });
 };
 
-export const getMembershipNumber = async (): Promise<string | null> => {
+export const getMembershipNumber = async (): Promise<null | string> => {
   const session = await getSession();
   return session?.user.username ?? null;
 };

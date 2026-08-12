@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import { signOutAndRedirect } from '@/lib/member-auth';
 
 type SignOutButtonProps = {
@@ -25,10 +26,10 @@ export const SignOutButton = ({
 
   return (
     <button
-      type='button'
-      onClick={signOut}
-      disabled={signingOut}
       className={className}
+      disabled={signingOut}
+      onClick={signOut}
+      type='button'
     >
       {signingOut ? 'Signing out…' : 'Sign out'}
     </button>

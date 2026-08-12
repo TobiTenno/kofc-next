@@ -43,17 +43,19 @@ const councilCsvPath = resolveDataPath(
 
 const e2eEnv = {
   BETTER_AUTH_SECRET:
-    process.env.BETTER_AUTH_SECRET ??
-    'ci-build-secret-minimum-32-characters-long',
+    process.env.BETTER_AUTH_SECRET
+    ?? 'ci-build-secret-minimum-32-characters-long',
   BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? baseUrl,
-  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? baseUrl,
-  DATABASE_PATH: process.env.DATABASE_PATH ?? './data/app.db',
-  COUNCIL_JSON_PATH: councilJsonPath,
   COUNCIL_CSV_PATH: councilCsvPath,
+  COUNCIL_JSON_PATH: councilJsonPath,
+  DATABASE_PATH: process.env.DATABASE_PATH ?? './data/app.db',
+  NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? baseUrl,
   NODE_ENV: 'production',
 };
 
-/** @type {import('node:child_process').ChildProcess | null} */
+/**
+@type {import('node:child_process').ChildProcess | null}
+*/
 let serverProcess = null;
 
 const resolveDatabasePath = () => {
@@ -75,8 +77,8 @@ const run = (command, commandArgs, label, extraEnv = {}) => {
   console.log(`\n> ${label ?? [command, ...commandArgs].join(' ')}`);
   const result = spawnSync(command, commandArgs, {
     cwd: root,
-    stdio: 'inherit',
     env: runEnv(extraEnv),
+    stdio: 'inherit',
   });
 
   if (result.status !== 0) {
@@ -114,9 +116,9 @@ const prepareStandalone = () => {
 const ensureCypressBinary = () => {
   const check = spawnSync('npx', ['cypress', 'verify'], {
     cwd: root,
+    encoding: 'utf8',
     env: runEnv(),
     stdio: 'pipe',
-    encoding: 'utf8',
   });
 
   if (check.status === 0) {
@@ -127,9 +129,9 @@ const ensureCypressBinary = () => {
 
   const verify = spawnSync('npx', ['cypress', 'verify'], {
     cwd: root,
+    encoding: 'utf8',
     env: runEnv(),
     stdio: 'inherit',
-    encoding: 'utf8',
   });
 
   if (verify.status !== 0) {
@@ -153,8 +155,8 @@ const startServer = () => {
     cwd: standaloneDir,
     env: {
       ...runEnv(),
-      PORT: '3000',
       HOSTNAME: '127.0.0.1',
+      PORT: '3000',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -190,7 +192,8 @@ const waitForServer = async (url, timeoutMs = 120_000) => {
         console.log('> server ready');
         return;
       }
-    } catch {
+    }
+    catch {
       // retry until timeout
     }
 
@@ -249,16 +252,18 @@ try {
 
     const cypressResult = spawnSync('npx', cypressArgs, {
       cwd: root,
-      stdio: 'inherit',
       env: runEnv(),
+      stdio: 'inherit',
     });
 
     exitCode = cypressResult.status ?? 1;
   }
-} catch (error) {
+}
+catch (error) {
   console.error(error instanceof Error ? error.message : error);
   exitCode = 1;
-} finally {
+}
+finally {
   stopServer();
 }
 

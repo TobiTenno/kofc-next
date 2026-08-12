@@ -1,33 +1,39 @@
 import { getDevServerOrigin } from '@/lib/dev-server';
 
 export const isLoopbackHost = (hostname: string): boolean =>
-  hostname === 'localhost' ||
-  hostname === '127.0.0.1' ||
-  hostname === '[::1]' ||
-  hostname.endsWith('.localhost');
+  hostname === 'localhost'
+  || hostname === '127.0.0.1'
+  || hostname === '[::1]'
+  || hostname.endsWith('.localhost');
 
-/** First value when a reverse proxy forwards comma-separated headers. */
+/**
+First value when a reverse proxy forwards comma-separated headers.
+*/
 export const firstForwardedHeaderValue = (
-  value: string | null | undefined,
-): string | null => {
+  value: null | string | undefined,
+): null | string => {
   if (!value) {
     return null;
   }
 
-  const first = value.split(',')[0]?.trim();
+  const first = value.split(',', 1)[0]?.trim();
   return first || null;
 };
 
-/** Client-facing host (X-Forwarded-Host, then Host, then Next URL). */
+/**
+Client-facing host (X-Forwarded-Host, then Host, then Next URL).
+*/
 export const getRequestHost = (
   headers: Headers,
   fallbackHost: string,
 ): string =>
-  firstForwardedHeaderValue(headers.get('x-forwarded-host')) ??
-  headers.get('host') ??
-  fallbackHost;
+  firstForwardedHeaderValue(headers.get('x-forwarded-host'))
+  ?? headers.get('host')
+  ?? fallbackHost;
 
-/** Client-facing protocol from X-Forwarded-Proto when present. */
+/**
+Client-facing protocol from X-Forwarded-Proto when present.
+*/
 export const getRequestProtocol = (
   headers: Headers,
   fallbackProtocol: string,
@@ -40,7 +46,9 @@ export const getRequestProtocol = (
   return fallbackProtocol;
 };
 
-/** Absolute URL using client-facing host/proto (required for proxy redirects). */
+/**
+Absolute URL using client-facing host/proto (required for proxy redirects).
+*/
 export const buildExternalRequestUrl = (
   headers: Headers,
   fallbackUrl: URL,
@@ -52,11 +60,15 @@ export const buildExternalRequestUrl = (
   return new URL(`${pathname}${search}`, `${protocol}//${host}`);
 };
 
-/** Local dev fallback origin (isolated port — see config/dev-server.json). */
+/**
+Local dev fallback origin (isolated port — see config/dev-server.json).
+*/
 export const getLocalDevOrigin = (): string => getDevServerOrigin();
 
-/** Canonical browser origin from env (NEXT_PUBLIC_APP_URL preferred). */
-export const getCanonicalAppOrigin = (): string | null => {
+/**
+Canonical browser origin from env (NEXT_PUBLIC_APP_URL preferred).
+*/
+export const getCanonicalAppOrigin = (): null | string => {
   const raw = process.env.NEXT_PUBLIC_APP_URL ?? process.env.BETTER_AUTH_URL;
   const trimmed = raw?.trim();
   if (!trimmed) {
@@ -65,12 +77,15 @@ export const getCanonicalAppOrigin = (): string | null => {
 
   try {
     return new URL(trimmed).origin;
-  } catch {
+  }
+  catch {
     return null;
   }
 };
 
-/** Redirect loopback visits when the app is configured for a LAN/production host. */
+/**
+Redirect loopback visits when the app is configured for a LAN/production host.
+*/
 export const shouldRedirectToCanonicalOrigin = (
   requestHost: string,
 ): boolean => {
@@ -81,10 +96,10 @@ export const shouldRedirectToCanonicalOrigin = (
 
   try {
     const canonicalUrl = new URL(canonical);
-    const requestHostname = requestHost.split(':')[0] ?? requestHost;
+    const requestHostname = requestHost.split(':', 1)[0] ?? requestHost;
     if (
-      canonicalUrl.hostname === requestHostname ||
-      canonicalUrl.host === requestHost
+      canonicalUrl.hostname === requestHostname
+      || canonicalUrl.host === requestHost
     ) {
       return false;
     }
@@ -92,12 +107,13 @@ export const shouldRedirectToCanonicalOrigin = (
     return (
       isLoopbackHost(requestHostname) && !isLoopbackHost(canonicalUrl.hostname)
     );
-  } catch {
+  }
+  catch {
     return false;
   }
 };
 
-export const toCanonicalUrl = (requestUrl: string): URL | null => {
+export const toCanonicalUrl = (requestUrl: string): null | URL => {
   const canonical = getCanonicalAppOrigin();
   if (!canonical) {
     return null;
@@ -109,7 +125,8 @@ export const toCanonicalUrl = (requestUrl: string): URL | null => {
     url.protocol = canonicalUrl.protocol;
     url.host = canonicalUrl.host;
     return url;
-  } catch {
+  }
+  catch {
     return null;
   }
 };

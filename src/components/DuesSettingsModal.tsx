@@ -14,26 +14,27 @@ import {
   useOverlayState,
 } from '@heroui/react';
 import { useEffect, useState } from 'react';
+
 import { memberClassCodes, memberClassLabels } from '@/lib/member-class';
 
 type DuesSettings = {
   councilYear: string;
   currency: string;
   paypalBusinessEmail: string;
-  rates: Record<string, number>;
-  paypalProductId?: string;
-  paypalPlans?: Record<string, string>;
   paypalClientId?: string;
-  paypalClientSecretMasked?: string | null;
-  paypalMode?: 'sandbox' | 'live';
-  paypalWebhookIdMasked?: string | null;
+  paypalClientSecretMasked?: null | string;
+  paypalMode?: 'live' | 'sandbox';
+  paypalPlans?: Record<string, string>;
+  paypalProductId?: string;
   paypalSubSyncIntervalMs?: number;
+  paypalWebhookIdMasked?: null | string;
+  rates: Record<string, number>;
 };
 
 type PaypalMeta = {
+  mode: 'live' | 'sandbox';
   restConfigured: boolean;
   subscriptionsReady: boolean;
-  mode: 'sandbox' | 'live';
 };
 
 const emptyRates = (): Record<string, string> => {
@@ -51,11 +52,11 @@ const applySettingsToForm = (
     setCurrency: (value: string) => void;
     setPaypalBusinessEmail: (value: string) => void;
     setPaypalClientId: (value: string) => void;
-    setPaypalMode: (value: 'sandbox' | 'live') => void;
-    setPaypalSubSyncIntervalMs: (value: string) => void;
-    setPaypalClientSecretMasked: (value: string | null) => void;
-    setPaypalWebhookIdMasked: (value: string | null) => void;
+    setPaypalClientSecretMasked: (value: null | string) => void;
+    setPaypalMode: (value: 'live' | 'sandbox') => void;
     setPaypalPlans: (value: Record<string, string>) => void;
+    setPaypalSubSyncIntervalMs: (value: string) => void;
+    setPaypalWebhookIdMasked: (value: null | string) => void;
     setRateDrafts: (value: Record<string, string>) => void;
   },
 ): void => {
@@ -93,22 +94,22 @@ export const DuesSettingsModal = ({
   const [paypalClientId, setPaypalClientId] = useState('');
   const [paypalClientSecret, setPaypalClientSecret] = useState('');
   const [paypalClientSecretMasked, setPaypalClientSecretMasked] = useState<
-    string | null
+    null | string
   >(null);
-  const [paypalMode, setPaypalMode] = useState<'sandbox' | 'live'>('sandbox');
+  const [paypalMode, setPaypalMode] = useState<'live' | 'sandbox'>('sandbox');
   const [paypalWebhookId, setPaypalWebhookId] = useState('');
   const [paypalWebhookIdMasked, setPaypalWebhookIdMasked] = useState<
-    string | null
+    null | string
   >(null);
-  const [paypalSubSyncIntervalMs, setPaypalSubSyncIntervalMs] =
-    useState('3600000');
+  const [paypalSubSyncIntervalMs, setPaypalSubSyncIntervalMs]
+    = useState('3600000');
   const [rateDrafts, setRateDrafts] = useState(emptyRates);
   const [paypalPlans, setPaypalPlans] = useState<Record<string, string>>({});
-  const [paypalMeta, setPaypalMeta] = useState<PaypalMeta | null>(null);
+  const [paypalMeta, setPaypalMeta] = useState<null | PaypalMeta>(null);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
+  const [message, setMessage] = useState<null | string>(null);
+  const [messageTone, setMessageTone] = useState<'danger' | 'success'>(
     'success',
   );
 
@@ -123,9 +124,9 @@ export const DuesSettingsModal = ({
 
     void fetch('/api/members/admin/dues/settings').then(async (response) => {
       const payload = (await response.json()) as {
-        settings?: DuesSettings;
-        paypal?: PaypalMeta;
         error?: string;
+        paypal?: PaypalMeta;
+        settings?: DuesSettings;
       };
       if (!response.ok) {
         setMessageTone('danger');
@@ -141,11 +142,11 @@ export const DuesSettingsModal = ({
         setCurrency,
         setPaypalBusinessEmail,
         setPaypalClientId,
-        setPaypalMode,
-        setPaypalSubSyncIntervalMs,
         setPaypalClientSecretMasked,
-        setPaypalWebhookIdMasked,
+        setPaypalMode,
         setPaypalPlans,
+        setPaypalSubSyncIntervalMs,
+        setPaypalWebhookIdMasked,
         setRateDrafts,
       });
       setPaypalMeta(payload.paypal ?? null);
@@ -167,26 +168,26 @@ export const DuesSettingsModal = ({
     }
 
     const response = await fetch('/api/members/admin/dues/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         councilYear,
         currency,
         paypalBusinessEmail,
-        rates,
         paypalClientId,
         paypalClientSecret: paypalClientSecret.trim() || undefined,
         paypalMode,
-        paypalWebhookId: paypalWebhookId.trim() || undefined,
         paypalSubSyncIntervalMs: Number(paypalSubSyncIntervalMs),
+        paypalWebhookId: paypalWebhookId.trim() || undefined,
+        rates,
       }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
     });
 
     const payload = (await response.json()) as {
-      settings?: DuesSettings;
-      paypal?: PaypalMeta;
-      planSyncError?: string | null;
       error?: string;
+      paypal?: PaypalMeta;
+      planSyncError?: null | string;
+      settings?: DuesSettings;
     };
 
     if (response.ok && payload.settings) {
@@ -195,11 +196,11 @@ export const DuesSettingsModal = ({
         setCurrency,
         setPaypalBusinessEmail,
         setPaypalClientId,
-        setPaypalMode,
-        setPaypalSubSyncIntervalMs,
         setPaypalClientSecretMasked,
-        setPaypalWebhookIdMasked,
+        setPaypalMode,
         setPaypalPlans,
+        setPaypalSubSyncIntervalMs,
+        setPaypalWebhookIdMasked,
         setRateDrafts,
       });
       setPaypalClientSecret('');
@@ -211,7 +212,8 @@ export const DuesSettingsModal = ({
           ? `Settings saved, but PayPal plan sync failed: ${payload.planSyncError}`
           : 'Dues settings saved',
       );
-    } else {
+    }
+    else {
       setMessageTone('danger');
       setMessage(payload.error ?? 'Save failed');
     }
@@ -226,20 +228,21 @@ export const DuesSettingsModal = ({
       method: 'POST',
     });
     const payload = (await response.json()) as {
+      error?: string;
       result?: {
         checked: number;
-        updated: number;
-        paymentsRecorded: number;
         errors: number;
+        paymentsRecorded: number;
+        updated: number;
       };
-      error?: string;
     };
     if (response.ok && payload.result) {
       setMessageTone('success');
       setMessage(
         `Synced ${payload.result.updated}/${payload.result.checked} subscriptions (${payload.result.paymentsRecorded} payments, ${payload.result.errors} errors)`,
       );
-    } else {
+    }
+    else {
       setMessageTone('danger');
       setMessage(payload.error ?? 'Sync failed');
     }
@@ -261,18 +264,18 @@ export const DuesSettingsModal = ({
                 manageDues. Saved values apply immediately (no restart).
               </p>
 
-              <Form onSubmit={save} className='grid gap-4'>
+              <Form className='grid gap-4' onSubmit={save}>
                 <TextField
                   fullWidth
                   isRequired
-                  value={councilYear}
                   onChange={setCouncilYear}
+                  value={councilYear}
                 >
                   <Label>Council year</Label>
                   <Input placeholder='2025-2026' />
                 </TextField>
 
-                <TextField fullWidth value={currency} onChange={setCurrency}>
+                <TextField fullWidth onChange={setCurrency} value={currency}>
                   <Label>Currency</Label>
                   <Input placeholder='USD' />
                 </TextField>
@@ -280,11 +283,11 @@ export const DuesSettingsModal = ({
                 <TextField
                   fullWidth
                   isRequired
-                  value={paypalBusinessEmail}
                   onChange={setPaypalBusinessEmail}
+                  value={paypalBusinessEmail}
                 >
                   <Label>PayPal business email</Label>
-                  <Input type='email' placeholder='dues@example.com' />
+                  <Input placeholder='dues@example.com' type='email' />
                   <Description>
                     Used for PayPal Buy Now / IPN. Stored config wins over
                     PAYPAL_BUSINESS_EMAIL env.
@@ -295,12 +298,12 @@ export const DuesSettingsModal = ({
                   <p className='text-sm font-medium'>PayPal REST API</p>
 
                   <Select
-                    selectedKey={paypalMode}
                     onSelectionChange={(key) => {
                       if (key === 'live' || key === 'sandbox') {
                         setPaypalMode(key);
                       }
                     }}
+                    selectedKey={paypalMode}
                   >
                     <Label>Mode</Label>
                     <Select.Trigger>
@@ -321,8 +324,8 @@ export const DuesSettingsModal = ({
 
                   <TextField
                     fullWidth
-                    value={paypalClientId}
                     onChange={setPaypalClientId}
+                    value={paypalClientId}
                   >
                     <Label>Client ID</Label>
                     <Input autoComplete='off' placeholder='PAYPAL_CLIENT_ID' />
@@ -330,18 +333,18 @@ export const DuesSettingsModal = ({
 
                   <TextField
                     fullWidth
-                    value={paypalClientSecret}
                     onChange={setPaypalClientSecret}
+                    value={paypalClientSecret}
                   >
                     <Label>Client secret</Label>
                     <Input
-                      type='password'
                       autoComplete='off'
                       placeholder={
                         paypalClientSecretMasked
                           ? `Current ${paypalClientSecretMasked}`
                           : 'PAYPAL_CLIENT_SECRET'
                       }
+                      type='password'
                     />
                     <Description>
                       Leave blank to keep the current secret.
@@ -350,8 +353,8 @@ export const DuesSettingsModal = ({
 
                   <TextField
                     fullWidth
-                    value={paypalWebhookId}
                     onChange={setPaypalWebhookId}
+                    value={paypalWebhookId}
                   >
                     <Label>Webhook ID</Label>
                     <Input
@@ -369,15 +372,15 @@ export const DuesSettingsModal = ({
 
                   <TextField
                     fullWidth
-                    value={paypalSubSyncIntervalMs}
                     onChange={setPaypalSubSyncIntervalMs}
+                    value={paypalSubSyncIntervalMs}
                   >
                     <Label>Subscription sync interval (ms)</Label>
                     <Input
-                      type='number'
-                      min={60000}
-                      step={60000}
+                      min={60_000}
                       placeholder='3600000'
+                      step={60_000}
+                      type='number'
                     />
                     <Description>
                       Minimum 60000 (1 minute). Default 3600000 (hourly).
@@ -387,81 +390,99 @@ export const DuesSettingsModal = ({
 
                 <div className='grid gap-3'>
                   <p className='text-sm font-medium'>Rates (amount in cents)</p>
-                  {memberClassCodes.map((code) => (
+                  {memberClassCodes.map(code => (
                     <TextField
-                      key={code}
                       fullWidth
-                      value={rateDrafts[code] ?? ''}
-                      onChange={(value) =>
-                        setRateDrafts((current) => ({
+                      key={code}
+                      onChange={value =>
+                        setRateDrafts(current => ({
                           ...current,
                           [code]: value,
-                        }))
-                      }
+                        }))}
+                      value={rateDrafts[code] ?? ''}
                     >
                       <Label>
-                        {memberClassLabels[code]} ({code})
+                        {memberClassLabels[code]}
+                        {' '}
+                        (
+                        {code}
+                        )
                       </Label>
                       <Input
-                        type='number'
                         min={1}
-                        step={1}
                         placeholder='4000'
+                        step={1}
+                        type='number'
                       />
                     </TextField>
                   ))}
                 </div>
 
-                {paypalMeta ? (
-                  <div className='grid gap-1 rounded border p-3 text-sm'>
-                    <p>
-                      PayPal REST:{' '}
-                      {paypalMeta.restConfigured ? 'configured' : 'missing'} (
-                      {paypalMeta.mode})
-                    </p>
-                    <p>
-                      Subscriptions:{' '}
-                      {paypalMeta.subscriptionsReady ? 'ready' : 'not ready'}
-                    </p>
-                    {Object.keys(paypalPlans).length > 0 ? (
-                      <ul className='mt-1 font-mono text-xs'>
-                        {Object.entries(paypalPlans).map(([code, planId]) => (
-                          <li key={code}>
-                            {code}: {planId}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
-                  </div>
-                ) : null}
+                {paypalMeta
+                  ? (
+                      <div className='grid gap-1 rounded border p-3 text-sm'>
+                        <p>
+                          PayPal REST:
+                          {' '}
+                          {paypalMeta.restConfigured ? 'configured' : 'missing'}
+                          {' '}
+                          (
+                          {paypalMeta.mode}
+                          )
+                        </p>
+                        <p>
+                          Subscriptions:
+                          {' '}
+                          {paypalMeta.subscriptionsReady ? 'ready' : 'not ready'}
+                        </p>
+                        {Object.keys(paypalPlans).length > 0
+                          ? (
+                              <ul className='mt-1 font-mono text-xs'>
+                                {Object.entries(paypalPlans).map(([code, planId]) => (
+                                  <li key={code}>
+                                    {code}
+                                    :
+                                    {planId}
+                                  </li>
+                                ))}
+                              </ul>
+                            )
+                          : null}
+                      </div>
+                    )
+                  : null}
 
                 <div className='flex flex-wrap gap-2'>
-                  <Button type='submit' variant='primary' isDisabled={saving}>
+                  <Button isDisabled={saving} type='submit' variant='primary'>
                     {saving ? 'Saving…' : 'Save dues settings'}
                   </Button>
-                  {paypalMeta?.restConfigured ? (
-                    <Button
-                      type='button'
-                      variant='secondary'
-                      isDisabled={syncing}
-                      onPress={() => void syncSubscriptions()}
-                    >
-                      {syncing ? 'Syncing…' : 'Sync subscriptions now'}
-                    </Button>
-                  ) : null}
+                  {paypalMeta?.restConfigured
+                    ? (
+                        <Button
+                          isDisabled={syncing}
+                          onPress={() => void syncSubscriptions()}
+                          type='button'
+                          variant='secondary'
+                        >
+                          {syncing ? 'Syncing…' : 'Sync subscriptions now'}
+                        </Button>
+                      )
+                    : null}
                 </div>
               </Form>
 
-              {message ? (
-                <Alert
-                  status={messageTone === 'success' ? 'success' : 'danger'}
-                >
-                  <Alert.Indicator />
-                  <Alert.Content>
-                    <Alert.Description>{message}</Alert.Description>
-                  </Alert.Content>
-                </Alert>
-              ) : null}
+              {message
+                ? (
+                    <Alert
+                      status={messageTone === 'success' ? 'success' : 'danger'}
+                    >
+                      <Alert.Indicator />
+                      <Alert.Content>
+                        <Alert.Description>{message}</Alert.Description>
+                      </Alert.Content>
+                    </Alert>
+                  )
+                : null}
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>

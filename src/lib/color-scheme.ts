@@ -1,11 +1,11 @@
-export type ColorSchemePreference = 'system' | 'light' | 'dark';
+export type ColorSchemePreference = 'dark' | 'light' | 'system';
 
 export const colorSchemeStorageKey = 'kofc-color-scheme';
 
 export const resolveColorScheme = (
   preference: ColorSchemePreference,
   systemPrefersDark: boolean,
-): 'light' | 'dark' => {
+): 'dark' | 'light' => {
   if (preference === 'dark') {
     return 'dark';
   }
@@ -31,7 +31,7 @@ export const readStoredColorScheme = (): ColorSchemePreference => {
 };
 
 export const applyColorScheme = (preference: ColorSchemePreference): void => {
-  const systemPrefersDark = window.matchMedia(
+  const systemPrefersDark = globalThis.matchMedia(
     '(prefers-color-scheme: dark)',
   ).matches;
   const resolved = resolveColorScheme(preference, systemPrefersDark);

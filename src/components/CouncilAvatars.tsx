@@ -1,24 +1,26 @@
+import type { FC } from 'react';
+
 import Avatar from '@mui/material/Avatar';
 import AvatarGroup from '@mui/material/AvatarGroup';
 import Badge from '@mui/material/Badge';
 import { styled } from '@mui/material/styles';
-import type { FC } from 'react';
+
 import { useConfig } from '@/providers/council';
 import { ImageName } from '@/schema/council';
 
 const SmallAvatar = styled(Avatar)(({ theme }) => ({
-  width: 22,
-  height: 22,
   border: `2px solid ${theme.palette.background.paper}`,
+  height: 22,
+  width: 22,
 }));
 
 const TinyAvatar = styled(Avatar)(({ theme }) => ({
-  width: 16,
-  height: 16,
   border: `2px solid ${theme.palette.background.paper}`,
+  height: 16,
+  width: 16,
 }));
 
-export const CouncilAvatars: FC<{ size?: 'sm' | 'md' }> = ({ size }) => {
+export const CouncilAvatars: FC<{ size?: 'md' | 'sm' }> = ({ size }) => {
   const { council } = useConfig();
   if (!council?.officers || council.officers.length === 0) {
     return null;
@@ -28,9 +30,7 @@ export const CouncilAvatars: FC<{ size?: 'sm' | 'md' }> = ({ size }) => {
       max={4}
       total={
         size === 'sm'
-          ? council.officers?.length > 4
-            ? 4
-            : council.officers?.length
+          ? (Math.min(council.officers?.length, 4))
           : 0
       }
     >
@@ -45,24 +45,30 @@ export const CouncilAvatars: FC<{ size?: 'sm' | 'md' }> = ({ size }) => {
         };
         return (
           <Badge
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            badgeContent={
+              officer?.avatar
+                ? (
+                    size === 'sm'
+                      ? (
+                          <TinyAvatar {...badgeProps} />
+                        )
+                      : (
+                          <SmallAvatar {...badgeProps} />
+                        )
+                  )
+                : null
+            }
             key={officer.position + officer.name}
             overlap='circular'
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            badgeContent={
-              officer?.avatar ? (
-                size === 'sm' ? (
-                  <TinyAvatar {...badgeProps} />
-                ) : (
-                  <SmallAvatar {...badgeProps} />
-                )
-              ) : null
-            }
           >
-            {size === 'sm' ? (
-              <SmallAvatar {...avatarProps} />
-            ) : (
-              <Avatar {...avatarProps} />
-            )}
+            {size === 'sm'
+              ? (
+                  <SmallAvatar {...avatarProps} />
+                )
+              : (
+                  <Avatar {...avatarProps} />
+                )}
           </Badge>
         );
       })}

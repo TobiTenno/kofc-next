@@ -10,14 +10,15 @@ import {
   TextField,
 } from '@heroui/react';
 import { useState } from 'react';
+
 import { AdminPageSurface } from '@/components/AdminPageSurface';
 import { authClient } from '@/lib/auth-client';
 
 export default function ImpersonateAdminClient() {
   const [membershipNumber, setMembershipNumber] = useState('');
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
+  const [message, setMessage] = useState<null | string>(null);
+  const [messageTone, setMessageTone] = useState<'danger' | 'success'>(
     'success',
   );
 
@@ -26,15 +27,15 @@ export default function ImpersonateAdminClient() {
     setMessage(null);
 
     const resolveResponse = await fetch('/api/members/admin/impersonate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ membershipNumber: membershipNumber.trim() }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
     });
 
     const resolvePayload = (await resolveResponse.json()) as {
       error?: string;
-      userId?: string;
       membershipNumber?: string;
+      userId?: string;
     };
 
     if (!resolveResponse.ok || !resolvePayload.userId) {
@@ -56,23 +57,25 @@ export default function ImpersonateAdminClient() {
     }
 
     // Full load so SiteHeader / nav pick up new session cookie.
-    window.location.replace('/members');
+    location.replace('/members');
   };
 
   return (
     <AdminPageSurface
-      title='Impersonate member'
       description='Act as another portal user to troubleshoot. Webmaster only. Session lasts up to 4 hours.'
       maxWidth='xl'
+      title='Impersonate member'
     >
-      {message ? (
-        <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Description>{message}</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      ) : null}
+      {message
+        ? (
+            <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{message}</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          )
+        : null}
 
       <Card>
         <Card.Header>
@@ -90,19 +93,19 @@ export default function ImpersonateAdminClient() {
             }}
           >
             <TextField
-              name='impersonateTarget'
               isRequired
-              value={membershipNumber}
+              name='impersonateTarget'
               onChange={setMembershipNumber}
+              value={membershipNumber}
             >
               <Label>Membership #</Label>
               <Input
-                inputMode='numeric'
                 autoComplete='on'
+                inputMode='numeric'
                 placeholder='e.g. 0000000'
               />
             </TextField>
-            <Button type='submit' variant='primary' isDisabled={busy}>
+            <Button isDisabled={busy} type='submit' variant='primary'>
               {busy ? 'Starting…' : 'Impersonate'}
             </Button>
           </Form>

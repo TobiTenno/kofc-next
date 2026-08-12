@@ -1,8 +1,10 @@
 import fs from 'node:fs';
 import { prettifyError } from 'zod';
+
+import type { CouncilConfig } from '@/types/council';
+
 import { getCouncilJsonPath } from '@/lib/council-paths';
 import { CouncilConfigSchema } from '@/schema/council';
-import type { CouncilConfig } from '@/types/council';
 
 export const loadCouncilConfig = (): CouncilConfig => {
   const configPath = getCouncilJsonPath();
@@ -10,8 +12,8 @@ export const loadCouncilConfig = (): CouncilConfig => {
   if (!fs.existsSync(configPath)) {
     return {
       complete: false,
-      errorMessage: 'Council config not found',
       council: undefined,
+      errorMessage: 'Council config not found',
     };
   }
 
@@ -21,8 +23,8 @@ export const loadCouncilConfig = (): CouncilConfig => {
   if (!parseResult.success) {
     return {
       complete: false,
-      errorMessage: prettifyError(parseResult.error),
       council: undefined,
+      errorMessage: prettifyError(parseResult.error),
     };
   }
 

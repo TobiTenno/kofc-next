@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import {
   getMemberDuesAmount,
   recordPaypalPayment,
@@ -13,34 +14,34 @@ import { findSubscriptionByPaypalId } from '@/lib/paypal-subscription-sync';
 import { getCurrentCouncilYear } from '@/lib/permissions-sync';
 
 type PaypalWebhookEvent = {
-  id?: string;
   event_type?: string;
+  id?: string;
   resource?: {
-    id?: string;
-    status?: string;
-    plan_id?: string;
-    custom_id?: string;
-    billing_agreement_id?: string;
-    subscriber?: { email_address?: string };
-    billing_info?: {
-      next_billing_time?: string;
-      last_payment?: { time?: string };
-    };
     amount?: { total?: string; value?: string };
+    billing_agreement_id?: string;
+    billing_info?: {
+      last_payment?: { time?: string };
+      next_billing_time?: string;
+    };
+    custom_id?: string;
+    id?: string;
+    plan_id?: string;
+    status?: string;
+    subscriber?: { email_address?: string };
   };
 };
 
 const parseCustomId = (
   customId: string | undefined,
-): { membershipNumber: string; councilYear: string } | null => {
+): null | { councilYear: string; membershipNumber: string } => {
   if (!customId) {
     return null;
   }
-  const [membershipNumber, councilYear] = customId.split('|');
+  const [membershipNumber, councilYear] = customId.split('|', 2);
   if (!membershipNumber || !councilYear) {
     return null;
   }
-  return { membershipNumber, councilYear };
+  return { councilYear, membershipNumber };
 };
 
 const parseTime = (value: string | undefined): Date | null => {
@@ -62,8 +63,8 @@ const handleSubscriptionLifecycle = async (
 
   const existing = await findSubscriptionByPaypalId(subscriptionId);
   const custom = parseCustomId(resource.custom_id);
-  const membershipNumber =
-    existing?.membershipNumber ?? custom?.membershipNumber;
+  const membershipNumber
+    = existing?.membershipNumber ?? custom?.membershipNumber;
   if (!membershipNumber) {
     return;
   }
@@ -74,34 +75,34 @@ const handleSubscriptionLifecycle = async (
   }
 
   await upsertDuesSubscription({
-    membershipNumber,
-    paypalSubscriptionId: subscriptionId,
-    paypalPlanId: resource.plan_id ?? existing?.paypalPlanId ?? '',
-    status: mapPaypalStatusToLocal(resource.status),
-    memberClass: dues?.memberClass ?? existing?.memberClass ?? 'R',
     amountCents: dues?.amountCents ?? existing?.amountCents ?? 0,
-    payerEmail: resource.subscriber?.email_address ?? existing?.payerEmail,
-    nextBillingAt: parseTime(resource.billing_info?.next_billing_time),
     lastPaymentAt: parseTime(resource.billing_info?.last_payment?.time),
+    memberClass: dues?.memberClass ?? existing?.memberClass ?? 'R',
+    membershipNumber,
+    nextBillingAt: parseTime(resource.billing_info?.next_billing_time),
+    payerEmail: resource.subscriber?.email_address ?? existing?.payerEmail,
+    paypalPlanId: resource.plan_id ?? existing?.paypalPlanId ?? '',
+    paypalSubscriptionId: subscriptionId,
+    status: mapPaypalStatusToLocal(resource.status),
   });
 
   // First activation often includes initial payment — credit current year if unpaid.
   if (mapPaypalStatusToLocal(resource.status) === 'active') {
-    const councilYear =
-      custom?.councilYear ??
-      dues?.councilYear ??
-      (await getCurrentCouncilYear());
+    const councilYear
+      = custom?.councilYear
+        ?? dues?.councilYear
+        ?? (await getCurrentCouncilYear());
     if (dues && councilYear) {
       const txnId = `sub-activate:${subscriptionId}:${event.id ?? resource.status}`;
       await recordPaypalPayment({
-        membershipNumber,
-        councilYear,
         amountCents: dues.amountCents,
+        councilYear,
         memberClass: dues.memberClass,
-        paypalTxnId: txnId,
+        membershipNumber,
         payerEmail: resource.subscriber?.email_address,
-        source: 'paypal_subscription',
         paypalSubscriptionId: subscriptionId,
+        paypalTxnId: txnId,
+        source: 'paypal_subscription',
       });
     }
   }
@@ -111,8 +112,8 @@ const handleSaleCompleted = async (
   event: PaypalWebhookEvent,
 ): Promise<void> => {
   const resource = event.resource;
-  const subscriptionId =
-    resource?.billing_agreement_id ?? resource?.id ?? undefined;
+  const subscriptionId
+    = resource?.billing_agreement_id ?? resource?.id ?? undefined;
   if (!subscriptionId) {
     return;
   }
@@ -125,15 +126,15 @@ const handleSaleCompleted = async (
 
   const existing = await findSubscriptionByPaypalId(subId);
   const custom = parseCustomId(resource?.custom_id);
-  const membershipNumber =
-    existing?.membershipNumber ?? custom?.membershipNumber;
+  const membershipNumber
+    = existing?.membershipNumber ?? custom?.membershipNumber;
   if (!membershipNumber) {
     return;
   }
 
   const dues = await getMemberDuesAmount(membershipNumber);
-  const councilYear =
-    custom?.councilYear ?? dues?.councilYear ?? (await getCurrentCouncilYear());
+  const councilYear
+    = custom?.councilYear ?? dues?.councilYear ?? (await getCurrentCouncilYear());
 
   if (!dues || !councilYear) {
     return;
@@ -145,28 +146,28 @@ const handleSaleCompleted = async (
   }
 
   await recordPaypalPayment({
-    membershipNumber,
-    councilYear,
     amountCents: dues.amountCents,
+    councilYear,
     memberClass: dues.memberClass,
-    paypalTxnId: txnId,
+    membershipNumber,
     payerEmail:
       resource?.subscriber?.email_address ?? existing?.payerEmail ?? undefined,
-    source: 'paypal_subscription',
     paypalSubscriptionId: subId,
+    paypalTxnId: txnId,
+    source: 'paypal_subscription',
   });
 
   if (existing) {
     await upsertDuesSubscription({
-      membershipNumber,
-      paypalSubscriptionId: subId,
-      paypalPlanId: existing.paypalPlanId,
-      status: existing.status,
-      memberClass: existing.memberClass,
       amountCents: existing.amountCents,
-      payerEmail: existing.payerEmail,
-      nextBillingAt: existing.nextBillingAt,
       lastPaymentAt: new Date(),
+      memberClass: existing.memberClass,
+      membershipNumber,
+      nextBillingAt: existing.nextBillingAt,
+      payerEmail: existing.payerEmail,
+      paypalPlanId: existing.paypalPlanId,
+      paypalSubscriptionId: subId,
+      status: existing.status,
     });
   }
 };
@@ -176,7 +177,8 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   let event: PaypalWebhookEvent;
   try {
     event = JSON.parse(rawBody) as PaypalWebhookEvent;
-  } catch {
+  }
+  catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
@@ -189,11 +191,11 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     const transmissionSig = request.headers.get('paypal-transmission-sig');
 
     if (
-      !transmissionId ||
-      !transmissionTime ||
-      !certUrl ||
-      !authAlgo ||
-      !transmissionSig
+      !transmissionId
+      || !transmissionTime
+      || !certUrl
+      || !authAlgo
+      || !transmissionSig
     ) {
       return NextResponse.json(
         { error: 'Missing signature headers' },
@@ -202,13 +204,13 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     }
 
     const verified = await verifyPaypalWebhookSignature({
-      transmissionId,
-      transmissionTime,
-      certUrl,
       authAlgo,
+      certUrl,
+      transmissionId,
       transmissionSig,
-      webhookId,
+      transmissionTime,
       webhookEvent: event,
+      webhookId,
     });
 
     if (!verified) {
@@ -221,13 +223,15 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   try {
     if (eventType.startsWith('BILLING.SUBSCRIPTION.')) {
       await handleSubscriptionLifecycle(event);
-    } else if (
-      eventType === 'PAYMENT.SALE.COMPLETED' ||
-      eventType === 'PAYMENT.CAPTURE.COMPLETED'
+    }
+    else if (
+      eventType === 'PAYMENT.SALE.COMPLETED'
+      || eventType === 'PAYMENT.CAPTURE.COMPLETED'
     ) {
       await handleSaleCompleted(event);
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error('PayPal webhook handler error:', error);
     return NextResponse.json({ error: 'Handler failed' }, { status: 500 });
   }

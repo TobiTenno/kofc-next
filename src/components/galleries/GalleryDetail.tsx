@@ -2,22 +2,23 @@
 
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
+
 import { GalleryBackLink } from '@/components/galleries/GalleryBackLink';
 import { GalleryGrid } from '@/components/galleries/GalleryGrid';
 import { GalleryUploadForm } from '@/components/galleries/GalleryUploadForm';
 
-type GalleryDetail = {
+type GalleryAsset = {
+  capturedAt: null | string;
+  filename: string;
   id: string;
-  title: string;
-  description: string | null;
-  allowMemberUploads: boolean;
-  updatedAt: string;
 };
 
-type GalleryAsset = {
+type GalleryDetail = {
+  allowMemberUploads: boolean;
+  description: null | string;
   id: string;
-  filename: string;
-  capturedAt: string | null;
+  title: string;
+  updatedAt: string;
 };
 
 export const GalleryDetail = () => {
@@ -28,7 +29,7 @@ export const GalleryDetail = () => {
   const [assets, setAssets] = useState<GalleryAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<null | string>(null);
 
   const load = useCallback(async (): Promise<void> => {
     setError(null);
@@ -41,9 +42,9 @@ export const GalleryDetail = () => {
     }
 
     const payload = (await response.json()) as {
-      gallery?: GalleryDetail;
       assets?: GalleryAsset[];
       error?: string;
+      gallery?: GalleryDetail;
     };
 
     if (!response.ok) {
@@ -83,21 +84,25 @@ export const GalleryDetail = () => {
           All galleries
         </GalleryBackLink>
         <h1 className='text-2xl font-bold'>{gallery.title}</h1>
-        {gallery.description ? (
-          <p className='text-muted-foreground'>{gallery.description}</p>
-        ) : null}
+        {gallery.description
+          ? (
+              <p className='text-muted-foreground'>{gallery.description}</p>
+            )
+          : null}
       </div>
 
       {error ? <p className='text-red-700'>{error}</p> : null}
 
       <GalleryGrid assets={assets} />
 
-      {gallery.allowMemberUploads ? (
-        <GalleryUploadForm
-          galleryId={gallery.id}
-          onUploaded={() => void load()}
-        />
-      ) : null}
+      {gallery.allowMemberUploads
+        ? (
+            <GalleryUploadForm
+              galleryId={gallery.id}
+              onUploaded={() => void load()}
+            />
+          )
+        : null}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { listActiveGalleries } from '@/lib/galleries';
 import { getImmichAlbum, isImmichConfigured } from '@/lib/immich/client';
 import { hasPermission } from '@/lib/permissions-sync';
@@ -23,27 +24,28 @@ export const GET = async (): Promise<NextResponse> => {
       try {
         const album = await getImmichAlbum(gallery.immichAlbumId);
         return {
-          id: gallery.id,
-          title: gallery.title,
-          description: gallery.description,
           allowMemberUploads: gallery.allowMemberUploads,
-          updatedAt: gallery.updatedAt.toISOString(),
           assetCount: album.assetCount ?? 0,
           coverAssetId: album.albumThumbnailAssetId ?? null,
-        };
-      } catch {
-        return {
+          description: gallery.description,
           id: gallery.id,
           title: gallery.title,
-          description: gallery.description,
-          allowMemberUploads: gallery.allowMemberUploads,
           updatedAt: gallery.updatedAt.toISOString(),
+        };
+      }
+      catch {
+        return {
+          allowMemberUploads: gallery.allowMemberUploads,
           assetCount: 0,
           coverAssetId: null,
+          description: gallery.description,
+          id: gallery.id,
+          title: gallery.title,
+          updatedAt: gallery.updatedAt.toISOString(),
         };
       }
     }),
   );
 
-  return NextResponse.json({ galleries: enriched, canManageGalleries });
+  return NextResponse.json({ canManageGalleries, galleries: enriched });
 };

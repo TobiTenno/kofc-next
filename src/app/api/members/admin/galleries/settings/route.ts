@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { recordAuditEvent } from '@/lib/audit';
 import {
   ensureImmichConfigSynced,
@@ -37,11 +38,11 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
   const existing = getStoredImmichConfig();
 
   const body = (await request.json()) as {
-    url?: string;
     apiKey?: string;
-    uploadApiKey?: string;
     deviceId?: string;
     maxUploadMb?: number;
+    uploadApiKey?: string;
+    url?: string;
   };
 
   const url = body.url?.trim() ?? existing?.url ?? '';
@@ -60,16 +61,17 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
 
   try {
     await writeImmichConfig({
-      url,
       apiKey,
-      uploadApiKey,
       deviceId: body.deviceId?.trim() || existing?.deviceId || 'kofc-council',
       maxUploadMb:
         body.maxUploadMb && body.maxUploadMb > 0
           ? body.maxUploadMb
           : (existing?.maxUploadMb ?? 25),
+      uploadApiKey,
+      url,
     });
-  } catch (error) {
+  }
+  catch (error) {
     return NextResponse.json(
       {
         error:
@@ -82,10 +84,10 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
   }
 
   await recordAuditEvent({
-    actorMembershipNumber: membershipNumber,
     action: 'galleries.settings.update',
-    summary: 'Updated Immich gallery settings',
+    actorMembershipNumber: membershipNumber,
     metadata: { url },
+    summary: 'Updated Immich gallery settings',
   });
 
   return NextResponse.json({ settings: getImmichPublicSettings() });

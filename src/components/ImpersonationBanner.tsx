@@ -2,19 +2,20 @@
 
 import { Button } from '@heroui/react';
 import { useState } from 'react';
+
 import { authClient } from '@/lib/auth-client';
 
 type ImpersonationBannerProps = {
-  membershipNumber: string;
   displayName: string;
+  membershipNumber: string;
 };
 
 export const ImpersonationBanner = ({
-  membershipNumber,
   displayName,
+  membershipNumber,
 }: ImpersonationBannerProps) => {
   const [stopping, setStopping] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<null | string>(null);
 
   const stop = async (): Promise<void> => {
     setStopping(true);
@@ -29,8 +30,9 @@ export const ImpersonationBanner = ({
         return;
       }
       // Full load so banner / nav clear with restored admin session.
-      window.location.replace('/members');
-    } catch {
+      location.replace('/members');
+    }
+    catch {
       setError('Could not stop impersonating');
       setStopping(false);
     }
@@ -42,16 +44,22 @@ export const ImpersonationBanner = ({
       role='status'
     >
       <p>
-        Impersonating <strong>{displayName}</strong> (#{membershipNumber})
+        Impersonating
+        {' '}
+        <strong>{displayName}</strong>
+        {' '}
+        (#
+        {membershipNumber}
+        )
         {error ? <span className='mt-1 block text-danger'>{error}</span> : null}
       </p>
       <Button
-        size='sm'
-        variant='secondary'
         isDisabled={stopping}
         onPress={() => {
           void stop();
         }}
+        size='sm'
+        variant='secondary'
       >
         {stopping ? 'Stopping…' : 'Stop impersonating'}
       </Button>

@@ -17,14 +17,16 @@ import {
   type View,
   Views,
 } from 'react-big-calendar';
-import { AgendaCardViewComponent } from '@/components/calendar/AgendaCardView';
-import { CalendarEventDialog } from '@/components/calendar/CalendarEventDialog';
-import { CalendarPreviewEventBlock } from '@/components/calendar/CalendarPreviewEventBlock';
+
 import type {
   CalendarEventVariant,
   CalendarPreviewEvent,
   SerializedCalendarPreviewEvent,
 } from '@/lib/calendar/calendar-event-types';
+
+import { AgendaCardViewComponent } from '@/components/calendar/AgendaCardView';
+import { CalendarEventDialog } from '@/components/calendar/CalendarEventDialog';
+import { CalendarPreviewEventBlock } from '@/components/calendar/CalendarPreviewEventBlock';
 import { deserializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-types';
 import {
   calendarPathWithView,
@@ -45,10 +47,10 @@ type CalendarEvent = CalendarPreviewEvent;
 const localizer = dayjsLocalizer(dayjs);
 
 const viewLabels: Record<View, string> = {
+  agenda: 'Agenda',
+  day: 'Day',
   month: 'Month',
   week: 'Week',
-  day: 'Day',
-  agenda: 'Agenda',
   work_week: 'Work week',
 };
 
@@ -59,12 +61,12 @@ const CalendarToolbar = ({
   view,
   views,
 }: ToolbarProps<CalendarEvent>) => {
-  const viewOptions = (views as View[]).filter((name) => name in viewLabels);
+  const viewOptions = (views as View[]).filter(name => name in viewLabels);
 
   return (
     <div className='calendar-toolbar mb-4 grid gap-3'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
-        <ButtonGroup variant='secondary' size='sm'>
+        <ButtonGroup size='sm' variant='secondary'>
           <Button onPress={() => onNavigate('TODAY')}>Today</Button>
           <Button onPress={() => onNavigate('PREV')}>
             <ButtonGroup.Separator />
@@ -79,17 +81,17 @@ const CalendarToolbar = ({
         <p className='text-base font-semibold text-foreground'>{label}</p>
 
         <ToggleButtonGroup
-          selectionMode='single'
-          selectedKeys={new Set([view])}
           onSelectionChange={(keys) => {
             if (keys === 'all') return;
-            const next = [...keys][0] as View | undefined;
+            const next = [...keys][0] as undefined | View;
             if (next) onView(next);
           }}
+          selectedKeys={new Set([view])}
+          selectionMode='single'
           size='sm'
         >
           {viewOptions.map((name, index) => (
-            <ToggleButton key={name} id={name}>
+            <ToggleButton id={name} key={name}>
               {index > 0 ? <ToggleButtonGroup.Separator /> : null}
               {viewLabels[name]}
             </ToggleButton>
@@ -101,9 +103,9 @@ const CalendarToolbar = ({
 };
 
 const legendSwatchClass: Record<CalendarEventVariant, string> = {
+  outline: 'calendar-legend-swatch--outline',
   primary: 'calendar-legend-swatch--primary',
   secondary: 'calendar-legend-swatch--secondary',
-  outline: 'calendar-legend-swatch--outline',
 };
 
 const legendItems: Array<{ label: string; variant: CalendarEventVariant }> = [
@@ -188,7 +190,8 @@ export const CalendarPreview = ({
 
     if (pathView) {
       setView(pathView);
-    } else {
+    }
+    else {
       const defaultView = defaultCalendarViewSegment();
       setView(defaultView);
       persistView(defaultView);
@@ -206,7 +209,7 @@ export const CalendarPreview = ({
       return;
     }
 
-    const media = window.matchMedia(
+    const media = globalThis.matchMedia(
       `(max-width: ${MOBILE_CALENDAR_MAX_WIDTH_PX}px)`,
     );
     const syncView = (): void => {
@@ -227,24 +230,24 @@ export const CalendarPreview = ({
     [events],
   );
 
-  const eventPropGetter: EventPropGetter<CalendarEvent> = (event) => ({
+  const eventPropGetter: EventPropGetter<CalendarEvent> = event => ({
     className: `event-variant-${event.variant}`,
   });
 
   const visibleLegend = showBirthdayLegend
     ? legendItems
-    : legendItems.filter((item) => item.label !== 'Birthday');
+    : legendItems.filter(item => item.label !== 'Birthday');
 
   const calendarMinHeight = view === Views.AGENDA ? 'auto' : '560px';
 
   return (
     <div className='grid w-full gap-4'>
       <div className='flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground'>
-        {visibleLegend.map((item) => (
-          <span key={item.label} className='flex items-center gap-2'>
+        {visibleLegend.map(item => (
+          <span className='flex items-center gap-2' key={item.label}>
             <span
-              className={`calendar-legend-swatch ${legendSwatchClass[item.variant]}`}
               aria-hidden
+              className={`calendar-legend-swatch ${legendSwatchClass[item.variant]}`}
             />
             {item.label}
           </span>
@@ -253,50 +256,54 @@ export const CalendarPreview = ({
 
       <Card>
         <Card.Content className='calendar-shell pt-4'>
-          {calendarReady ? (
-            <Calendar
-              localizer={localizer}
-              events={calendarEvents}
-              view={view}
-              date={date}
-              onView={handleViewChange}
-              onNavigate={setDate}
-              views={{
-                month: true,
-                week: true,
-                day: true,
-                agenda: AgendaCardViewComponent,
-              }}
-              popup
-              showMultiDayTimes
-              className='w-full'
-              style={{ minHeight: calendarMinHeight, width: '100%' }}
-              components={{
-                toolbar: CalendarToolbar,
-                event: CalendarPreviewEventBlock,
-              }}
-              eventPropGetter={eventPropGetter}
-              onSelectEvent={(event) => setSelectedEvent(event)}
-            />
-          ) : (
-            <div
-              className='w-full rounded-md bg-muted/30'
-              style={{
-                minHeight:
+          {calendarReady
+            ? (
+                <Calendar
+                  className='w-full'
+                  components={{
+                    event: CalendarPreviewEventBlock,
+                    toolbar: CalendarToolbar,
+                  }}
+                  date={date}
+                  eventPropGetter={eventPropGetter}
+                  events={calendarEvents}
+                  localizer={localizer}
+                  onNavigate={setDate}
+                  onSelectEvent={event => setSelectedEvent(event)}
+                  onView={handleViewChange}
+                  popup
+                  showMultiDayTimes
+                  style={{ minHeight: calendarMinHeight, width: '100%' }}
+                  view={view}
+                  views={{
+                    agenda: AgendaCardViewComponent,
+                    day: true,
+                    month: true,
+                    week: true,
+                  }}
+                />
+              )
+            : (
+                <div
+                  aria-hidden
+                  className='w-full rounded-md bg-muted/30'
+                  style={{
+                    minHeight:
                   calendarMinHeight === 'auto' ? '420px' : calendarMinHeight,
-              }}
-              aria-hidden
-            />
-          )}
+                  }}
+                />
+              )}
         </Card.Content>
       </Card>
 
-      {selectedEvent ? (
-        <CalendarEventDialog
-          event={selectedEvent}
-          onClose={() => setSelectedEvent(null)}
-        />
-      ) : null}
+      {selectedEvent
+        ? (
+            <CalendarEventDialog
+              event={selectedEvent}
+              onClose={() => setSelectedEvent(null)}
+            />
+          )
+        : null}
     </div>
   );
 };

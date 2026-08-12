@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { events } from '@/db/schema';
 import { recordAuditEvent } from '@/lib/audit';
@@ -24,14 +25,14 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   const body = (await request.json()) as {
-    title?: string;
-    description?: string;
-    location?: string;
-    startAt?: string;
-    endAt?: string;
     allDay?: boolean;
-    type?: 'council' | 'member';
+    description?: string;
+    endAt?: string;
+    location?: string;
     recurrenceRule?: string;
+    startAt?: string;
+    title?: string;
+    type?: 'council' | 'member';
   };
 
   if (!body.title || !body.startAt || !body.type) {
@@ -41,26 +42,26 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   const now = new Date();
   const id = createId();
   await db.insert(events).values({
-    id,
-    title: body.title,
-    description: body.description ?? null,
-    location: body.location ?? null,
-    startAt: new Date(body.startAt),
-    endAt: body.endAt ? new Date(body.endAt) : null,
     allDay: body.allDay ?? false,
-    type: body.type,
-    recurrenceRule: body.recurrenceRule ?? null,
-    createdBy: membershipNumber,
     createdAt: now,
+    createdBy: membershipNumber,
+    description: body.description ?? null,
+    endAt: body.endAt ? new Date(body.endAt) : null,
+    id,
+    location: body.location ?? null,
+    recurrenceRule: body.recurrenceRule ?? null,
+    startAt: new Date(body.startAt),
+    title: body.title,
+    type: body.type,
     updatedAt: now,
   });
 
   await rebuildCalendarCache();
   await recordAuditEvent({
-    actorMembershipNumber: membershipNumber,
     action: 'event.create',
-    summary: `Created ${body.type} event “${body.title}”`,
+    actorMembershipNumber: membershipNumber,
     metadata: { id, type: body.type },
+    summary: `Created ${body.type} event “${body.title}”`,
   });
   return NextResponse.json({ ok: true });
 };
@@ -88,12 +89,12 @@ export const DELETE = async (request: Request): Promise<NextResponse> => {
   await db.delete(events).where(eq(events.id, id));
   await rebuildCalendarCache();
   await recordAuditEvent({
-    actorMembershipNumber: membershipNumber,
     action: 'event.delete',
+    actorMembershipNumber: membershipNumber,
+    metadata: { id },
     summary: existing
       ? `Deleted event “${existing.title}”`
       : `Deleted event ${id}`,
-    metadata: { id },
   });
   return NextResponse.json({ ok: true });
 };

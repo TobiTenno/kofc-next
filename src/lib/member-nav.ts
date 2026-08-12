@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { members } from '@/db/schema';
 import {
@@ -11,35 +12,35 @@ import { canViewRoster, isFinancialSecretary } from '@/lib/officers';
 import { hasPermission, isWebmaster } from '@/lib/permissions-sync';
 import { centsToDollars, formatMemberName } from '@/lib/utils';
 
+export type MemberNavContext = {
+  links: MemberNavGroups;
+  meta: MemberNavMeta;
+};
+
+export type MemberNavDuesMeta = {
+  amountCents: null | number;
+  amountLabel: null | string;
+  councilYear: null | string;
+  detailsHref: string;
+  paid: boolean;
+  payHref: null | string;
+};
+
+export type MemberNavGroups = {
+  admin: MemberNavLink[];
+  member: MemberNavLink[];
+};
+
 export type MemberNavLink = {
   href: string;
   label: string;
 };
 
-export type MemberNavGroups = {
-  member: MemberNavLink[];
-  admin: MemberNavLink[];
-};
-
-export type MemberNavDuesMeta = {
-  councilYear: string | null;
-  amountCents: number | null;
-  amountLabel: string | null;
-  paid: boolean;
-  payHref: string | null;
-  detailsHref: string;
-};
-
 export type MemberNavMeta = {
-  membershipNumber: string;
   displayName: string;
-  memberClass: string | null;
   dues: MemberNavDuesMeta | null;
-};
-
-export type MemberNavContext = {
-  links: MemberNavGroups;
-  meta: MemberNavMeta;
+  memberClass: null | string;
+  membershipNumber: string;
 };
 
 export const buildMemberNavLinks = async (
@@ -132,7 +133,7 @@ export const buildMemberNavLinks = async (
     });
   }
 
-  return { member, admin };
+  return { admin, member };
 };
 
 const buildDuesMeta = async (
@@ -149,16 +150,16 @@ const buildDuesMeta = async (
   }
 
   return {
-    councilYear: status.councilYear,
     amountCents: status.amountCents,
     amountLabel:
-      status.amountCents != null ? centsToDollars(status.amountCents) : null,
+      status.amountCents == null ? null : centsToDollars(status.amountCents),
+    councilYear: status.councilYear,
+    detailsHref: '/members/dues',
     paid: status.paid,
     payHref:
       status.paid || !isPayPalConfigured()
         ? null
         : `/dues/pay?member=${encodeURIComponent(membershipNumber)}`,
-    detailsHref: '/members/dues',
   };
 };
 
@@ -176,10 +177,10 @@ export const buildMemberNavContext = async (
   return {
     links,
     meta: {
-      membershipNumber,
       displayName: member ? formatMemberName(member) : membershipNumber,
-      memberClass: member?.memberClass ?? null,
       dues,
+      memberClass: member?.memberClass ?? null,
+      membershipNumber,
     },
   };
 };

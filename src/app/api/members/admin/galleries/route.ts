@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { createGallery, listAllGalleries } from '@/lib/galleries';
 import { isImmichConfigured } from '@/lib/immich/client';
 import { hasPermission } from '@/lib/permissions-sync';
@@ -20,13 +21,13 @@ export const GET = async (): Promise<NextResponse> => {
 
   const galleries = await listAllGalleries();
   return NextResponse.json({
-    galleries: galleries.map((gallery) => ({
-      id: gallery.id,
-      title: gallery.title,
-      description: gallery.description,
-      immichAlbumId: gallery.immichAlbumId,
-      allowMemberUploads: gallery.allowMemberUploads,
+    galleries: galleries.map(gallery => ({
       active: gallery.active,
+      allowMemberUploads: gallery.allowMemberUploads,
+      description: gallery.description,
+      id: gallery.id,
+      immichAlbumId: gallery.immichAlbumId,
+      title: gallery.title,
       updatedAt: gallery.updatedAt.toISOString(),
     })),
   });
@@ -47,10 +48,10 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   const body = (await request.json()) as {
-    title?: string;
-    description?: string;
     allowMemberUploads?: boolean;
+    description?: string;
     immichAlbumId?: string;
+    title?: string;
   };
 
   if (!body.title?.trim()) {
@@ -59,15 +60,16 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   try {
     const gallery = await createGallery({
-      title: body.title.trim(),
-      description: body.description?.trim(),
       allowMemberUploads: body.allowMemberUploads ?? true,
       createdBy: membershipNumber,
+      description: body.description?.trim(),
       immichAlbumId: body.immichAlbumId?.trim() || undefined,
+      title: body.title.trim(),
     });
 
     return NextResponse.json({ gallery: { id: gallery.id } });
-  } catch (error) {
+  }
+  catch (error) {
     const message = error instanceof Error ? error.message : 'Create failed';
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -9,62 +9,62 @@ type PaypalTokenCache = {
   expiresAtMs: number;
 };
 
-let tokenCache: PaypalTokenCache | null = null;
-
-export type PaypalSubscriptionStatus =
-  | 'APPROVAL_PENDING'
-  | 'APPROVED'
-  | 'ACTIVE'
-  | 'SUSPENDED'
-  | 'CANCELLED'
-  | 'EXPIRED';
-
-export type PaypalSubscriptionDetails = {
-  id: string;
-  status: PaypalSubscriptionStatus;
-  plan_id?: string;
-  custom_id?: string;
-  subscriber?: {
-    email_address?: string;
-  };
-  billing_info?: {
-    next_billing_time?: string;
-    last_payment?: {
-      amount?: { value?: string; currency_code?: string };
-      time?: string;
-    };
-  };
-};
+let tokenCache: null | PaypalTokenCache = null;
 
 export type PaypalPublicSettings = {
   clientId: string;
-  clientSecretMasked: string | null;
-  mode: 'sandbox' | 'live';
-  webhookIdMasked: string | null;
-  subSyncIntervalMs: number;
+  clientSecretMasked: null | string;
+  mode: 'live' | 'sandbox';
   restConfigured: boolean;
   subscriptionsReady: boolean;
+  subSyncIntervalMs: number;
+  webhookIdMasked: null | string;
 };
+
+export type PaypalSubscriptionDetails = {
+  billing_info?: {
+    last_payment?: {
+      amount?: { currency_code?: string; value?: string };
+      time?: string;
+    };
+    next_billing_time?: string;
+  };
+  custom_id?: string;
+  id: string;
+  plan_id?: string;
+  status: PaypalSubscriptionStatus;
+  subscriber?: {
+    email_address?: string;
+  };
+};
+
+export type PaypalSubscriptionStatus
+  = | 'ACTIVE'
+    | 'APPROVAL_PENDING'
+    | 'APPROVED'
+    | 'CANCELLED'
+    | 'EXPIRED'
+    | 'SUSPENDED';
 
 const getDuesPaypal = () => loadCouncilConfig().dues;
 
-const trimOrNull = (value: string | undefined | null): string | null => {
+const trimOrNull = (value: null | string | undefined): null | string => {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
 };
 
-export const getPaypalClientId = (): string | null =>
-  trimOrNull(getDuesPaypal()?.paypalClientId) ??
-  trimOrNull(process.env.PAYPAL_CLIENT_ID);
+export const getPaypalClientId = (): null | string =>
+  trimOrNull(getDuesPaypal()?.paypalClientId)
+  ?? trimOrNull(process.env.PAYPAL_CLIENT_ID);
 
-export const getPaypalClientSecret = (): string | null =>
-  trimOrNull(getDuesPaypal()?.paypalClientSecret) ??
-  trimOrNull(process.env.PAYPAL_CLIENT_SECRET);
+export const getPaypalClientSecret = (): null | string =>
+  trimOrNull(getDuesPaypal()?.paypalClientSecret)
+  ?? trimOrNull(process.env.PAYPAL_CLIENT_SECRET);
 
 export const isPaypalRestConfigured = (): boolean =>
   Boolean(getPaypalClientId() && getPaypalClientSecret());
 
-export const getPaypalMode = (): 'sandbox' | 'live' => {
+export const getPaypalMode = (): 'live' | 'sandbox' => {
   const fromConfig = getDuesPaypal()?.paypalMode;
   if (fromConfig === 'live' || fromConfig === 'sandbox') {
     return fromConfig;
@@ -81,9 +81,9 @@ export const getPaypalApiBase = (): string =>
 export const getPaypalSubSyncIntervalMs = (): number => {
   const fromConfig = getDuesPaypal()?.paypalSubSyncIntervalMs;
   if (
-    typeof fromConfig === 'number' &&
-    Number.isFinite(fromConfig) &&
-    fromConfig >= 60_000
+    typeof fromConfig === 'number'
+    && Number.isFinite(fromConfig)
+    && fromConfig >= 60_000
   ) {
     return fromConfig;
   }
@@ -98,7 +98,7 @@ export const getPaypalSubSyncIntervalMs = (): number => {
     : DEFAULT_SYNC_INTERVAL_MS;
 };
 
-export const getPaypalPlanIdForClass = (memberClass: string): string | null => {
+export const getPaypalPlanIdForClass = (memberClass: string): null | string => {
   const plans = getDuesPaypal()?.paypalPlans;
   const planId = plans?.[memberClass]?.trim();
   return planId || null;
@@ -109,7 +109,7 @@ export const hasPaypalPlansConfigured = (): boolean => {
   if (!plans) {
     return false;
   }
-  return Object.values(plans).some((id) => Boolean(id?.trim()));
+  return Object.values(plans).some(id => Boolean(id?.trim()));
 };
 
 export const isPaypalSubscriptionsReady = (): boolean =>
@@ -119,18 +119,18 @@ export const clearPaypalTokenCache = (): void => {
   tokenCache = null;
 };
 
-export const getPaypalWebhookId = (): string | null =>
-  trimOrNull(getDuesPaypal()?.paypalWebhookId) ??
-  trimOrNull(process.env.PAYPAL_WEBHOOK_ID);
+export const getPaypalWebhookId = (): null | string =>
+  trimOrNull(getDuesPaypal()?.paypalWebhookId)
+  ?? trimOrNull(process.env.PAYPAL_WEBHOOK_ID);
 
 export const getPaypalPublicSettings = (): PaypalPublicSettings => ({
   clientId: getPaypalClientId() ?? '',
   clientSecretMasked: maskSecret(getPaypalClientSecret()),
   mode: getPaypalMode(),
-  webhookIdMasked: maskSecret(getPaypalWebhookId()),
-  subSyncIntervalMs: getPaypalSubSyncIntervalMs(),
   restConfigured: isPaypalRestConfigured(),
   subscriptionsReady: isPaypalSubscriptionsReady(),
+  subSyncIntervalMs: getPaypalSubSyncIntervalMs(),
+  webhookIdMasked: maskSecret(getPaypalWebhookId()),
 });
 
 const getBasicAuthHeader = (): string => {
@@ -148,12 +148,12 @@ export const getPaypalAccessToken = async (): Promise<string> => {
   }
 
   const response = await fetch(`${getPaypalApiBase()}/v1/oauth2/token`, {
-    method: 'POST',
+    body: 'grant_type=client_credentials',
     headers: {
-      Authorization: `Basic ${getBasicAuthHeader()}`,
+      'Authorization': `Basic ${getBasicAuthHeader()}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: 'grant_type=client_credentials',
+    method: 'POST',
   });
 
   if (!response.ok) {
@@ -182,10 +182,10 @@ const paypalFetch = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const response = await fetch(`${getPaypalApiBase()}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${token}`,
+      'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json',
-      Prefer: 'return=representation',
-      ...(init?.headers ?? {}),
+      'Prefer': 'return=representation',
+      ...init?.headers,
     },
   });
 
@@ -209,94 +209,96 @@ const ensurePaypalProduct = async (
   }
 
   const product = await paypalFetch<{ id: string }>('/v1/catalogs/products', {
-    method: 'POST',
     body: JSON.stringify({
-      name: 'Council dues',
-      description: 'Annual Knights of Columbus council dues',
-      type: 'SERVICE',
       category: 'MEMBERSHIP_CLUBS_AND_ORGANIZATIONS',
+      description: 'Annual Knights of Columbus council dues',
+      name: 'Council dues',
+      type: 'SERVICE',
     }),
+    method: 'POST',
   });
 
   return product.id;
 };
 
 const createAnnualPlan = async (options: {
-  productId: string;
-  memberClass: string;
   amountCents: number;
   currency: string;
+  memberClass: string;
+  productId: string;
 }): Promise<string> => {
   const amount = (options.amountCents / 100).toFixed(2);
   const plan = await paypalFetch<{ id: string }>('/v1/billing/plans', {
-    method: 'POST',
     body: JSON.stringify({
-      product_id: options.productId,
-      name: `Council dues (${options.memberClass})`,
-      description: `Annual dues for member class ${options.memberClass}`,
-      status: 'ACTIVE',
       billing_cycles: [
         {
-          frequency: { interval_unit: 'YEAR', interval_count: 1 },
-          tenure_type: 'REGULAR',
-          sequence: 1,
-          total_cycles: 0,
+          frequency: { interval_count: 1, interval_unit: 'YEAR' },
           pricing_scheme: {
             fixed_price: {
-              value: amount,
               currency_code: options.currency,
+              value: amount,
             },
           },
+          sequence: 1,
+          tenure_type: 'REGULAR',
+          total_cycles: 0,
         },
       ],
+      description: `Annual dues for member class ${options.memberClass}`,
+      name: `Council dues (${options.memberClass})`,
       payment_preferences: {
         auto_bill_outstanding: true,
         payment_failure_threshold: 3,
       },
+      product_id: options.productId,
+      status: 'ACTIVE',
     }),
+    method: 'POST',
   });
 
   return plan.id;
 };
 
-/** Ensure each member class has an annual plan. Existing plan IDs are kept (amount locked on PayPal until re-subscribe). */
+/**
+Ensure each member class has an annual plan. Existing plan IDs are kept (amount locked on PayPal until re-subscribe).
+*/
 export const syncPaypalPlansForRates = async (options: {
-  rates: Record<string, number>;
   currency: string;
   existingPlans?: Record<string, string>;
   existingProductId?: string;
+  rates: Record<string, number>;
   recreateAll?: boolean;
-}): Promise<{ productId: string; plans: Record<string, string> }> => {
+}): Promise<{ plans: Record<string, string>; productId: string }> => {
   if (!isPaypalRestConfigured()) {
     return {
-      productId: options.existingProductId ?? '',
       plans: options.existingPlans ?? {},
+      productId: options.existingProductId ?? '',
     };
   }
 
   const productId = await ensurePaypalProduct(options.existingProductId);
   const plans: Record<string, string> = options.recreateAll
     ? {}
-    : { ...(options.existingPlans ?? {}) };
+    : { ...options.existingPlans };
 
   for (const [memberClass, amountCents] of Object.entries(options.rates)) {
     if (plans[memberClass]?.trim()) {
       continue;
     }
     plans[memberClass] = await createAnnualPlan({
-      productId,
-      memberClass,
       amountCents,
       currency: options.currency,
+      memberClass,
+      productId,
     });
   }
 
-  return { productId, plans };
+  return { plans, productId };
 };
 
 export const persistPaypalPlans = (options: {
-  productId: string;
   plans: Record<string, string>;
+  productId: string;
 }): void => {
   const config = loadCouncilConfig();
   if (!config.dues) {
@@ -307,47 +309,47 @@ export const persistPaypalPlans = (options: {
     ...config,
     dues: {
       ...config.dues,
-      paypalProductId: options.productId || config.dues.paypalProductId,
       paypalPlans: options.plans,
+      paypalProductId: options.productId || config.dues.paypalProductId,
     },
   });
 };
 
 export const createPaypalSubscription = async (options: {
-  planId: string;
-  membershipNumber: string;
-  councilYear: string;
-  returnUrl: string;
   cancelUrl: string;
-}): Promise<{ id: string; approveUrl: string }> => {
+  councilYear: string;
+  membershipNumber: string;
+  planId: string;
+  returnUrl: string;
+}): Promise<{ approveUrl: string; id: string }> => {
   const customId = `${options.membershipNumber}|${options.councilYear}`;
   const subscription = await paypalFetch<{
     id: string;
-    links?: Array<{ rel?: string; href?: string }>;
+    links?: Array<{ href?: string; rel?: string }>;
   }>('/v1/billing/subscriptions', {
-    method: 'POST',
     body: JSON.stringify({
-      plan_id: options.planId,
-      custom_id: customId,
       application_context: {
         brand_name: 'Knights of Columbus',
+        cancel_url: options.cancelUrl,
+        return_url: options.returnUrl,
         shipping_preference: 'NO_SHIPPING',
         user_action: 'SUBSCRIBE_NOW',
-        return_url: options.returnUrl,
-        cancel_url: options.cancelUrl,
       },
+      custom_id: customId,
+      plan_id: options.planId,
     }),
+    method: 'POST',
   });
 
   const approveUrl = subscription.links?.find(
-    (link) => link.rel === 'approve',
+    link => link.rel === 'approve',
   )?.href;
 
   if (!approveUrl) {
     throw new Error('PayPal subscription missing approve URL');
   }
 
-  return { id: subscription.id, approveUrl };
+  return { approveUrl, id: subscription.id };
 };
 
 export const getPaypalSubscription = async (
@@ -360,38 +362,45 @@ export const getPaypalSubscription = async (
 export const mapPaypalStatusToLocal = (
   status: string,
 ):
+  | 'active'
   | 'approval_pending'
   | 'approved'
-  | 'active'
-  | 'suspended'
   | 'cancelled'
-  | 'expired' => {
+  | 'expired'
+  | 'suspended' => {
   switch (status.toUpperCase()) {
-    case 'APPROVAL_PENDING':
-      return 'approval_pending';
-    case 'APPROVED':
-      return 'approved';
-    case 'ACTIVE':
+    case 'ACTIVE': {
       return 'active';
-    case 'SUSPENDED':
-      return 'suspended';
-    case 'CANCELLED':
-      return 'cancelled';
-    case 'EXPIRED':
-      return 'expired';
-    default:
+    }
+    case 'APPROVAL_PENDING': {
       return 'approval_pending';
+    }
+    case 'APPROVED': {
+      return 'approved';
+    }
+    case 'CANCELLED': {
+      return 'cancelled';
+    }
+    case 'EXPIRED': {
+      return 'expired';
+    }
+    case 'SUSPENDED': {
+      return 'suspended';
+    }
+    default: {
+      return 'approval_pending';
+    }
   }
 };
 
 type WebhookVerifyPayload = {
-  transmissionId: string;
-  transmissionTime: string;
-  certUrl: string;
   authAlgo: string;
+  certUrl: string;
+  transmissionId: string;
   transmissionSig: string;
-  webhookId: string;
+  transmissionTime: string;
   webhookEvent: unknown;
+  webhookId: string;
 };
 
 export const verifyPaypalWebhookSignature = async (
@@ -404,16 +413,16 @@ export const verifyPaypalWebhookSignature = async (
   const result = await paypalFetch<{ verification_status?: string }>(
     '/v1/notifications/verify-webhook-signature',
     {
-      method: 'POST',
       body: JSON.stringify({
-        transmission_id: options.transmissionId,
-        transmission_time: options.transmissionTime,
-        cert_url: options.certUrl,
         auth_algo: options.authAlgo,
+        cert_url: options.certUrl,
+        transmission_id: options.transmissionId,
         transmission_sig: options.transmissionSig,
-        webhook_id: options.webhookId,
+        transmission_time: options.transmissionTime,
         webhook_event: options.webhookEvent,
+        webhook_id: options.webhookId,
       }),
+      method: 'POST',
     },
   );
 

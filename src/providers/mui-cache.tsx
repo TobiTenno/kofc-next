@@ -9,12 +9,12 @@ import { useServerInsertedHTML } from 'next/navigation';
 import * as React from 'react';
 
 type AppRouterCacheProviderProps = {
-  options?: Partial<CacheOptions> & { enableCssLayer?: boolean };
   CacheProvider?: React.ComponentType<{
-    value: EmotionCache;
     children: React.ReactNode;
+    value: EmotionCache;
   }>;
   children: React.ReactNode;
+  options?: Partial<CacheOptions> & { enableCssLayer?: boolean };
 };
 
 /**
@@ -22,9 +22,9 @@ type AppRouterCacheProviderProps = {
  * AppRouterCacheProvider, without CJS next/* bridge files that break under Vite.
  */
 export function AppRouterCacheProvider({
-  options,
   CacheProvider = DefaultCacheProvider,
   children,
+  options,
 }: AppRouterCacheProviderProps) {
   const [registry] = React.useState(() => {
     const cache = createCache({
@@ -33,20 +33,20 @@ export function AppRouterCacheProvider({
     });
     cache.compat = true;
     const prevInsert = cache.insert;
-    let inserted: Array<{ name: string; isGlobal: boolean }> = [];
+    let inserted: Array<{ isGlobal: boolean; name: string }> = [];
 
     cache.insert = (...args) => {
       if (
-        options?.enableCssLayer &&
-        !args[1].styles.match(/^@layer\s+[^{]*$/)
+        options?.enableCssLayer
+        && !/^@layer\s+[^{]*$/.test(args[1].styles)
       ) {
         args[1].styles = `@layer mui {${args[1].styles}}`;
       }
       const [selector, serialized] = args;
       if (cache.inserted[serialized.name] === undefined) {
         inserted.push({
-          name: serialized.name,
           isGlobal: !selector,
+          name: serialized.name,
         });
       }
       return prevInsert(...args);
@@ -71,12 +71,13 @@ export function AppRouterCacheProvider({
     let dataEmotionAttribute = registry.cache.key;
     const globals: Array<{ name: string; style: string }> = [];
 
-    for (const { name, isGlobal } of inserted) {
+    for (const { isGlobal, name } of inserted) {
       const style = registry.cache.inserted[name];
       if (typeof style === 'string') {
         if (isGlobal) {
           globals.push({ name, style });
-        } else {
+        }
+        else {
           styles += style;
           dataEmotionAttribute += ` ${name}`;
         }
@@ -87,19 +88,19 @@ export function AppRouterCacheProvider({
       <>
         {globals.map(({ name, style }) => (
           <style
-            key={name}
-            nonce={options?.nonce}
-            data-emotion={`${registry.cache.key}-global ${name}`}
             // biome-ignore lint/security/noDangerouslySetInnerHtml: Emotion SSR styles
             dangerouslySetInnerHTML={{ __html: style }}
+            data-emotion={`${registry.cache.key}-global ${name}`}
+            key={name}
+            nonce={options?.nonce}
           />
         ))}
         {styles ? (
           <style
-            nonce={options?.nonce}
-            data-emotion={dataEmotionAttribute}
             // biome-ignore lint/security/noDangerouslySetInnerHtml: Emotion SSR styles
             dangerouslySetInnerHTML={{ __html: styles }}
+            data-emotion={dataEmotionAttribute}
+            nonce={options?.nonce}
           />
         ) : null}
       </>

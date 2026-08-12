@@ -1,5 +1,6 @@
 import { and, eq, gt, isNull } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { members, registrationTokens } from '@/db/schema';
 import { serverSignUpAuth } from '@/lib/auth';
@@ -13,8 +14,8 @@ import {
 
 export const POST = async (request: Request): Promise<NextResponse> => {
   const body = (await request.json()) as {
-    membershipNumber?: string;
     email?: string;
+    membershipNumber?: string;
   };
 
   if (!body.membershipNumber || !body.email) {
@@ -39,16 +40,17 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
   await db.insert(registrationTokens).values({
+    code,
+    email,
+    expiresAt,
     id: createId(),
     membershipNumber,
-    email,
-    code,
-    expiresAt,
   });
 
   try {
-    await sendRegistrationCode({ to: email, code });
-  } catch {
+    await sendRegistrationCode({ code, to: email });
+  }
+  catch {
     return NextResponse.json(
       { error: 'Unable to send verification email' },
       { status: 503 },
@@ -62,9 +64,9 @@ export const completeRegistration = async (
   request: Request,
 ): Promise<NextResponse> => {
   const body = (await request.json()) as {
-    membershipNumber?: string;
-    email?: string;
     code?: string;
+    email?: string;
+    membershipNumber?: string;
     password?: string;
   };
 
@@ -104,8 +106,8 @@ export const completeRegistration = async (
   const result = await serverSignUpAuth.api.signUpEmail({
     body: {
       email,
-      password: body.password,
       name: formatMemberName(member),
+      password: body.password,
       username: membershipNumber,
     },
   });
@@ -121,8 +123,8 @@ export const completeRegistration = async (
 
   const { recordAuditEvent } = await import('@/lib/audit');
   await recordAuditEvent({
-    actorMembershipNumber: membershipNumber,
     action: 'auth.register',
+    actorMembershipNumber: membershipNumber,
     summary: `Registered portal login for ${membershipNumber}`,
   });
 

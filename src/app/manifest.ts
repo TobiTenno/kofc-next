@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+
 import {
   getPwaLabels,
   pwaBackgroundColorLight,
@@ -7,46 +8,46 @@ import {
 } from '@/lib/pwa';
 
 export default function manifest(): MetadataRoute.Manifest {
-  const { fullName, shortName, description } = getPwaLabels();
+  const { description, fullName, shortName } = getPwaLabels();
 
   return {
-    id: '/',
-    name: fullName,
-    short_name: shortName,
-    description,
-    lang: 'en',
-    start_url: '/',
-    scope: '/',
-    display: 'standalone',
-    orientation: 'any',
-    theme_color: pwaThemeColorLight,
     background_color: pwaBackgroundColorLight,
     categories: ['lifestyle', 'social'],
-    icons: pwaIcons.map((icon) => ({
-      src: icon.src,
-      sizes: icon.sizes,
-      type: icon.type,
+    description,
+    display: 'standalone',
+    icons: pwaIcons.map(icon => ({
       purpose: icon.purpose,
+      sizes: icon.sizes,
+      src: icon.src,
+      type: icon.type,
     })),
+    id: '/',
+    lang: 'en',
+    name: fullName,
+    orientation: 'any',
+    scope: '/',
+    short_name: shortName,
     shortcuts: [
       {
+        description: 'Council calendar',
         name: 'Calendar',
         short_name: 'Calendar',
         url: '/members/calendar',
-        description: 'Council calendar',
       },
       {
+        description: 'View and pay dues',
         name: 'Dues',
         short_name: 'Dues',
         url: '/members/dues',
-        description: 'View and pay dues',
       },
       {
+        description: 'Member portal home',
         name: 'Members',
         short_name: 'Members',
         url: '/members',
-        description: 'Member portal home',
       },
     ],
+    start_url: '/',
+    theme_color: pwaThemeColorLight,
   };
 }

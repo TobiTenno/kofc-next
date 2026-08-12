@@ -21,4 +21,4 @@ dayjs.extend(minMax);
 dayjs.extend(isLeapYear);
 dayjs.locale('en');
 
-export default dayjs;
+export { default } from 'dayjs';

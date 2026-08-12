@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { members } from '@/db/schema';
 import {
@@ -10,8 +11,8 @@ import {
 
 export const POST = async (request: Request): Promise<NextResponse> => {
   const body = (await request.json()) as {
-    membershipNumber?: string;
     lastName?: string;
+    membershipNumber?: string;
   };
 
   if (!body.membershipNumber || !body.lastName) {
@@ -40,14 +41,14 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   return NextResponse.json({
+    amountCents: dues.amountCents,
+    councilYear: dues.councilYear,
     member: {
-      membershipNumber: member.membershipNumber,
       firstName: member.firstName,
       lastName: member.lastName,
       memberClass: member.memberClass,
+      membershipNumber: member.membershipNumber,
     },
-    amountCents: dues.amountCents,
-    councilYear: dues.councilYear,
     paypalBusinessEmail,
     subscribeAvailable: isPayPalSubscribeConfigured(),
   });

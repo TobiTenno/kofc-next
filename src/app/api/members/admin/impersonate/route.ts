@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { user } from '@/db/schema';
 import { recordAuditEvent } from '@/lib/audit';
@@ -61,18 +62,18 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   await recordAuditEvent({
-    actorMembershipNumber,
     action: 'auth.impersonate.start',
-    summary: `Impersonating ${membershipNumber}`,
+    actorMembershipNumber,
     metadata: {
-      targetUserId: target.id,
       targetMembershipNumber: membershipNumber,
+      targetUserId: target.id,
     },
+    summary: `Impersonating ${membershipNumber}`,
   });
 
   return NextResponse.json({
-    userId: target.id,
     membershipNumber,
     name: target.name,
+    userId: target.id,
   });
 };

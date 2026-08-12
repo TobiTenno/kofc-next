@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { user } from '@/db/schema';
 import { recordAuditEvent } from '@/lib/audit';
@@ -25,14 +26,14 @@ export const POST = async (): Promise<NextResponse> => {
   });
 
   await recordAuditEvent({
-    actorMembershipNumber: adminUser?.username ?? null,
     action: 'auth.impersonate.stop',
-    summary: `Stopped impersonating ${session.user.username ?? 'user'}`,
+    actorMembershipNumber: adminUser?.username ?? null,
     metadata: {
-      targetUserId: session.user.id,
-      targetMembershipNumber: session.user.username ?? null,
       adminUserId,
+      targetMembershipNumber: session.user.username ?? null,
+      targetUserId: session.user.id,
     },
+    summary: `Stopped impersonating ${session.user.username ?? 'user'}`,
   });
 
   return NextResponse.json({ ok: true });

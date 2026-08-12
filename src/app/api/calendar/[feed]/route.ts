@@ -1,5 +1,6 @@
-import fs from 'node:fs';
 import { NextResponse } from 'next/server';
+import fs from 'node:fs';
+
 import {
   type CalendarFeed,
   ensureFeedCached,
@@ -9,9 +10,9 @@ import {
 import { validateCalendarToken } from '@/lib/calendar/tokens';
 
 const feedMap: Record<string, CalendarFeed> = {
+  'birthdays.ics': 'birthdays',
   'council.ics': 'council',
   'member-events.ics': 'member-events',
-  'birthdays.ics': 'birthdays',
 };
 
 export const GET = async (
@@ -29,8 +30,8 @@ export const GET = async (
     const url = new URL(request.url);
     const token = url.searchParams.get('token');
     if (
-      !token ||
-      !(await validateCalendarToken({ token, feed: 'birthdays' }))
+      !token
+      || !(await validateCalendarToken({ feed: 'birthdays', token }))
     ) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -42,10 +43,10 @@ export const GET = async (
 
   return new NextResponse(content, {
     headers: {
-      'Content-Type': 'text/calendar; charset=utf-8',
       'Cache-Control': 'public, max-age=300',
-      ...(meta.mtime ? { 'Last-Modified': meta.mtime.toUTCString() } : {}),
-      ...(meta.hash ? { ETag: `"${meta.hash}"` } : {}),
+      'Content-Type': 'text/calendar; charset=utf-8',
+      ...(meta.mtime && { 'Last-Modified': meta.mtime.toUTCString() }),
+      ...(meta.hash && { ETag: `"${meta.hash}"` }),
     },
   });
 };

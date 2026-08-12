@@ -14,35 +14,36 @@ import {
 } from '@heroui/react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+
 import { AdminPageSurface } from '@/components/AdminPageSurface';
 import { GallerySettingsModal } from '@/components/galleries/GallerySettingsModal';
 
 const NEW_ALBUM_KEY = '__new__';
 
 type AdminGallery = {
-  id: string;
-  title: string;
-  description: string | null;
-  immichAlbumId: string;
-  allowMemberUploads: boolean;
   active: boolean;
+  allowMemberUploads: boolean;
+  description: null | string;
+  id: string;
+  immichAlbumId: string;
+  title: string;
   updatedAt: string;
 };
 
 type ImmichAlbumOption = {
+  assetCount: number;
+  description: string;
   id: string;
   name: string;
-  description: string;
-  assetCount: number;
-  thumbnailAssetId: string | null;
+  thumbnailAssetId: null | string;
 };
 
 export const GalleriesAdmin = ({
-  settingsOpen,
   onSettingsOpenChange,
+  settingsOpen,
 }: {
-  settingsOpen: boolean;
   onSettingsOpenChange: (open: boolean) => void;
+  settingsOpen: boolean;
 }) => {
   const [galleries, setGalleries] = useState<AdminGallery[]>([]);
   const [immichAlbums, setImmichAlbums] = useState<ImmichAlbumOption[]>([]);
@@ -51,8 +52,8 @@ export const GalleriesAdmin = ({
   const [description, setDescription] = useState('');
   const [albumChoice, setAlbumChoice] = useState<string>(NEW_ALBUM_KEY);
   const [allowMemberUploads, setAllowMemberUploads] = useState(true);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
+  const [message, setMessage] = useState<null | string>(null);
+  const [messageTone, setMessageTone] = useState<'danger' | 'success'>(
     'success',
   );
   const [submitting, setSubmitting] = useState(false);
@@ -73,7 +74,8 @@ export const GalleriesAdmin = ({
 
     if (response.ok) {
       setImmichAlbums(payload.albums ?? []);
-    } else {
+    }
+    else {
       setMessage(payload.error ?? 'Could not load Immich albums');
       setMessageTone('danger');
     }
@@ -87,7 +89,7 @@ export const GalleriesAdmin = ({
   }, [loadImmichAlbums, loadGalleries]);
 
   const selectedAlbum = useMemo(
-    () => immichAlbums.find((album) => album.id === albumChoice) ?? null,
+    () => immichAlbums.find(album => album.id === albumChoice) ?? null,
     [albumChoice, immichAlbums],
   );
 
@@ -98,13 +100,13 @@ export const GalleriesAdmin = ({
       return;
     }
 
-    const album = immichAlbums.find((item) => item.id === key);
+    const album = immichAlbums.find(item => item.id === key);
     if (!album) {
       return;
     }
 
-    setTitle((current) => current.trim() || album.name);
-    setDescription((current) => current.trim() || album.description);
+    setTitle(current => current.trim() || album.name);
+    setDescription(current => current.trim() || album.description);
   };
 
   const create = async (event: React.FormEvent): Promise<void> => {
@@ -112,18 +114,18 @@ export const GalleriesAdmin = ({
     setSubmitting(true);
     setMessage(null);
 
-    const immichAlbumId =
-      albumChoice === NEW_ALBUM_KEY ? undefined : albumChoice;
+    const immichAlbumId
+      = albumChoice === NEW_ALBUM_KEY ? undefined : albumChoice;
 
     const response = await fetch('/api/members/admin/galleries', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        title,
-        description: description || undefined,
         allowMemberUploads,
+        description: description || undefined,
         immichAlbumId,
+        title,
       }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
     });
 
     const payload = (await response.json()) as { error?: string };
@@ -135,7 +137,8 @@ export const GalleriesAdmin = ({
       setDescription('');
       setAlbumChoice(NEW_ALBUM_KEY);
       await Promise.all([loadGalleries(), loadImmichAlbums()]);
-    } else {
+    }
+    else {
       setMessage(payload.error ?? 'Create failed');
       setMessageTone('danger');
     }
@@ -146,22 +149,22 @@ export const GalleriesAdmin = ({
   const patch = async (
     id: string,
     patchValues: Partial<
-      Pick<AdminGallery, 'allowMemberUploads' | 'active' | 'title'>
+      Pick<AdminGallery, 'active' | 'allowMemberUploads' | 'title'>
     >,
   ): Promise<void> => {
     await fetch(`/api/members/admin/galleries/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(patchValues),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
     });
     await loadGalleries();
   };
 
   return (
     <AdminPageSurface
-      title='Galleries Admin'
       manageAriaLabel='Manage gallery settings'
       onManage={() => onSettingsOpenChange(true)}
+      title='Galleries Admin'
     >
       <Card>
         <Card.Header>
@@ -172,17 +175,17 @@ export const GalleriesAdmin = ({
           </Card.Description>
         </Card.Header>
         <Card.Content>
-          <form onSubmit={create} className='grid gap-4'>
+          <form className='grid gap-4' onSubmit={create}>
             <Select
               fullWidth
-              selectedKey={albumChoice}
+              isDisabled={albumsLoading}
               onSelectionChange={(key) => {
                 if (key == null) {
                   return;
                 }
                 applyAlbumSelection(String(key));
               }}
-              isDisabled={albumsLoading}
+              selectedKey={albumChoice}
             >
               <Label>Immich album</Label>
               <Select.Trigger>
@@ -194,35 +197,45 @@ export const GalleriesAdmin = ({
                   <ListBox.Item id={NEW_ALBUM_KEY} textValue='Create new album'>
                     Create new album
                   </ListBox.Item>
-                  {immichAlbums.map((album) => (
+                  {immichAlbums.map(album => (
                     <ListBox.Item
-                      key={album.id}
                       id={album.id}
+                      key={album.id}
                       textValue={album.name}
                     >
-                      {album.name} ({album.assetCount} photo
-                      {album.assetCount === 1 ? '' : 's'})
+                      {album.name}
+                      {' '}
+                      (
+                      {album.assetCount}
+                      {' '}
+                      photo
+                      {album.assetCount === 1 ? '' : 's'}
+                      )
                     </ListBox.Item>
                   ))}
                 </ListBox>
               </Select.Popover>
             </Select>
 
-            {selectedAlbum ? (
-              <p className='text-sm text-muted-foreground'>
-                Linking existing album &ldquo;{selectedAlbum.name}&rdquo;.
-                {selectedAlbum.description
-                  ? ` ${selectedAlbum.description}`
-                  : ''}
-              </p>
-            ) : null}
+            {selectedAlbum
+              ? (
+                  <p className='text-sm text-muted-foreground'>
+                    Linking existing album &ldquo;
+                    {selectedAlbum.name}
+                    &rdquo;.
+                    {selectedAlbum.description
+                      ? ` ${selectedAlbum.description}`
+                      : ''}
+                  </p>
+                )
+              : null}
 
-            <TextField fullWidth isRequired value={title} onChange={setTitle}>
+            <TextField fullWidth isRequired onChange={setTitle} value={title}>
               <Label>Title</Label>
               <Input />
             </TextField>
 
-            <TextField fullWidth value={description} onChange={setDescription}>
+            <TextField fullWidth onChange={setDescription} value={description}>
               <Label>Description</Label>
               <TextArea rows={2} />
             </TextField>
@@ -240,10 +253,10 @@ export const GalleriesAdmin = ({
             </Switch>
 
             <Button
+              fullWidth
+              isDisabled={submitting}
               type='submit'
               variant='primary'
-              isDisabled={submitting}
-              fullWidth
             >
               {submitting ? 'Creating…' : 'Create gallery'}
             </Button>
@@ -252,66 +265,70 @@ export const GalleriesAdmin = ({
       </Card>
 
       <ul className='grid gap-3'>
-        {galleries.map((gallery) => (
+        {galleries.map(gallery => (
           <Card key={gallery.id}>
             <Card.Content className='grid gap-2 pt-4'>
               <div className='flex flex-wrap justify-between gap-2'>
                 <div>
                   <Link
-                    href={`/members/galleries/${gallery.id}`}
                     className='font-semibold underline'
+                    href={`/members/galleries/${gallery.id}`}
                   >
                     {gallery.title}
                   </Link>
                   <p className='font-mono text-xs text-muted-foreground'>
-                    album {gallery.immichAlbumId}
+                    album
+                    {' '}
+                    {gallery.immichAlbumId}
                   </p>
                 </div>
                 <div className='flex flex-wrap gap-2'>
                   <Button
-                    size='sm'
-                    variant='secondary'
                     className='min-h-11 touch-manipulation'
                     onPress={() =>
                       void patch(gallery.id, {
                         allowMemberUploads: !gallery.allowMemberUploads,
-                      })
-                    }
+                      })}
+                    size='sm'
+                    variant='secondary'
                   >
                     {gallery.allowMemberUploads
                       ? 'Disable uploads'
                       : 'Enable uploads'}
                   </Button>
                   <Button
-                    size='sm'
-                    variant='secondary'
                     className='min-h-11 touch-manipulation'
                     onPress={() =>
-                      void patch(gallery.id, { active: !gallery.active })
-                    }
+                      void patch(gallery.id, { active: !gallery.active })}
+                    size='sm'
+                    variant='secondary'
                   >
                     {gallery.active ? 'Hide' : 'Show'}
                   </Button>
                 </div>
               </div>
-              {gallery.description ? (
-                <p className='text-sm text-muted-foreground'>
-                  {gallery.description}
-                </p>
-              ) : null}
+              {gallery.description
+                ? (
+                    <p className='text-sm text-muted-foreground'>
+                      {gallery.description}
+                    </p>
+                  )
+                : null}
             </Card.Content>
           </Card>
         ))}
       </ul>
 
-      {message ? (
-        <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Description>{message}</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      ) : null}
+      {message
+        ? (
+            <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{message}</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          )
+        : null}
 
       <GallerySettingsModal
         isOpen={settingsOpen}

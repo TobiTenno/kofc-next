@@ -1,22 +1,24 @@
-/** KofC Member Billing / roster class codes from council export. */
+/**
+KofC Member Billing / roster class codes from council export.
+*/
 export const memberClassCodes = ['R', 'L', 'H', 'A', 'I'] as const;
 
 export type MemberClassCode = (typeof memberClassCodes)[number];
 
 export const memberClassLabels: Record<MemberClassCode, string> = {
-  R: 'Regular',
-  L: 'Lifetime',
-  H: 'Honorary',
   A: 'Affiliate',
+  H: 'Honorary',
   I: 'Inactive',
+  L: 'Lifetime',
+  R: 'Regular',
 };
 
 export const isMemberClassCode = (value: string): value is MemberClassCode =>
   memberClassCodes.includes(value as MemberClassCode);
 
 export const formatMemberClass = (
-  code: string | null | undefined,
-): string | null => {
+  code: null | string | undefined,
+): null | string => {
   if (!code) {
     return null;
   }

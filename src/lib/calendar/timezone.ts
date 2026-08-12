@@ -6,20 +6,21 @@ export const DEFAULT_CALENDAR_TIMEZONE = 'America/Chicago';
 
 export const isValidIanaTimeZone = (value: string): boolean => {
   try {
-    Intl.DateTimeFormat(undefined, { timeZone: value });
+    new Intl.DateTimeFormat(undefined, { timeZone: value });
     return true;
-  } catch {
+  }
+  catch {
     return false;
   }
 };
 
 export const resolveCalendarTimeZone = (
-  value: string | null | undefined,
+  value: null | string | undefined,
 ): string =>
   value && isValidIanaTimeZone(value) ? value : DEFAULT_CALENDAR_TIMEZONE;
 
 export const resolveCalendarLocale = (
-  value: string | null | undefined,
+  value: null | string | undefined,
 ): string => value?.trim() || 'en-US';
 
 export const isCalendarDateKey = (value: string): boolean =>

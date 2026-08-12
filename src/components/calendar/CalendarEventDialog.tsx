@@ -1,7 +1,9 @@
 'use client';
 
 import { Modal, useOverlayState } from '@heroui/react';
+
 import type { CalendarPreviewEvent } from '@/lib/calendar/calendar-event-types';
+
 import { calendarEventKindLabel } from '@/lib/calendar/calendar-event-types';
 import dayjs from '@/lib/calendar/dayjs';
 import { buildOsmSearchUrl } from '@/lib/openstreetmap';
@@ -55,8 +57,8 @@ export const CalendarEventDialog = ({
                   {calendarEventKindLabel[event.kind]}
                 </p>
                 <Modal.Heading
-                  id='calendar-event-title'
                   className='text-xl font-semibold'
+                  id='calendar-event-title'
                 >
                   {event.title}
                 </Modal.Heading>
@@ -70,34 +72,38 @@ export const CalendarEventDialog = ({
                   <dt className='font-medium text-muted-foreground'>When</dt>
                   <dd>{formatEventWhen(event)}</dd>
                 </div>
-                {event.location ? (
-                  <div className='grid gap-1'>
-                    <dt className='font-medium text-muted-foreground'>
-                      Location
-                    </dt>
-                    <dd className='grid gap-1'>
-                      <a
-                        href={buildOsmSearchUrl(event.location)}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='underline underline-offset-2 hover:opacity-80'
-                      >
-                        {event.location}
-                      </a>
-                      <span className='text-xs text-muted-foreground'>
-                        Opens in OpenStreetMap
-                      </span>
-                    </dd>
-                  </div>
-                ) : null}
-                {event.description ? (
-                  <div className='grid gap-1'>
-                    <dt className='font-medium text-muted-foreground'>
-                      Details
-                    </dt>
-                    <dd className='whitespace-pre-wrap'>{event.description}</dd>
-                  </div>
-                ) : null}
+                {event.location
+                  ? (
+                      <div className='grid gap-1'>
+                        <dt className='font-medium text-muted-foreground'>
+                          Location
+                        </dt>
+                        <dd className='grid gap-1'>
+                          <a
+                            className='underline underline-offset-2 hover:opacity-80'
+                            href={buildOsmSearchUrl(event.location)}
+                            rel='noopener noreferrer'
+                            target='_blank'
+                          >
+                            {event.location}
+                          </a>
+                          <span className='text-xs text-muted-foreground'>
+                            Opens in OpenStreetMap
+                          </span>
+                        </dd>
+                      </div>
+                    )
+                  : null}
+                {event.description
+                  ? (
+                      <div className='grid gap-1'>
+                        <dt className='font-medium text-muted-foreground'>
+                          Details
+                        </dt>
+                        <dd className='whitespace-pre-wrap'>{event.description}</dd>
+                      </div>
+                    )
+                  : null}
               </dl>
             </Modal.Body>
           </Modal.Dialog>

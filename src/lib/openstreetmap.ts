@@ -2,10 +2,10 @@ export const buildOsmSearchUrl = (query: string): string =>
   `https://www.openstreetmap.org/search?query=${encodeURIComponent(query.trim())}`;
 
 export type PostalAddress = {
-  street: string;
-  street2?: string | null;
   city: string;
   state: string;
+  street: string;
+  street2?: null | string;
   zipCode: string;
 };
 
@@ -17,17 +17,17 @@ export const formatPostalAddress = (address: PostalAddress): string => {
   return `${streetLine}, ${address.city}, ${address.state} ${address.zipCode}`;
 };
 
-export type NominatimSearchResult = {
-  lat: string;
-  lon: string;
-  display_name: string;
-};
-
 export type GeocodeOptions = {
-  q: string;
   addressdetails?: boolean;
   countrycodes?: string[];
   limit?: number;
+  q: string;
+};
+
+export type NominatimSearchResult = {
+  display_name: string;
+  lat: string;
+  lon: string;
 };
 
 const NOMINATIM_SEARCH = 'https://nominatim.openstreetmap.org/search';

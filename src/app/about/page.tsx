@@ -2,6 +2,7 @@
 
 import Divider from '@mui/material/Divider';
 import dynamic from 'next/dynamic';
+
 import { useConfig } from '@/providers/council';
 
 const MapBox = dynamic(() => import('@/components/MapBox'), { ssr: false });
@@ -26,8 +27,14 @@ export default function Page() {
           </div>
           <div className='min-w-0'>
             <div className='text-lg/8 dark:text-gray-300 not-dark:text-gray-700'>
-              {council?.address.street} {council?.address.city},{' '}
-              {council?.address.state} {council?.address.zipCode}
+              {council?.address.street}
+              {' '}
+              {council?.address.city}
+              ,
+              {' '}
+              {council?.address.state}
+              {' '}
+              {council?.address.zipCode}
               <Divider className='my-4' />
               <MapBox />
             </div>

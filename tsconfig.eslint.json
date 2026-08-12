@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowJs": true
+  },
+  "include": [
+    ".commitlintrc.ts",
+    "cypress.config.ts",
+    "cypress/**/*.ts",
+    "drizzle.config.ts",
+    "eslint.config.js",
+    "next-env.d.ts",
+    "next.config.ts",
+    "scripts/**/*.ts",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "vite.config.ts"
+  ],
+  "exclude": ["node_modules", "with-cypress-app", ".next", "dist", "build"]
+}

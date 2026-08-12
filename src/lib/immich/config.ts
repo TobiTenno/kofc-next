@@ -1,25 +1,26 @@
 import { eq } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { appMeta } from '@/db/schema';
 import { loadCouncilConfig, writeCouncilConfig } from '@/lib/council-config';
 import { maskSecret } from '@/lib/utils';
 
-export type ImmichStoredConfig = {
-  url: string;
-  apiKey: string;
-  uploadApiKey?: string;
-  deviceId?: string;
-  maxUploadMb?: number;
-};
-
 export type ImmichPublicSettings = {
-  url: string;
-  apiKeyMasked: string | null;
-  uploadApiKeyMasked: string | null;
+  apiKeyMasked: null | string;
+  configured: boolean;
   deviceId: string;
   maxUploadMb: number;
-  configured: boolean;
-  source: 'stored' | 'env-legacy' | 'none';
+  source: 'env-legacy' | 'none' | 'stored';
+  uploadApiKeyMasked: null | string;
+  url: string;
+};
+
+export type ImmichStoredConfig = {
+  apiKey: string;
+  deviceId?: string;
+  maxUploadMb?: number;
+  uploadApiKey?: string;
+  url: string;
 };
 
 const immichConfigMetaKey = 'immich_config';
@@ -36,14 +37,14 @@ const normalizeStored = (
   }
 
   return {
-    url: trimTrailingSlash(value.url.trim()),
     apiKey: value.apiKey.trim(),
-    uploadApiKey: value.uploadApiKey?.trim() || undefined,
     deviceId: value.deviceId?.trim() || undefined,
     maxUploadMb:
       value.maxUploadMb && value.maxUploadMb > 0
         ? value.maxUploadMb
         : undefined,
+    uploadApiKey: value.uploadApiKey?.trim() || undefined,
+    url: trimTrailingSlash(value.url.trim()),
   };
 };
 
@@ -55,11 +56,11 @@ const readImmichFromEnv = (): ImmichStoredConfig | null => {
   }
 
   return normalizeStored({
-    url,
     apiKey,
-    uploadApiKey: process.env.IMMICH_UPLOAD_API_KEY?.trim() || undefined,
     deviceId: process.env.IMMICH_DEVICE_ID?.trim() || undefined,
     maxUploadMb: Number(process.env.IMMICH_MAX_UPLOAD_MB) || undefined,
+    uploadApiKey: process.env.IMMICH_UPLOAD_API_KEY?.trim() || undefined,
+    url,
   });
 };
 
@@ -80,7 +81,8 @@ const readImmichFromAppMeta = async (): Promise<ImmichStoredConfig | null> => {
 
   try {
     return normalizeStored(JSON.parse(raw) as ImmichStoredConfig);
-  } catch {
+  }
+  catch {
     return null;
   }
 };
@@ -93,8 +95,8 @@ const writeImmichToAppMeta = async (
     .insert(appMeta)
     .values({ key: immichConfigMetaKey, value })
     .onConflictDoUpdate({
-      target: appMeta.key,
       set: { value },
+      target: appMeta.key,
     });
 };
 
@@ -103,13 +105,15 @@ const writeImmichToCouncilJson = (config: ImmichStoredConfig): void => {
   writeCouncilConfig({
     ...current,
     integrations: {
-      ...(current.integrations ?? {}),
+      ...current.integrations,
       immich: config,
     },
   });
 };
 
-/** Persist Immich settings to council.json and app_meta. */
+/**
+Persist Immich settings to council.json and app_meta.
+*/
 export const writeImmichConfig = async (
   config: ImmichStoredConfig,
 ): Promise<ImmichStoredConfig> => {
@@ -135,12 +139,12 @@ export const ensureImmichConfigSynced = async (): Promise<void> => {
 
   if (fromMeta) {
     if (
-      !fromJson ||
-      fromJson.url !== fromMeta.url ||
-      fromJson.apiKey !== fromMeta.apiKey ||
-      fromJson.uploadApiKey !== fromMeta.uploadApiKey ||
-      fromJson.deviceId !== fromMeta.deviceId ||
-      fromJson.maxUploadMb !== fromMeta.maxUploadMb
+      !fromJson
+      || fromJson.url !== fromMeta.url
+      || fromJson.apiKey !== fromMeta.apiKey
+      || fromJson.uploadApiKey !== fromMeta.uploadApiKey
+      || fromJson.deviceId !== fromMeta.deviceId
+      || fromJson.maxUploadMb !== fromMeta.maxUploadMb
     ) {
       writeImmichToCouncilJson(fromMeta);
     }
@@ -174,14 +178,14 @@ export const toImmichPublicSettings = (
   config: ImmichStoredConfig | null,
   source: ImmichPublicSettings['source'],
 ): ImmichPublicSettings => ({
-  url: config?.url ?? '',
   apiKeyMasked: maskSecret(config?.apiKey),
-  uploadApiKeyMasked: maskSecret(config?.uploadApiKey),
+  configured: Boolean(config?.url && config.apiKey),
   deviceId: config?.deviceId?.trim() || 'kofc-council',
   maxUploadMb:
     config?.maxUploadMb && config.maxUploadMb > 0 ? config.maxUploadMb : 25,
-  configured: Boolean(config?.url && config.apiKey),
   source,
+  uploadApiKeyMasked: maskSecret(config?.uploadApiKey),
+  url: config?.url ?? '',
 });
 
 export const getImmichPublicSettings = (): ImmichPublicSettings => {

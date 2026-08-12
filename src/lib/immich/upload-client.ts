@@ -19,9 +19,9 @@ export const uploadFileToImmich = async (
   form.append('deviceId', session.deviceId);
 
   const response = await fetch(session.uploadUrl, {
-    method: 'POST',
-    headers: { 'x-api-key': session.apiKey },
     body: form,
+    headers: { 'x-api-key': session.apiKey },
+    method: 'POST',
   });
 
   if (!response.ok) {

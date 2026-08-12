@@ -2,16 +2,18 @@
 
 import { Alert, Button, Card, Label } from '@heroui/react';
 import { useRef, useState } from 'react';
+
 import type { ImmichUploadSession } from '@/lib/immich/client';
+
 import { uploadFileToImmich } from '@/lib/immich/upload-client';
 
 const allowedMimeTypes = new Set([
-  'image/jpeg',
-  'image/png',
-  'image/webp',
   'image/gif',
   'image/heic',
   'image/heif',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
 ]);
 
 type GalleryUploadFormProps = {
@@ -25,8 +27,8 @@ export const GalleryUploadForm = ({
 }: GalleryUploadFormProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [statusTone, setStatusTone] = useState<'success' | 'danger' | 'accent'>(
+  const [status, setStatus] = useState<null | string>(null);
+  const [statusTone, setStatusTone] = useState<'accent' | 'danger' | 'success'>(
     'accent',
   );
   const [uploading, setUploading] = useState(false);
@@ -81,12 +83,12 @@ export const GalleryUploadForm = ({
       const completeResponse = await fetch(
         `/api/members/galleries/${galleryId}/upload/complete`,
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             assetId: upload.id,
             filename: file.name,
           }),
+          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
         },
       );
 
@@ -96,8 +98,8 @@ export const GalleryUploadForm = ({
 
       if (!completeResponse.ok) {
         setStatus(
-          completePayload.error ??
-            'Uploaded to Immich but could not add to gallery',
+          completePayload.error
+          ?? 'Uploaded to Immich but could not add to gallery',
         );
         setStatusTone('danger');
         setUploading(false);
@@ -112,10 +114,11 @@ export const GalleryUploadForm = ({
       setStatusTone('success');
       setUploading(false);
       onUploaded?.();
-    } catch (error) {
+    }
+    catch (error) {
       const message = error instanceof Error ? error.message : 'Upload failed';
-      const corsHint =
-        message.includes('Failed to fetch') || message.includes('NetworkError')
+      const corsHint
+        = message.includes('Failed to fetch') || message.includes('NetworkError')
           ? ' Check Immich CORS / reverse-proxy settings for this site origin.'
           : '';
       setStatus(`${message}${corsHint}`);
@@ -133,46 +136,50 @@ export const GalleryUploadForm = ({
         </Card.Description>
       </Card.Header>
       <Card.Content>
-        <form onSubmit={submit} className='grid gap-4'>
+        <form className='grid gap-4' onSubmit={submit}>
           <div className='grid gap-2'>
             <Label>Image file</Label>
             <input
-              ref={fileInputRef}
-              type='file'
               accept='image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif'
               className='block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-800'
-              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+              onChange={event => setFile(event.target.files?.[0] ?? null)}
+              ref={fileInputRef}
+              type='file'
             />
-            {file ? (
-              <p className='text-sm text-muted-foreground'>{file.name}</p>
-            ) : null}
+            {file
+              ? (
+                  <p className='text-sm text-muted-foreground'>{file.name}</p>
+                )
+              : null}
           </div>
 
           <Button
+            fullWidth
+            isDisabled={uploading}
             type='submit'
             variant='primary'
-            isDisabled={uploading}
-            fullWidth
           >
             {uploading ? 'Uploading…' : 'Upload'}
           </Button>
 
-          {status ? (
-            <Alert
-              status={
-                statusTone === 'success'
-                  ? 'success'
-                  : statusTone === 'danger'
-                    ? 'danger'
-                    : 'accent'
-              }
-            >
-              <Alert.Indicator />
-              <Alert.Content>
-                <Alert.Description>{status}</Alert.Description>
-              </Alert.Content>
-            </Alert>
-          ) : null}
+          {status
+            ? (
+                <Alert
+                  status={
+                    statusTone === 'success'
+                      ? 'success'
+                      : (statusTone === 'danger'
+                          ? 'danger'
+                          : 'accent')
+                  }
+                >
+                  <Alert.Indicator />
+                  <Alert.Content>
+                    <Alert.Description>{status}</Alert.Description>
+                  </Alert.Content>
+                </Alert>
+              )
+            : null}
         </form>
       </Card.Content>
     </Card>

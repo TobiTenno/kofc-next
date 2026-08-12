@@ -19,19 +19,21 @@ export const SiteHeader = async () => {
 
   return (
     <>
-      {impersonating && membershipNumber && memberContext ? (
-        <ImpersonationBanner
-          membershipNumber={membershipNumber}
-          displayName={memberContext.meta.displayName}
-        />
-      ) : null}
+      {impersonating && membershipNumber && memberContext
+        ? (
+            <ImpersonationBanner
+              displayName={memberContext.meta.displayName}
+              membershipNumber={membershipNumber}
+            />
+          )
+        : null}
       <header className='relative z-[100] mx-auto w-full max-w-7xl min-w-0 rounded-xl text-white dark:bg-gray-950 not-dark:bg-blue-950'>
         <SiteNav
           councilName={council?.name}
-          membershipNumber={membershipNumber}
-          showPayDuesLink={isPayPalConfigured()}
           memberLinks={memberContext?.links ?? null}
           memberMeta={memberContext?.meta ?? null}
+          membershipNumber={membershipNumber}
+          showPayDuesLink={isPayPalConfigured()}
         />
         {memberContext ? <MemberSubNav context={memberContext} /> : null}
       </header>

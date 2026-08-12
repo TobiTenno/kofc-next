@@ -1,142 +1,142 @@
 import { z } from 'zod';
 
 const Address = z.object({
-  street: z.string().min(1),
-  street2: z.string().optional(),
   city: z.string().min(1),
   state: z.string().min(1).length(2),
+  street: z.string().min(1),
+  street2: z.string().optional(),
   zipCode: z.string().min(5).max(10),
 });
 
 const Contact = z.object({
-  phone: z.string().min(10).max(15),
   email: z.string().email(),
+  phone: z.string().min(10).max(15),
   website: z.string().url().optional(),
 });
 
 export enum Position {
-  GrandKnight = 'Grand Knight',
-  DeputyGrandKnight = 'Deputy Grand Knight',
+  Advocate = 'Advocate',
   Chancellor = 'Chancellor',
+  Chaplain = 'Chaplain',
+  DeputyGrandKnight = 'Deputy Grand Knight',
+  DistrictDeputy = 'District Deputy',
   FinancialSecretary = 'Financial Secretary',
+  GrandKnight = 'Grand Knight',
+  InsideGuard = 'Inside Guard',
+  Lecturer = 'Lecturer',
+  OutsideGuard = 'Outside Guard',
   Recorder = 'Recorder',
   Treasurer = 'Treasurer',
-  Advocate = 'Advocate',
-  Warden = 'Warden',
-  InsideGuard = 'Inside Guard',
-  OutsideGuard = 'Outside Guard',
   TrusteeOneYear = 'Trustee (1 Year)',
-  TrusteeTwoYear = 'Trustee (2 Year)',
   TrusteeThreeYear = 'Trustee (3 Year)',
-  Chaplain = 'Chaplain',
-  Lecturer = 'Lecturer',
-  DistrictDeputy = 'District Deputy',
+  TrusteeTwoYear = 'Trustee (2 Year)',
+  Warden = 'Warden',
 }
 
 export const ALL_OFFICER_POSITIONS = Object.values(Position) as Position[];
 
 export const ImageName: Record<Position, string> = {
-  [Position.GrandKnight]: '/medals/grand_knight.jpg',
-  [Position.DeputyGrandKnight]: '/medals/deputy_grand_knight.jpg',
+  [Position.Advocate]: '/medals/advocate.jpg',
   [Position.Chancellor]: '/medals/chancellor.jpg',
+  [Position.Chaplain]: '/medals/chaplain.jpg',
+  [Position.DeputyGrandKnight]: '/medals/deputy_grand_knight.jpg',
+  [Position.DistrictDeputy]: '/medals/district_deputy.jpg',
   [Position.FinancialSecretary]: '/medals/financial_secretary.jpg',
+  [Position.GrandKnight]: '/medals/grand_knight.jpg',
+  [Position.InsideGuard]: '/medals/inside_guard.jpg',
+  [Position.Lecturer]: '/medals/lecturer.jpg',
+  [Position.OutsideGuard]: '/medals/outside_guard.jpg',
   [Position.Recorder]: '/medals/recorder.jpg',
   [Position.Treasurer]: '/medals/treasurer.jpg',
-  [Position.Advocate]: '/medals/advocate.jpg',
-  [Position.Warden]: '/medals/warden.jpg',
-  [Position.InsideGuard]: '/medals/inside_guard.jpg',
-  [Position.OutsideGuard]: '/medals/outside_guard.jpg',
   [Position.TrusteeOneYear]: '/medals/trustee.jpg',
-  [Position.TrusteeTwoYear]: '/medals/trustee.jpg',
   [Position.TrusteeThreeYear]: '/medals/trustee.jpg',
-  [Position.Chaplain]: '/medals/chaplain.jpg',
-  [Position.Lecturer]: '/medals/lecturer.jpg',
-  [Position.DistrictDeputy]: '/medals/district_deputy.jpg',
+  [Position.TrusteeTwoYear]: '/medals/trustee.jpg',
+  [Position.Warden]: '/medals/warden.jpg',
 };
 
 // Define a schema for council configuration data
 export const CouncilSchema = z.object({
-  name: z.string().min(1).optional(),
-  id: z.uuidv7(),
-  number: z.number().int().positive(),
   address: Address,
-  parish: Address.extend({ name: z.string().min(1) }),
-  meetingLocation: Address.optional(),
   contact: Contact.optional(),
+  id: z.uuidv7(),
+  meetingLocation: Address.optional(),
   meetingTimes: z.object({
     council: z.object({
       day: z.string().min(1),
-      time: z.string().min(1),
       frequency: z.string().min(1),
+      time: z.string().min(1),
     }),
     officers: z.object({
       day: z.string().min(1),
-      time: z.string().min(1),
       frequency: z.string().min(1),
+      time: z.string().min(1),
     }),
   }),
+  name: z.string().min(1).optional(),
+  number: z.number().int().positive(),
   officers: z
     .array(
       z.object({
         avatar: z.string().url().optional(),
+        email: z.string().email().optional(),
+        membershipNumber: z.string().min(1).optional(),
         name: z.string().min(1),
+        phone: z.string().min(10).max(15).optional(),
         position: z.enum(Position),
         termEnd: z.string().optional(),
-        email: z.string().email().optional(),
-        phone: z.string().min(10).max(15).optional(),
-        membershipNumber: z.string().min(1).optional(),
       }),
     )
     .optional(),
+  parish: Address.extend({ name: z.string().min(1) }),
 });
 
 export const CouncilConfigSchema = z.object({
+  complete: z.boolean().optional(),
   council: CouncilSchema.optional(),
+  dues: z
+    .object({
+      councilYear: z.string(),
+      currency: z.string().default('USD'),
+      paypalBusinessEmail: z.string().email(),
+      paypalClientId: z.string().optional(),
+      paypalClientSecret: z.string().optional(),
+      paypalMode: z.enum(['sandbox', 'live']).optional(),
+      paypalPlans: z.record(z.string(), z.string()).optional(),
+      paypalProductId: z.string().optional(),
+      paypalSubSyncIntervalMs: z.number().int().positive().optional(),
+      paypalWebhookId: z.string().optional(),
+      rates: z.record(z.string(), z.number().int().positive()),
+    })
+    .optional(),
+  errorMessage: z.string().optional(),
+  integrations: z
+    .object({
+      immich: z
+        .object({
+          apiKey: z.string().min(1),
+          deviceId: z.string().optional(),
+          maxUploadMb: z.number().int().positive().optional(),
+          uploadApiKey: z.string().optional(),
+          url: z.string().url(),
+        })
+        .optional(),
+    })
+    .optional(),
+  permissions: z
+    .object({
+      manageDues: z.array(z.string()).default([]),
+      manageEvents: z.array(z.string()).default([]),
+      manageGalleries: z.array(z.string()).default([]),
+      manageOfficers: z.array(z.string()).default([]),
+      managePermissions: z.array(z.string()).default([]),
+      manageRoster: z.array(z.string()).default([]),
+      sendCouncilEmail: z.array(z.string()).default([]),
+      viewAuditLog: z.array(z.string()).default([]),
+    })
+    .optional(),
   webmaster: z
     .object({
       membershipNumber: z.string(),
     })
     .optional(),
-  permissions: z
-    .object({
-      sendCouncilEmail: z.array(z.string()).default([]),
-      managePermissions: z.array(z.string()).default([]),
-      manageEvents: z.array(z.string()).default([]),
-      manageGalleries: z.array(z.string()).default([]),
-      manageRoster: z.array(z.string()).default([]),
-      manageOfficers: z.array(z.string()).default([]),
-      manageDues: z.array(z.string()).default([]),
-      viewAuditLog: z.array(z.string()).default([]),
-    })
-    .optional(),
-  dues: z
-    .object({
-      councilYear: z.string(),
-      rates: z.record(z.string(), z.number().int().positive()),
-      currency: z.string().default('USD'),
-      paypalBusinessEmail: z.string().email(),
-      paypalProductId: z.string().optional(),
-      paypalPlans: z.record(z.string(), z.string()).optional(),
-      paypalClientId: z.string().optional(),
-      paypalClientSecret: z.string().optional(),
-      paypalMode: z.enum(['sandbox', 'live']).optional(),
-      paypalWebhookId: z.string().optional(),
-      paypalSubSyncIntervalMs: z.number().int().positive().optional(),
-    })
-    .optional(),
-  integrations: z
-    .object({
-      immich: z
-        .object({
-          url: z.string().url(),
-          apiKey: z.string().min(1),
-          uploadApiKey: z.string().optional(),
-          deviceId: z.string().optional(),
-          maxUploadMb: z.number().int().positive().optional(),
-        })
-        .optional(),
-    })
-    .optional(),
-  complete: z.boolean().optional(),
-  errorMessage: z.string().optional(),
 });

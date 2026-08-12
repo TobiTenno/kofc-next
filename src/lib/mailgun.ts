@@ -12,12 +12,12 @@ const sendMailgunRequest = async (
   const response = await fetch(
     `https://api.mailgun.net/v3/${domain}/messages`,
     {
-      method: 'POST',
+      body,
       headers: {
-        Authorization: `Basic ${Buffer.from(`api:${apiKey}`).toString('base64')}`,
+        'Authorization': `Basic ${Buffer.from(`api:${apiKey}`).toString('base64')}`,
         'Content-Type': 'application/x-www-form-urlencoded',
       },
-      body,
+      method: 'POST',
     },
   );
 
@@ -27,10 +27,10 @@ const sendMailgunRequest = async (
 };
 
 export const sendEmail = async (options: {
-  to: string;
+  html?: string;
   subject: string;
   text: string;
-  html?: string;
+  to: string;
 }): Promise<void> => {
   const from = process.env.MAILGUN_FROM;
   if (!from) {
@@ -39,30 +39,30 @@ export const sendEmail = async (options: {
 
   await sendMailgunRequest({
     from,
-    to: options.to,
     subject: options.subject,
     text: options.text,
-    ...(options.html ? { html: options.html } : {}),
+    to: options.to,
+    ...(options.html && { html: options.html }),
   });
 };
 
 export const sendRegistrationCode = async (options: {
-  to: string;
   code: string;
+  to: string;
 }): Promise<void> => {
   await sendEmail({
-    to: options.to,
+    html: `<p>Your verification code is <strong>${options.code}</strong>.</p><p>It expires in 15 minutes.</p>`,
     subject: 'Council member registration code',
     text: `Your verification code is ${options.code}. It expires in 15 minutes.`,
-    html: `<p>Your verification code is <strong>${options.code}</strong>.</p><p>It expires in 15 minutes.</p>`,
+    to: options.to,
   });
 };
 
 export const sendCouncilBroadcast = async (options: {
+  html?: string;
   recipients: string[];
   subject: string;
   text: string;
-  html?: string;
 }): Promise<void> => {
   const from = process.env.MAILGUN_FROM;
   if (!from) {
@@ -74,10 +74,10 @@ export const sendCouncilBroadcast = async (options: {
     const chunk = options.recipients.slice(index, index + chunkSize);
     await sendMailgunRequest({
       from,
-      to: chunk.join(','),
       subject: options.subject,
       text: options.text,
-      ...(options.html ? { html: options.html } : {}),
+      to: chunk.join(','),
+      ...(options.html && { html: options.html }),
     });
   }
 };

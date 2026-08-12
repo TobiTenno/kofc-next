@@ -2,10 +2,10 @@ import { getCanonicalAppOrigin, isLoopbackHost } from '@/lib/app-origin';
 import { DEV_SERVER_PORT } from '@/lib/dev-server';
 import { parseCommaSeparatedList } from '@/lib/utilities';
 
-const devTrustedPort =
-  process.env.NODE_ENV === 'production' ? 3000 : DEV_SERVER_PORT;
+const devTrustedPort
+  = process.env.NODE_ENV === 'production' ? 3000 : DEV_SERVER_PORT;
 
-const addOrigin = (origins: Set<string>, value?: string | null): void => {
+const addOrigin = (origins: Set<string>, value?: null | string): void => {
   const trimmed = value?.trim();
   if (!trimmed) {
     return;
@@ -14,7 +14,8 @@ const addOrigin = (origins: Set<string>, value?: string | null): void => {
   if (trimmed.includes('://')) {
     try {
       origins.add(new URL(trimmed).origin);
-    } catch {
+    }
+    catch {
       // ignore invalid URL
     }
     return;
@@ -30,7 +31,9 @@ const addOrigin = (origins: Set<string>, value?: string | null): void => {
   }
 };
 
-/** Origins allowed for Better Auth CSRF / callback checks. */
+/**
+Origins allowed for Better Auth CSRF / callback checks.
+*/
 export const getAuthTrustedOrigins = (): string[] => {
   const origins = new Set<string>();
 
@@ -61,7 +64,8 @@ export const getAuthTrustedOrigins = (): string[] => {
         origins.add(`http://localhost:${devTrustedPort}`);
         origins.add(`http://127.0.0.1:${devTrustedPort}`);
       }
-    } catch {
+    }
+    catch {
       // ignore invalid canonical URL
     }
   }

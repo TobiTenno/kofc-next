@@ -1,6 +1,8 @@
 import { cookies, headers } from 'next/headers';
-import { serializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-serialize';
+
 import type { SerializedCalendarPreviewEvent } from '@/lib/calendar/calendar-event-types';
+
+import { serializeCalendarPreviewEvents } from '@/lib/calendar/calendar-event-serialize';
 import { loadCalendarPreviewEvents } from '@/lib/calendar/display-events';
 import {
   CALENDAR_LOCALE_COOKIE,
@@ -16,21 +18,21 @@ export type CalendarRequestContext = {
   timeZone: string;
 };
 
-export const getCalendarRequestContext =
-  async (): Promise<CalendarRequestContext> => {
+export const getCalendarRequestContext
+  = async (): Promise<CalendarRequestContext> => {
     const headerStore = await headers();
     const cookieStore = await cookies();
 
     const timeZone = resolveCalendarTimeZone(
-      headerStore.get(CALENDAR_TIMEZONE_HEADER) ??
-        cookieStore.get(CALENDAR_TIMEZONE_COOKIE)?.value,
+      headerStore.get(CALENDAR_TIMEZONE_HEADER)
+      ?? cookieStore.get(CALENDAR_TIMEZONE_COOKIE)?.value,
     );
     const locale = resolveCalendarLocale(
-      headerStore.get(CALENDAR_LOCALE_HEADER) ??
-        cookieStore.get(CALENDAR_LOCALE_COOKIE)?.value,
+      headerStore.get(CALENDAR_LOCALE_HEADER)
+      ?? cookieStore.get(CALENDAR_LOCALE_COOKIE)?.value,
     );
 
-    return { timeZone, locale };
+    return { locale, timeZone };
   };
 
 export const loadSerializedCalendarPreviewEvents = async (options?: {

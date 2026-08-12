@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import {
   fetchImmichAssetMedia,
   type ImmichAssetSize,
@@ -8,7 +9,7 @@ import { getMembershipNumber } from '@/lib/session';
 
 export const runtime = 'nodejs';
 
-const parseSize = (value: string | null): ImmichAssetSize => {
+const parseSize = (value: null | string): ImmichAssetSize => {
   if (value === 'preview' || value === 'fullsize') {
     return value;
   }
@@ -40,11 +41,12 @@ export const GET = async (
 
     return new NextResponse(buffer, {
       headers: {
-        'Content-Type': contentType,
         'Cache-Control': 'private, max-age=300',
+        'Content-Type': contentType,
       },
     });
-  } catch {
+  }
+  catch {
     return NextResponse.json({ error: 'Asset not found' }, { status: 404 });
   }
 };

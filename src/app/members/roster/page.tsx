@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { redirect } from 'next/navigation';
+
 import { RosterTable } from '@/components/roster/RosterTable';
 import { db } from '@/db';
 import { members } from '@/db/schema';
@@ -24,8 +25,8 @@ export default async function RosterPage() {
     redirect('/members/calendar');
   }
 
-  const [roster, canSendEmail, canUseDuesTools, duesConfigured, councilYear] =
-    await Promise.all([
+  const [roster, canSendEmail, canUseDuesTools, duesConfigured, councilYear]
+    = await Promise.all([
       db.select().from(members),
       canSendRosterEmail(membershipNumber),
       canUseRosterAdminTools(membershipNumber),
@@ -35,8 +36,8 @@ export default async function RosterPage() {
 
   const showDuesTools = canUseDuesTools && duesConfigured;
 
-  const paidMembershipNumbers =
-    showDuesTools && councilYear
+  const paidMembershipNumbers
+    = showDuesTools && councilYear
       ? [...(await getPaidMembershipNumbersForCouncilYear(councilYear))]
       : [];
 
@@ -52,11 +53,11 @@ export default async function RosterPage() {
           : null}
       </p>
       <RosterTable
-        members={rows}
         canSendEmail={canSendEmail}
-        showDuesTools={showDuesTools}
         councilYear={showDuesTools ? councilYear : null}
+        members={rows}
         paidMembershipNumbers={paidMembershipNumbers}
+        showDuesTools={showDuesTools}
       />
     </div>
   );

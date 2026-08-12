@@ -1,5 +1,6 @@
 import { inArray } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { members } from '@/db/schema';
 import { recordAuditEvent } from '@/lib/audit';
@@ -18,10 +19,10 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   const body = (await request.json()) as {
-    subject?: string;
-    text?: string;
     membershipNumber?: string;
     membershipNumbers?: string[];
+    subject?: string;
+    text?: string;
   };
 
   if (!body.subject || !body.text) {
@@ -35,20 +36,20 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   const membershipNumbers = body.membershipNumbers?.length
     ? [...new Set(body.membershipNumbers)]
-    : body.membershipNumber
-      ? [body.membershipNumber]
-      : null;
+    : (body.membershipNumber
+        ? [body.membershipNumber]
+        : null);
 
   const auditEmailSend = async (recipientCount: number): Promise<void> => {
     await recordAuditEvent({
-      actorMembershipNumber: membershipNumber,
       action: 'email.send',
-      summary: `Sent email to ${recipientCount} recipient${recipientCount === 1 ? '' : 's'}`,
+      actorMembershipNumber: membershipNumber,
       metadata: {
         recipientCount,
         subjectLength: body.subject?.length ?? 0,
         targeted: Boolean(membershipNumbers),
       },
+      summary: `Sent email to ${recipientCount} recipient${recipientCount === 1 ? '' : 's'}`,
     });
   };
 
@@ -63,7 +64,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     }
 
     const recipients = matched
-      .map((member) => member.primaryEmail)
+      .map(member => member.primaryEmail)
       .filter((email): email is string => Boolean(email));
 
     if (recipients.length === 0) {
@@ -80,10 +81,10 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       }
 
       await sendEmail({
-        to: recipient,
+        html,
         subject: body.subject,
         text: body.text,
-        html,
+        to: recipient,
       });
 
       await auditEmailSend(1);
@@ -96,10 +97,10 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     }
 
     await sendCouncilBroadcast({
+      html,
       recipients,
       subject: body.subject,
       text: body.text,
-      html,
     });
 
     await auditEmailSend(recipients.length);
@@ -112,18 +113,18 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   const roster = await db.select().from(members);
   const recipients = roster
-    .filter((member) => member.active && member.primaryEmail)
-    .map((member) => member.primaryEmail as string);
+    .filter(member => member.active && member.primaryEmail)
+    .map(member => member.primaryEmail as string);
 
   if (recipients.length === 0) {
     return NextResponse.json({ error: 'No recipients' }, { status: 400 });
   }
 
   await sendCouncilBroadcast({
+    html,
     recipients,
     subject: body.subject,
     text: body.text,
-    html,
   });
 
   await auditEmailSend(recipients.length);

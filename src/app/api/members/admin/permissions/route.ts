@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import {
   getPermissionsFromDb,
   hasPermission,
@@ -47,7 +48,7 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
   await updatePermissions(body.key, body.membershipNumbers, membershipNumber);
   const permissions = await getPermissionsFromDb();
   return NextResponse.json({
-    ok: true,
     membershipNumbers: permissions[body.key],
+    ok: true,
   });
 };

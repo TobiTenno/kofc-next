@@ -1,8 +1,9 @@
+import { parse } from 'csv-parse/sync';
+import { eq, notInArray } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parse } from 'csv-parse/sync';
-import { eq, notInArray } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { appMeta, members, user } from '@/db/schema';
 import { getCouncilCsvPath } from '@/lib/council-paths';
@@ -13,24 +14,24 @@ const csvPath = (): string => getCouncilCsvPath();
 type CsvRow = Record<string, string>;
 
 const csvColumns = {
-  membershipNumber: 'Membership Number',
-  prefix: 'Prefix',
-  firstName: 'First Name',
-  middleName: 'Middle Name',
-  lastName: 'Last Name',
-  suffix: 'Suffix',
-  memberType: 'Member Type',
-  memberClass: 'Member Class',
-  nickname: 'Nickname',
-  residencePhone: 'Residence Phone',
-  cellPhone: 'Cell Phone',
-  primaryEmail: 'Primary Email',
-  firstDegreeDate: '1st Degree Date',
-  secondDegreeDate: '2nd Degree Date',
-  thirdDegreeDate: '3rd Degree Date',
-  fourthDegreeDate: '4th Degree Date',
   assemblyNumber: 'Assembly Number',
   birthDate: 'Birth Date',
+  cellPhone: 'Cell Phone',
+  firstDegreeDate: '1st Degree Date',
+  firstName: 'First Name',
+  fourthDegreeDate: '4th Degree Date',
+  lastName: 'Last Name',
+  memberClass: 'Member Class',
+  membershipNumber: 'Membership Number',
+  memberType: 'Member Type',
+  middleName: 'Middle Name',
+  nickname: 'Nickname',
+  prefix: 'Prefix',
+  primaryEmail: 'Primary Email',
+  residencePhone: 'Residence Phone',
+  secondDegreeDate: '2nd Degree Date',
+  suffix: 'Suffix',
+  thirdDegreeDate: '3rd Degree Date',
 } as const;
 
 export const readCouncilCsv = (): CsvRow[] => {
@@ -43,7 +44,7 @@ export const readCouncilCsv = (): CsvRow[] => {
     columns: true,
     skip_empty_lines: true,
     trim: true,
-  }) as CsvRow[];
+  });
 };
 
 export const writeCouncilCsv = (content: string): { rowCount: number } => {
@@ -51,7 +52,7 @@ export const writeCouncilCsv = (content: string): { rowCount: number } => {
     columns: true,
     skip_empty_lines: true,
     trim: true,
-  }) as CsvRow[];
+  });
 
   if (rows.length === 0) {
     throw new Error('CSV has no data rows');
@@ -64,7 +65,7 @@ export const writeCouncilCsv = (content: string): { rowCount: number } => {
     );
   }
 
-  const hasMembership = rows.some((row) =>
+  const hasMembership = rows.some(row =>
     Boolean(row[csvColumns.membershipNumber]?.trim()),
   );
   if (!hasMembership) {
@@ -77,7 +78,7 @@ export const writeCouncilCsv = (content: string): { rowCount: number } => {
   return { rowCount: rows.length };
 };
 
-export const hashCsvContent = (): string | null => {
+export const hashCsvContent = (): null | string => {
   if (!fs.existsSync(csvPath())) {
     return null;
   }
@@ -86,8 +87,8 @@ export const hashCsvContent = (): string | null => {
 };
 
 export const syncCouncilCsv = async (): Promise<{
-  upserted: number;
   deactivated: number;
+  upserted: number;
 }> => {
   const rows = readCouncilCsv();
   const now = new Date();
@@ -104,54 +105,54 @@ export const syncCouncilCsv = async (): Promise<{
     await db
       .insert(members)
       .values({
-        membershipNumber,
-        prefix: row[csvColumns.prefix] || null,
-        firstName: row[csvColumns.firstName] || '',
-        middleName: row[csvColumns.middleName] || null,
-        lastName: row[csvColumns.lastName] || '',
-        suffix: row[csvColumns.suffix] || null,
-        memberType: row[csvColumns.memberType] || null,
-        memberClass: row[csvColumns.memberClass] || null,
-        nickname: row[csvColumns.nickname] || null,
-        residencePhone: row[csvColumns.residencePhone] || null,
+        active: true,
+        assemblyNumber: row[csvColumns.assemblyNumber] || null,
+        birthDate: row[csvColumns.birthDate] || null,
         cellPhone: row[csvColumns.cellPhone] || null,
+        firstDegreeDate: row[csvColumns.firstDegreeDate] || null,
+        firstName: row[csvColumns.firstName] || '',
+        fourthDegreeDate: row[csvColumns.fourthDegreeDate] || null,
+        lastName: row[csvColumns.lastName] || '',
+        memberClass: row[csvColumns.memberClass] || null,
+        membershipNumber,
+        memberType: row[csvColumns.memberType] || null,
+        middleName: row[csvColumns.middleName] || null,
+        nickname: row[csvColumns.nickname] || null,
+        prefix: row[csvColumns.prefix] || null,
         primaryEmail: row[csvColumns.primaryEmail]
           ? normalizeEmail(row[csvColumns.primaryEmail])
           : null,
-        firstDegreeDate: row[csvColumns.firstDegreeDate] || null,
+        residencePhone: row[csvColumns.residencePhone] || null,
         secondDegreeDate: row[csvColumns.secondDegreeDate] || null,
-        thirdDegreeDate: row[csvColumns.thirdDegreeDate] || null,
-        fourthDegreeDate: row[csvColumns.fourthDegreeDate] || null,
-        assemblyNumber: row[csvColumns.assemblyNumber] || null,
-        birthDate: row[csvColumns.birthDate] || null,
-        active: true,
+        suffix: row[csvColumns.suffix] || null,
         syncedAt: now,
+        thirdDegreeDate: row[csvColumns.thirdDegreeDate] || null,
       })
       .onConflictDoUpdate({
-        target: members.membershipNumber,
         set: {
-          prefix: row[csvColumns.prefix] || null,
-          firstName: row[csvColumns.firstName] || '',
-          middleName: row[csvColumns.middleName] || null,
-          lastName: row[csvColumns.lastName] || '',
-          suffix: row[csvColumns.suffix] || null,
-          memberType: row[csvColumns.memberType] || null,
-          memberClass: row[csvColumns.memberClass] || null,
-          nickname: row[csvColumns.nickname] || null,
-          residencePhone: row[csvColumns.residencePhone] || null,
+          active: true,
+          assemblyNumber: row[csvColumns.assemblyNumber] || null,
+          birthDate: row[csvColumns.birthDate] || null,
           cellPhone: row[csvColumns.cellPhone] || null,
+          firstDegreeDate: row[csvColumns.firstDegreeDate] || null,
+          firstName: row[csvColumns.firstName] || '',
+          fourthDegreeDate: row[csvColumns.fourthDegreeDate] || null,
+          lastName: row[csvColumns.lastName] || '',
+          memberClass: row[csvColumns.memberClass] || null,
+          memberType: row[csvColumns.memberType] || null,
+          middleName: row[csvColumns.middleName] || null,
+          nickname: row[csvColumns.nickname] || null,
+          prefix: row[csvColumns.prefix] || null,
           primaryEmail: row[csvColumns.primaryEmail]
             ? normalizeEmail(row[csvColumns.primaryEmail])
             : null,
-          firstDegreeDate: row[csvColumns.firstDegreeDate] || null,
+          residencePhone: row[csvColumns.residencePhone] || null,
           secondDegreeDate: row[csvColumns.secondDegreeDate] || null,
-          thirdDegreeDate: row[csvColumns.thirdDegreeDate] || null,
-          fourthDegreeDate: row[csvColumns.fourthDegreeDate] || null,
-          assemblyNumber: row[csvColumns.assemblyNumber] || null,
-          birthDate: row[csvColumns.birthDate] || null,
-          active: true,
+          suffix: row[csvColumns.suffix] || null,
           syncedAt: now,
+          thirdDegreeDate: row[csvColumns.thirdDegreeDate] || null,
         },
+        target: members.membershipNumber,
       });
   }
 
@@ -190,12 +191,12 @@ export const syncCouncilCsv = async (): Promise<{
       .insert(appMeta)
       .values({ key: 'csv_hash', value: hash })
       .onConflictDoUpdate({
-        target: appMeta.key,
         set: { value: hash },
+        target: appMeta.key,
       });
   }
 
-  return { upserted: activeNumbers.length, deactivated };
+  return { deactivated, upserted: activeNumbers.length };
 };
 
 export const shouldSyncCsv = async (): Promise<boolean> => {

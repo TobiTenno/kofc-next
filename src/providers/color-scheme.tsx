@@ -9,6 +9,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+
 import {
   applyColorScheme,
   type ColorSchemePreference,
@@ -24,8 +25,8 @@ type ColorSchemeContextValue = {
 const ColorSchemeContext = createContext<ColorSchemeContextValue | null>(null);
 
 export const ColorSchemeProvider = ({ children }: { children: ReactNode }) => {
-  const [preference, setPreferenceState] =
-    useState<ColorSchemePreference>('system');
+  const [preference, setPreferenceState]
+    = useState<ColorSchemePreference>('system');
 
   useEffect(() => {
     setPreferenceState(readStoredColorScheme());
@@ -39,7 +40,7 @@ export const ColorSchemeProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const media = globalThis.matchMedia('(prefers-color-scheme: dark)');
     const syncSystem = (): void => applyColorScheme('system');
     media.addEventListener('change', syncSystem);
     return () => media.removeEventListener('change', syncSystem);

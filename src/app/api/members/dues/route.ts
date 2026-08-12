@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { getMemberPaymentStatus, getMemberSubscription } from '@/lib/dues';
 import { requireMembershipNumber } from '@/lib/session';
 
@@ -8,7 +9,8 @@ export const GET = async (): Promise<NextResponse> => {
     const status = await getMemberPaymentStatus(membershipNumber);
     const subscription = await getMemberSubscription(membershipNumber);
     return NextResponse.json({ ...status, subscription });
-  } catch {
+  }
+  catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 };

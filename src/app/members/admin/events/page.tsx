@@ -12,13 +12,14 @@ import {
   TextField,
 } from '@heroui/react';
 import { useCallback, useEffect, useState } from 'react';
+
 import { AdminPageSurface } from '@/components/AdminPageSurface';
 
 type EventRow = {
   id: string;
+  startAt: string;
   title: string;
   type: 'council' | 'member';
-  startAt: string;
 };
 
 type EventType = EventRow['type'];
@@ -29,8 +30,8 @@ export default function EventsAdminPage() {
   const [startAt, setStartAt] = useState('');
   const [type, setType] = useState<EventType>('council');
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
+  const [message, setMessage] = useState<null | string>(null);
+  const [messageTone, setMessageTone] = useState<'danger' | 'success'>(
     'success',
   );
 
@@ -50,9 +51,9 @@ export default function EventsAdminPage() {
     setMessage(null);
 
     const response = await fetch('/api/members/admin/events', {
-      method: 'POST',
+      body: JSON.stringify({ allDay: false, startAt, title, type }),
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, startAt, type, allDay: false }),
+      method: 'POST',
     });
 
     if (response.ok) {
@@ -62,7 +63,8 @@ export default function EventsAdminPage() {
       setStartAt('');
       setType('council');
       await load();
-    } else {
+    }
+    else {
       setMessageTone('danger');
       setMessage('Create failed');
     }
@@ -85,8 +87,8 @@ export default function EventsAdminPage() {
           </Card.Description>
         </Card.Header>
         <Card.Content>
-          <Form onSubmit={create} className='grid gap-4'>
-            <TextField fullWidth isRequired value={title} onChange={setTitle}>
+          <Form className='grid gap-4' onSubmit={create}>
+            <TextField fullWidth isRequired onChange={setTitle} value={title}>
               <Label>Title</Label>
               <Input />
             </TextField>
@@ -94,8 +96,8 @@ export default function EventsAdminPage() {
             <TextField
               fullWidth
               isRequired
-              value={startAt}
               onChange={setStartAt}
+              value={startAt}
             >
               <Label>Start</Label>
               <Input type='datetime-local' />
@@ -103,13 +105,13 @@ export default function EventsAdminPage() {
 
             <Select
               fullWidth
-              selectedKey={type}
               onSelectionChange={(key) => {
                 if (key == null) {
                   return;
                 }
                 setType(String(key) as EventType);
               }}
+              selectedKey={type}
             >
               <Label>Type</Label>
               <Select.Trigger>
@@ -129,10 +131,10 @@ export default function EventsAdminPage() {
             </Select>
 
             <Button
+              fullWidth
+              isDisabled={submitting}
               type='submit'
               variant='primary'
-              isDisabled={submitting}
-              fullWidth
             >
               {submitting ? 'Creating…' : 'Add event'}
             </Button>
@@ -141,21 +143,24 @@ export default function EventsAdminPage() {
       </Card>
 
       <ul className='grid gap-3'>
-        {events.map((event) => (
+        {events.map(event => (
           <Card key={event.id}>
             <Card.Content className='grid gap-2 pt-4'>
               <div className='flex flex-wrap items-start justify-between gap-2'>
                 <div>
                   <p className='font-semibold'>{event.title}</p>
                   <p className='text-sm text-muted-foreground'>
-                    {event.type} — {new Date(event.startAt).toLocaleString()}
+                    {event.type}
+                    {' '}
+                    —
+                    {new Date(event.startAt).toLocaleString()}
                   </p>
                 </div>
                 <Button
-                  size='sm'
-                  variant='danger'
                   className='min-h-11 touch-manipulation'
                   onPress={() => void remove(event.id)}
+                  size='sm'
+                  variant='danger'
                 >
                   Delete
                 </Button>
@@ -165,14 +170,16 @@ export default function EventsAdminPage() {
         ))}
       </ul>
 
-      {message ? (
-        <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Description>{message}</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      ) : null}
+      {message
+        ? (
+            <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{message}</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          )
+        : null}
     </AdminPageSurface>
   );
 }

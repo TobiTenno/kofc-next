@@ -1,4 +1,5 @@
 import { desc, eq } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { gallerySubmissions, photoGalleries } from '@/db/schema';
 import {
@@ -35,11 +36,11 @@ export const getGalleryById = async (
 };
 
 export const createGallery = async (options: {
-  title: string;
-  description?: string;
   allowMemberUploads: boolean;
   createdBy: string;
+  description?: string;
   immichAlbumId?: string;
+  title: string;
 }): Promise<GalleryRecord> => {
   if (!isImmichConfigured()) {
     throw new Error('Immich is not configured');
@@ -64,24 +65,24 @@ export const createGallery = async (options: {
       });
 
   const record: GalleryRecord = {
-    id: createId(),
-    title: options.title,
-    description: options.description ?? null,
-    immichAlbumId: immichAlbum.id,
-    allowMemberUploads: options.allowMemberUploads,
     active: true,
-    createdBy: options.createdBy,
+    allowMemberUploads: options.allowMemberUploads,
     createdAt: now,
+    createdBy: options.createdBy,
+    description: options.description ?? null,
+    id: createId(),
+    immichAlbumId: immichAlbum.id,
+    title: options.title,
     updatedAt: now,
   };
 
   await db.insert(photoGalleries).values(record);
   const { recordAuditEvent } = await import('@/lib/audit');
   await recordAuditEvent({
-    actorMembershipNumber: options.createdBy,
     action: 'gallery.create',
-    summary: `Created gallery “${record.title}”`,
+    actorMembershipNumber: options.createdBy,
     metadata: { id: record.id, immichAlbumId: record.immichAlbumId },
+    summary: `Created gallery “${record.title}”`,
   });
   return record;
 };
@@ -91,10 +92,10 @@ export const updateGallery = async (
   patch: Partial<
     Pick<
       GalleryRecord,
-      'title' | 'description' | 'allowMemberUploads' | 'active'
+      'active' | 'allowMemberUploads' | 'description' | 'title'
     >
   >,
-  actorMembershipNumber?: string | null,
+  actorMembershipNumber?: null | string,
 ): Promise<GalleryRecord | null> => {
   const existing = await getGalleryById(id);
   if (!existing) {
@@ -115,20 +116,20 @@ export const updateGallery = async (
 
   const { recordAuditEvent } = await import('@/lib/audit');
   await recordAuditEvent({
-    actorMembershipNumber,
     action: 'gallery.update',
-    summary: `Updated gallery “${updated.title}”`,
+    actorMembershipNumber,
     metadata: { id, patch },
+    summary: `Updated gallery “${updated.title}”`,
   });
 
   return updated;
 };
 
 export const completeGalleryUpload = async (options: {
-  gallery: GalleryRecord;
-  membershipNumber: string;
   assetId: string;
   filename: string;
+  gallery: GalleryRecord;
+  membershipNumber: string;
 }): Promise<{ assetId: string }> => {
   if (!options.gallery.active) {
     throw new Error('Gallery is not active');
@@ -155,24 +156,24 @@ export const completeGalleryUpload = async (options: {
   ]);
 
   await db.insert(gallerySubmissions).values({
-    id: createId(),
+    createdAt: new Date(),
+    filename: options.filename,
     galleryId: options.gallery.id,
+    id: createId(),
     immichAssetId: options.assetId,
     membershipNumber: options.membershipNumber,
-    filename: options.filename,
-    createdAt: new Date(),
   });
 
   const { recordAuditEvent } = await import('@/lib/audit');
   await recordAuditEvent({
-    actorMembershipNumber: options.membershipNumber,
     action: 'gallery.upload',
-    summary: `Uploaded photo to “${options.gallery.title}”`,
+    actorMembershipNumber: options.membershipNumber,
     metadata: {
-      galleryId: options.gallery.id,
       assetId: options.assetId,
       filename: options.filename,
+      galleryId: options.gallery.id,
     },
+    summary: `Uploaded photo to “${options.gallery.title}”`,
   });
 
   return { assetId: options.assetId };
@@ -186,7 +187,7 @@ export const getGalleryWithImmichAssets = async (id: string) => {
 
   const album = await getImmichAlbumWithAssets(gallery.immichAlbumId);
   return {
-    gallery,
     assets: album.assets ?? [],
+    gallery,
   };
 };

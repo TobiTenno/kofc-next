@@ -4,22 +4,24 @@ import { Button } from '@heroui/react';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 type AdminManageButtonProps = {
-  onPress: () => void;
   'aria-label'?: string;
+  'onPress': () => void;
 };
 
-/** Standard admin settings-modal trigger: cog + "Manage". */
+/**
+Standard admin settings-modal trigger: cog + "Manage".
+*/
 export const AdminManageButton = ({
-  onPress,
   'aria-label': ariaLabel = 'Manage',
+  onPress,
 }: AdminManageButtonProps) => (
   <Button
-    type='button'
-    variant='secondary'
     aria-label={ariaLabel}
     onPress={onPress}
+    type='button'
+    variant='secondary'
   >
-    <SettingsIcon fontSize='small' aria-hidden />
+    <SettingsIcon aria-hidden fontSize='small' />
     Manage
   </Button>
 );

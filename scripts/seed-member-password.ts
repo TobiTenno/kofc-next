@@ -12,9 +12,9 @@ Dev-only: create or replace portal login without Mail registration.
 
 const parseArgs = (
   argv: string[],
-): { membershipNumber: string; password: string; reset: boolean } | null => {
+): null | { membershipNumber: string; password: string; reset: boolean } => {
   const reset = argv.includes('--reset');
-  const positional = argv.filter((arg) => arg !== '--reset');
+  const positional = argv.filter(arg => arg !== '--reset');
 
   if (positional.length < 2) {
     return null;

@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+
 import { defaultCalendarViewSegment } from '@/lib/calendar/calendar-view-path';
 
 type CalendarDefaultRedirectProps = {
@@ -19,9 +20,9 @@ export const CalendarDefaultRedirect = ({
 
   return (
     <div
+      aria-hidden
       className='w-full rounded-md bg-muted/30'
       style={{ minHeight: '420px' }}
-      aria-hidden
     />
   );
 };

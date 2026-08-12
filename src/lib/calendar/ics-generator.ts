@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import ical from 'ical-generator';
+
 import { db } from '@/db';
 import { events, members } from '@/db/schema';
 import { parseMemberBirthMonthDay } from '@/lib/calendar/birth-date';
@@ -27,14 +28,14 @@ const addMeetingEvents = (calendar: ReturnType<typeof ical>): void => {
   }
 
   calendar.createEvent({
-    id: 'council-meeting',
-    summary: `${councilName()} Meeting`,
     description: `${meeting.frequency} on the ${meeting.day} at ${meeting.time}`,
+    id: 'council-meeting',
     location: config.council?.meetingLocation
       ? `${config.council?.meetingLocation.street}, ${config.council?.meetingLocation.city}`
       : undefined,
-    start: new Date(),
     repeating: 'FREQ=MONTHLY',
+    start: new Date(),
+    summary: `${councilName()} Meeting`,
     timezone: 'America/Chicago',
   });
 };
@@ -50,14 +51,14 @@ export const buildCouncilCalendar = async (): Promise<string> => {
 
   for (const event of councilEvents) {
     calendar.createEvent({
-      id: event.id,
-      summary: event.title,
-      description: event.description ?? undefined,
-      location: event.location ?? undefined,
-      start: event.startAt,
-      end: event.endAt ?? undefined,
       allDay: event.allDay,
+      description: event.description ?? undefined,
+      end: event.endAt ?? undefined,
+      id: event.id,
+      location: event.location ?? undefined,
       repeating: event.recurrenceRule ?? undefined,
+      start: event.startAt,
+      summary: event.title,
     });
   }
 
@@ -73,14 +74,14 @@ export const buildMemberEventsCalendar = async (): Promise<string> => {
 
   for (const event of memberEvents) {
     calendar.createEvent({
-      id: event.id,
-      summary: event.title,
-      description: event.description ?? undefined,
-      location: event.location ?? undefined,
-      start: event.startAt,
-      end: event.endAt ?? undefined,
       allDay: event.allDay,
+      description: event.description ?? undefined,
+      end: event.endAt ?? undefined,
+      id: event.id,
+      location: event.location ?? undefined,
       repeating: event.recurrenceRule ?? undefined,
+      start: event.startAt,
+      summary: event.title,
     });
   }
 
@@ -111,11 +112,11 @@ export const buildBirthdaysCalendar = async (): Promise<string> => {
     }
 
     calendar.createEvent({
-      id: `birthday-${member.membershipNumber}`,
-      summary: `${formatMemberName(member)} Birthday`,
-      start: new Date(year, parsed.month - 1, parsed.day),
       allDay: true,
+      id: `birthday-${member.membershipNumber}`,
       repeating: 'FREQ=YEARLY',
+      start: new Date(year, parsed.month - 1, parsed.day),
+      summary: `${formatMemberName(member)} Birthday`,
     });
   }
 

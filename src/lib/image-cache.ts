@@ -2,18 +2,19 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
+
 import { ALLOWED_IMAGE_WIDTHS } from '@/lib/image-sizes';
 
 const CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
 export const getImageCacheDir = (): string =>
-  process.env.IMAGE_CACHE_DIR?.trim() ||
-  path.join(process.cwd(), 'data/cache/images');
+  process.env.IMAGE_CACHE_DIR?.trim()
+  || path.join(process.cwd(), 'data/cache/images');
 
 export type ImageRequestParams = {
   imageUrl: string;
-  width: number;
   quality: number;
+  width: number;
 };
 
 export const parseImageRequest = (
@@ -35,10 +36,10 @@ export const parseImageRequest = (
   const quality = Number.parseInt(qualityParam, 10);
 
   if (
-    width <= 0 ||
-    quality < 1 ||
-    quality > 100 ||
-    !ALLOWED_IMAGE_WIDTHS.includes(width)
+    width <= 0
+    || quality < 1
+    || quality > 100
+    || !ALLOWED_IMAGE_WIDTHS.includes(width)
   ) {
     return null;
   }
@@ -53,11 +54,12 @@ export const parseImageRequest = (
     if (new URL(normalizedUrl, base).origin !== base) {
       return null;
     }
-  } catch {
+  }
+  catch {
     return null;
   }
 
-  return { imageUrl: normalizedUrl, width, quality };
+  return { imageUrl: normalizedUrl, quality, width };
 };
 
 const cacheFilePath = (params: ImageRequestParams): string => {
@@ -73,8 +75,8 @@ const resolvePublicFile = (imageUrl: string): string => {
   const resolved = path.resolve(publicRoot, relativePath);
 
   if (
-    resolved !== publicRoot &&
-    !resolved.startsWith(`${publicRoot}${path.sep}`)
+    resolved !== publicRoot
+    && !resolved.startsWith(`${publicRoot}${path.sep}`)
   ) {
     throw new Error('Invalid image path');
   }

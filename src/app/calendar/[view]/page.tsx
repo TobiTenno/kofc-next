@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { notFound } from 'next/navigation';
+
 import { PublicCalendarContent } from '@/components/calendar/PublicCalendarContent';
 import { getCanonicalAppOrigin, getLocalDevOrigin } from '@/lib/app-origin';
 import {
@@ -28,7 +29,7 @@ export default async function PublicCalendarViewPage({
   const signedIn = Boolean(membershipNumber);
   const baseUrl = getCanonicalAppOrigin() ?? getLocalDevOrigin();
   const token = membershipNumber
-    ? await mintCalendarToken({ membershipNumber, feed: 'birthdays' })
+    ? await mintCalendarToken({ feed: 'birthdays', membershipNumber })
     : null;
   const birthdayUrl = token
     ? `${baseUrl}/api/calendar/birthdays.ics?token=${token}`
@@ -41,9 +42,9 @@ export default async function PublicCalendarViewPage({
     <PublicCalendarContent
       baseUrl={baseUrl}
       calendarBasePath='/calendar'
+      initialBirthdayUrl={birthdayUrl}
       initialEvents={events}
       initialSignedIn={signedIn}
-      initialBirthdayUrl={birthdayUrl}
       serverTimeZone={timeZone}
     />
   );

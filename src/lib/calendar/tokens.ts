@@ -1,12 +1,13 @@
-import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { and, eq, gt } from 'drizzle-orm';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+
 import { db } from '@/db';
 import { calendarTokens } from '@/db/schema';
 import { createId, hashToken } from '@/lib/utils';
 
 export const mintCalendarToken = async (options: {
-  membershipNumber: string;
   feed: 'birthdays';
+  membershipNumber: string;
   ttlDays?: number;
 }): Promise<string> => {
   const token = randomBytes(32).toString('hex');
@@ -16,20 +17,20 @@ export const mintCalendarToken = async (options: {
   );
 
   await db.insert(calendarTokens).values({
+    createdAt: new Date(),
+    expiresAt,
+    feed: options.feed,
     id: createId(),
     membershipNumber: options.membershipNumber,
     tokenHash,
-    feed: options.feed,
-    expiresAt,
-    createdAt: new Date(),
   });
 
   return token;
 };
 
 export const validateCalendarToken = async (options: {
-  token: string;
   feed: 'birthdays';
+  token: string;
 }): Promise<boolean> => {
   const tokenHash = hashToken(options.token);
   const now = new Date();

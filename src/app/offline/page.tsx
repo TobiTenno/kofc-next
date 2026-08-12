@@ -9,7 +9,7 @@ export default function OfflinePage() {
         try again.
       </p>
       <p>
-        <a href='/' className='underline underline-offset-2'>
+        <a className='underline underline-offset-2' href='/'>
           Retry home
         </a>
       </p>

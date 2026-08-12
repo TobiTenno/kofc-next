@@ -1,15 +1,19 @@
 import { getStoredImmichConfig, trimTrailingSlash } from '@/lib/immich/config';
 
-export type ImmichConfig = {
-  apiBase: string;
-  apiKey: string;
+export type ImmichAlbum = {
+  albumName: string;
+  albumThumbnailAssetId?: null | string;
+  assetCount: number;
+  assets?: ImmichAsset[];
+  description: string;
+  id: string;
 };
 
 export type ImmichAsset = {
   id: string;
-  type: 'IMAGE' | 'VIDEO';
-  originalFileName: string;
   localDateTime?: string;
+  originalFileName: string;
+  type: 'IMAGE' | 'VIDEO';
 };
 
 export type ImmichAssetDetail = ImmichAsset & {
@@ -17,19 +21,15 @@ export type ImmichAssetDetail = ImmichAsset & {
   isTrashed?: boolean;
 };
 
-export type ImmichAlbum = {
-  id: string;
-  albumName: string;
-  description: string;
-  assetCount: number;
-  albumThumbnailAssetId?: string | null;
-  assets?: ImmichAsset[];
+export type ImmichConfig = {
+  apiBase: string;
+  apiKey: string;
 };
 
 type ImmichSearchAssetsResponse = {
   assets?: {
     items?: ImmichAsset[];
-    nextPage?: string | null;
+    nextPage?: null | string;
   };
 };
 
@@ -48,17 +48,19 @@ export const getImmichConfig = (): ImmichConfig | null => {
 export const isImmichConfigured = (): boolean => getImmichConfig() !== null;
 
 export type ImmichUploadSession = {
-  uploadUrl: string;
   apiKey: string;
   deviceId: string;
   maxBytes: number;
+  uploadUrl: string;
 };
 
 export const getImmichDeviceId = (): string =>
   getStoredImmichConfig()?.deviceId?.trim() || 'kofc-council';
 
-/** Upload-only key for browser direct uploads; falls back to admin key. */
-export const getImmichUploadApiKey = (): string | null => {
+/**
+Upload-only key for browser direct uploads; falls back to admin key.
+*/
+export const getImmichUploadApiKey = (): null | string => {
   const stored = getStoredImmichConfig();
   if (!stored) {
     return null;
@@ -76,10 +78,10 @@ export const getImmichUploadSession = (): ImmichUploadSession | null => {
   }
 
   return {
-    uploadUrl: `${trimTrailingSlash(stored.url)}/api/assets`,
     apiKey,
     deviceId: getImmichDeviceId(),
     maxBytes: getMaxUploadBytes(),
+    uploadUrl: `${trimTrailingSlash(stored.url)}/api/assets`,
   };
 };
 
@@ -106,8 +108,8 @@ const immichRequest = async <T>(
 
   const response = await fetch(`${config.apiBase}${path}`, {
     ...init,
-    headers,
     cache: 'no-store',
+    headers,
   });
 
   if (!response.ok) {
@@ -125,11 +127,11 @@ const immichRequest = async <T>(
 };
 
 export type ImmichAlbumSummary = {
-  id: string;
   albumName: string;
-  description: string;
+  albumThumbnailAssetId?: null | string;
   assetCount: number;
-  albumThumbnailAssetId?: string | null;
+  description: string;
+  id: string;
 };
 
 export const listImmichAlbums = async (): Promise<ImmichAlbumSummary[]> =>
@@ -140,18 +142,20 @@ export const createImmichAlbum = async (options: {
   description?: string;
 }): Promise<ImmichAlbum> =>
   immichRequest<ImmichAlbum>('/albums', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       albumName: options.albumName,
       description: options.description ?? '',
     }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
   });
 
 export const getImmichAlbum = async (albumId: string): Promise<ImmichAlbum> =>
   immichRequest<ImmichAlbum>(`/albums/${albumId}`);
 
-/** Newer Immich omits assets on GET /albums/:id; fetch via metadata search. */
+/**
+Newer Immich omits assets on GET /albums/:id; fetch via metadata search.
+*/
 export const searchImmichAlbumAssets = async (
   albumId: string,
 ): Promise<ImmichAsset[]> => {
@@ -162,13 +166,13 @@ export const searchImmichAlbumAssets = async (
     const response = await immichRequest<ImmichSearchAssetsResponse>(
       '/search/metadata',
       {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           albumIds: [albumId],
-          size: 1000,
           page,
+          size: 1000,
         }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
       },
     );
 
@@ -176,9 +180,9 @@ export const searchImmichAlbumAssets = async (
     for (const item of items) {
       assets.push({
         id: item.id,
-        type: item.type,
-        originalFileName: item.originalFileName,
         localDateTime: item.localDateTime,
+        originalFileName: item.originalFileName,
+        type: item.type,
       });
     }
 
@@ -221,7 +225,9 @@ export class ImmichUploadValidationError extends Error {
   }
 }
 
-/** Ensure a member-uploaded asset belongs to this council user and site upload flow. */
+/**
+Ensure a member-uploaded asset belongs to this council user and site upload flow.
+*/
 export const assertGalleryUploadAsset = async (
   assetId: string,
 ): Promise<ImmichAssetDetail> => {
@@ -250,13 +256,13 @@ export const addAssetsToImmichAlbum = async (
   }
 
   await immichRequest(`/albums/${albumId}/assets`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ids: assetIds }),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PUT',
   });
 };
 
-export type ImmichAssetSize = 'thumbnail' | 'preview' | 'fullsize';
+export type ImmichAssetSize = 'fullsize' | 'preview' | 'thumbnail';
 
 export const fetchImmichAssetMedia = async (
   assetId: string,
@@ -267,14 +273,14 @@ export const fetchImmichAssetMedia = async (
     throw new Error('Immich is not configured');
   }
 
-  const path =
-    size === 'fullsize'
+  const path
+    = size === 'fullsize'
       ? `/assets/${assetId}/original`
       : `/assets/${assetId}/thumbnail?size=${size}`;
 
   const response = await fetch(`${config.apiBase}${path}`, {
-    headers: { 'x-api-key': config.apiKey },
     cache: 'no-store',
+    headers: { 'x-api-key': config.apiKey },
   });
 
   if (!response.ok) {

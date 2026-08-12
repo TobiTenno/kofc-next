@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { firstForwardedHeaderValue } from '@/lib/app-origin';
 import {
   appendExpiredCookies,
@@ -14,14 +15,14 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   const forwardedProto = firstForwardedHeaderValue(
     request.headers.get('x-forwarded-proto'),
   );
-  const isHttps =
-    forwardedProto === 'https' || new URL(request.url).protocol === 'https:';
+  const isHttps
+    = forwardedProto === 'https' || new URL(request.url).protocol === 'https:';
 
   const pruned = collectStaleAuthCookies(cookieHeader, isHttps);
   const response = NextResponse.json({
-    pruned: pruned.length,
-    names: pruned,
     cookieHeaderBytes: cookieHeader.length,
+    names: pruned,
+    pruned: pruned.length,
   });
 
   appendExpiredCookies(response, pruned);

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { listAuditEvents } from '@/lib/audit';
 import { hasPermission } from '@/lib/permissions-sync';
 import { getMembershipNumber } from '@/lib/session';
@@ -15,13 +16,13 @@ export const GET = async (): Promise<NextResponse> => {
 
   const events = await listAuditEvents(500);
   return NextResponse.json({
-    events: events.map((event) => ({
-      id: event.id,
-      actorMembershipNumber: event.actorMembershipNumber,
+    events: events.map(event => ({
       action: event.action,
-      summary: event.summary,
-      metadata: event.metadata ? JSON.parse(event.metadata) : null,
+      actorMembershipNumber: event.actorMembershipNumber,
       createdAt: event.createdAt,
+      id: event.id,
+      metadata: event.metadata ? JSON.parse(event.metadata) : null,
+      summary: event.summary,
     })),
   });
 };

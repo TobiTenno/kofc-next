@@ -1,32 +1,32 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 
 export type EmailComposeFieldsHandle = {
-  reset: () => void;
   getValues: () => { subject: string; text: string };
+  reset: () => void;
 };
 
 type EmailComposeFieldsProps = {
-  subjectId?: string;
+  autoFocusSubject?: boolean;
   messageId?: string;
   messageMinHeightClass?: string;
-  autoFocusSubject?: boolean;
+  subjectId?: string;
 };
 
 const fieldLabelClass = 'text-sm font-medium text-foreground';
-const inputClass =
-  'input input--primary input--full-width min-h-10 text-foreground';
-const textareaClass =
-  'textarea textarea--primary textarea--full-width min-h-28 text-foreground';
+const inputClass
+  = 'input input--primary input--full-width min-h-10 text-foreground';
+const textareaClass
+  = 'textarea textarea--primary textarea--full-width min-h-28 text-foreground';
 
 export const EmailComposeFields = forwardRef<
   EmailComposeFieldsHandle,
   EmailComposeFieldsProps
 >(function EmailComposeFields(
   {
-    subjectId = 'email-subject',
+    autoFocusSubject = false,
     messageId = 'email-message',
     messageMinHeightClass = 'min-h-28',
-    autoFocusSubject = false,
+    subjectId = 'email-subject',
   },
   ref,
 ) {
@@ -36,11 +36,11 @@ export const EmailComposeFields = forwardRef<
   useImperativeHandle(
     ref,
     () => ({
+      getValues: () => ({ subject, text }),
       reset: () => {
         setSubject('');
         setText('');
       },
-      getValues: () => ({ subject, text }),
     }),
     [subject, text],
   );
@@ -57,32 +57,32 @@ export const EmailComposeFields = forwardRef<
   return (
     <>
       <div className='grid gap-1.5'>
-        <label htmlFor={subjectId} className={fieldLabelClass}>
+        <label className={fieldLabelClass} htmlFor={subjectId}>
           Subject
         </label>
         <input
+          autoComplete='off'
+          className={inputClass}
           id={subjectId}
           name='subject'
-          type='text'
+          onChange={event => setSubject(event.target.value)}
           required
-          autoComplete='off'
+          type='text'
           value={subject}
-          onChange={(event) => setSubject(event.target.value)}
-          className={inputClass}
         />
       </div>
 
       <div className='grid gap-1.5'>
-        <label htmlFor={messageId} className={fieldLabelClass}>
+        <label className={fieldLabelClass} htmlFor={messageId}>
           Message
         </label>
         <textarea
+          className={`${textareaClass} ${messageMinHeightClass}`}
           id={messageId}
           name='message'
+          onChange={event => setText(event.target.value)}
           required
           value={text}
-          onChange={(event) => setText(event.target.value)}
-          className={`${textareaClass} ${messageMinHeightClass}`}
         />
       </div>
     </>

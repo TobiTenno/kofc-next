@@ -1,63 +1,67 @@
 import { parseCalendarDateLocal } from '@/lib/calendar/calendar-date-parse';
 
-export type CalendarEventVariant = 'primary' | 'secondary' | 'outline';
+export type CalendarEventKind
+  = | 'birthday'
+    | 'council-event'
+    | 'council-meeting'
+    | 'member-event'
+    | 'officers-meeting';
 
-export type CalendarEventKind =
-  | 'council-meeting'
-  | 'officers-meeting'
-  | 'council-event'
-  | 'member-event'
-  | 'birthday';
+export type CalendarEventVariant = 'outline' | 'primary' | 'secondary';
 
 export type CalendarPreviewEvent = {
-  id: string;
-  title: string;
-  start: Date;
-  end: Date;
   allDay?: boolean;
-  /** YYYY-MM-DD for all-day events (stable across server TZ). */
-  startDateKey?: string;
-  /** YYYY-MM-DD exclusive end for all-day events. */
+  description?: null | string;
+  end: Date;
+  /**
+  YYYY-MM-DD exclusive end for all-day events.
+  */
   endDateKey?: string;
-  variant: CalendarEventVariant;
+  id: string;
   kind: CalendarEventKind;
-  description?: string | null;
-  location?: string | null;
+  location?: null | string;
+  start: Date;
+  /**
+  YYYY-MM-DD for all-day events (stable across server TZ).
+  */
+  startDateKey?: string;
+  title: string;
+  variant: CalendarEventVariant;
 };
 
 export type SerializedCalendarPreviewEvent = {
-  id: string;
-  title: string;
-  start: string;
-  end: string;
   allDay?: boolean;
-  variant: CalendarEventVariant;
+  description?: null | string;
+  end: string;
+  id: string;
   kind: CalendarEventKind;
-  description?: string | null;
-  location?: string | null;
+  location?: null | string;
+  start: string;
+  title: string;
+  variant: CalendarEventVariant;
 };
 
 export const deserializeCalendarPreviewEvents = (
   rows: SerializedCalendarPreviewEvent[],
 ): CalendarPreviewEvent[] =>
-  rows.map((event) => ({
+  rows.map(event => ({
+    allDay: event.allDay,
+    description: event.description ?? null,
+    end: event.allDay ? parseCalendarDateLocal(event.end) : new Date(event.end),
     id: event.id,
-    title: event.title,
+    kind: event.kind,
+    location: event.location ?? null,
     start: event.allDay
       ? parseCalendarDateLocal(event.start)
       : new Date(event.start),
-    end: event.allDay ? parseCalendarDateLocal(event.end) : new Date(event.end),
-    allDay: event.allDay,
+    title: event.title,
     variant: event.variant,
-    kind: event.kind,
-    description: event.description ?? null,
-    location: event.location ?? null,
   }));
 
 export const calendarEventKindLabel: Record<CalendarEventKind, string> = {
-  'council-meeting': 'Council meeting',
-  'officers-meeting': 'Officers meeting',
+  'birthday': 'Birthday',
   'council-event': 'Council event',
+  'council-meeting': 'Council meeting',
   'member-event': 'Member event',
-  birthday: 'Birthday',
+  'officers-meeting': 'Officers meeting',
 };

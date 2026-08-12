@@ -1,8 +1,8 @@
 type DegreeMember = {
-  firstDegreeDate?: string | null;
-  secondDegreeDate?: string | null;
-  thirdDegreeDate?: string | null;
-  fourthDegreeDate?: string | null;
+  firstDegreeDate?: null | string;
+  fourthDegreeDate?: null | string;
+  secondDegreeDate?: null | string;
+  thirdDegreeDate?: null | string;
 };
 
 export const degreeDateFields = [
@@ -12,7 +12,7 @@ export const degreeDateFields = [
   { key: 'fourthDegreeDate' as const, label: '4°' },
 ];
 
-export const formatDegreeDate = (value: string | null | undefined): string => {
+export const formatDegreeDate = (value: null | string | undefined): string => {
   if (!value?.trim()) {
     return '—';
   }
@@ -25,7 +25,7 @@ export const formatDegreeDate = (value: string | null | undefined): string => {
   return `${match[1]}/${match[2]}/${match[3]}`;
 };
 
-export const getHighestDegreeLabel = (member: DegreeMember): string | null => {
+export const getHighestDegreeLabel = (member: DegreeMember): null | string => {
   if (member.fourthDegreeDate?.trim()) {
     return '4th Degree';
   }
@@ -66,8 +66,8 @@ export const getHighestDegreeRank = (member: DegreeMember): number => {
 };
 
 export const parseDegreeDate = (
-  value: string | null | undefined,
-): number | null => {
+  value: null | string | undefined,
+): null | number => {
   if (!value?.trim()) {
     return null;
   }

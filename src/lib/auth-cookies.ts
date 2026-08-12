@@ -1,18 +1,20 @@
 const BETTER_AUTH_MARKER = 'better-auth';
 
-/** ~12 KB — below Node's default 16 KB header cap, above normal single-session size. */
+/**
+~12 KB — below Node's default 16 KB header cap, above normal single-session size.
+*/
 const AGGRESSIVE_PRUNE_COOKIE_HEADER_BYTES = 12_000;
 
 const parseCookieNames = (cookieHeader: string): string[] =>
   cookieHeader
     .split(';')
-    .map((part) => part.trim().split('=')[0]?.trim())
+    .map(part => part.trim().split('=', 1)[0]?.trim())
     .filter((name): name is string => Boolean(name));
 
 const isBetterAuthCookie = (name: string): boolean =>
   name.includes(BETTER_AUTH_MARKER);
 
-const getBetterAuthSuffix = (name: string): string | null => {
+const getBetterAuthSuffix = (name: string): null | string => {
   const withoutSecurePrefix = name.startsWith('__Secure-')
     ? name.slice('__Secure-'.length)
     : name;
@@ -25,12 +27,14 @@ const getBetterAuthSuffix = (name: string): string | null => {
 };
 
 const isDisabledCacheCookie = (suffix: string): boolean =>
-  suffix === 'session_data' ||
-  suffix.startsWith('session_data.') ||
-  suffix === 'account_data' ||
-  suffix.startsWith('account_data.');
+  suffix === 'session_data'
+  || suffix.startsWith('session_data.')
+  || suffix === 'account_data'
+  || suffix.startsWith('account_data.');
 
-/** Cookie names to expire in dev (HttpOnly cookies require Set-Cookie from server). */
+/**
+Cookie names to expire in dev (HttpOnly cookies require Set-Cookie from server).
+*/
 export const collectStaleAuthCookies = (
   cookieHeader: string,
   isHttps: boolean,
@@ -49,8 +53,8 @@ export const collectStaleAuthCookies = (
     }
 
     if (
-      isDisabledCacheCookie(suffix) ||
-      suffix === 'bearer-token-confirmation'
+      isDisabledCacheCookie(suffix)
+      || suffix === 'bearer-token-confirmation'
     ) {
       stale.add(name);
     }
@@ -83,10 +87,10 @@ export const appendExpiredCookies = (
         name: string,
         value: string,
         options?: {
+          httpOnly?: boolean;
           maxAge?: number;
           path?: string;
           secure?: boolean;
-          httpOnly?: boolean;
         },
       ) => void;
     };
@@ -95,9 +99,9 @@ export const appendExpiredCookies = (
 ): void => {
   for (const name of cookieNames) {
     response.cookies.set(name, '', {
+      httpOnly: true,
       maxAge: 0,
       path: '/',
-      httpOnly: true,
       secure: name.startsWith('__Secure-'),
     });
   }

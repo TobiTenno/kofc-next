@@ -1,5 +1,8 @@
 'use client';
 
+import type { Selection } from '@react-types/shared';
+import type { SortDescriptor } from 'react-aria-components';
+
 import {
   Alert,
   Button,
@@ -13,90 +16,90 @@ import {
   TextField,
   useOverlayState,
 } from '@heroui/react';
-import type { Selection } from '@react-types/shared';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { SortDescriptor } from 'react-aria-components';
+
+import type { RosterMemberRow } from '@/lib/roster';
+
 import {
   EmailComposeFields,
   type EmailComposeFieldsHandle,
 } from '@/components/email/EmailComposeFields';
 import { memberClassCodes, memberClassLabels } from '@/lib/member-class';
 import { degreeDateFields, getHighestDegreeRank } from '@/lib/member-degrees';
-import type { RosterMemberRow } from '@/lib/roster';
 
 const ROWS_PER_PAGE = 25;
 
-type ActiveFilter = 'all' | 'active' | 'inactive';
+type ActiveFilter = 'active' | 'all' | 'inactive';
 type DuesFilter = 'all' | 'paid' | 'unpaid';
-type DuesStatus = 'paid' | 'unpaid' | 'unknown';
+type DuesStatus = 'paid' | 'unknown' | 'unpaid';
 
 type RosterDetailRow = {
-  rowType: 'details';
+  children: [];
   id: string;
   member: RosterMemberRow;
-  children: [];
+  rowType: 'details';
 };
 
 type RosterParentRow = RosterMemberRow & {
-  rowType: 'member';
-  id: string;
   children: [RosterDetailRow];
+  id: string;
+  rowType: 'member';
 };
 
-type RosterRowItem = RosterParentRow | RosterDetailRow;
+type RosterRowItem = RosterDetailRow | RosterParentRow;
 
 type RosterTableProps = {
-  members: RosterMemberRow[];
   canSendEmail?: boolean;
-  showDuesTools?: boolean;
-  councilYear?: string | null;
+  councilYear?: null | string;
+  members: RosterMemberRow[];
   paidMembershipNumbers?: string[];
+  showDuesTools?: boolean;
 };
 
 const compareStrings = (left: string, right: string): number =>
   left.localeCompare(right, undefined, { sensitivity: 'base' });
 
 const compareNullableStrings = (
-  left: string | null,
-  right: string | null,
+  left: null | string,
+  right: null | string,
 ): number => compareStrings(left ?? '', right ?? '');
 
 const toParentRows = (members: RosterMemberRow[]): RosterParentRow[] =>
-  members.map((member) => ({
+  members.map(member => ({
     ...member,
-    rowType: 'member',
-    id: member.membershipNumber,
     children: [
       {
-        rowType: 'details',
+        children: [],
         id: `${member.membershipNumber}-details`,
         member,
-        children: [],
+        rowType: 'details',
       },
     ],
+    id: member.membershipNumber,
+    rowType: 'member',
   }));
 
 const ChevronRightIcon = ({ className = '' }: { className?: string }) => (
   <svg
     aria-hidden
     className={`size-4 shrink-0 ${className}`}
-    viewBox='0 0 24 24'
     fill='currentColor'
+    viewBox='0 0 24 24'
   >
     <path d='M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z' />
   </svg>
 );
 
 const RosterCheckbox = ({
+  ariaLabel,
   checked,
   indeterminate = false,
   onChange,
-  ariaLabel,
 }: {
+  ariaLabel: string;
   checked: boolean;
   indeterminate?: boolean;
   onChange: (checked: boolean) => void;
-  ariaLabel: string;
 }) => {
   const stopActivation = (event: React.SyntheticEvent): void => {
     event.stopPropagation();
@@ -104,19 +107,19 @@ const RosterCheckbox = ({
 
   return (
     <input
-      type='checkbox'
       aria-label={ariaLabel}
       checked={checked}
+      className='size-4 shrink-0 cursor-pointer accent-primary'
+      onChange={event => onChange(event.target.checked)}
+      onClick={stopActivation}
+      onMouseDown={stopActivation}
+      onPointerDown={stopActivation}
       ref={(element) => {
         if (element) {
           element.indeterminate = indeterminate;
         }
       }}
-      onChange={(event) => onChange(event.target.checked)}
-      onClick={stopActivation}
-      onPointerDown={stopActivation}
-      onMouseDown={stopActivation}
-      className='size-4 shrink-0 cursor-pointer accent-primary'
+      type='checkbox'
     />
   );
 };
@@ -138,26 +141,29 @@ const getDuesStatus = (
 
 const formatDuesStatus = (status: DuesStatus): string => {
   switch (status) {
-    case 'paid':
+    case 'paid': {
       return 'Paid';
-    case 'unpaid':
+    }
+    case 'unpaid': {
       return 'Unpaid';
-    default:
+    }
+    default: {
       return '—';
+    }
   }
 };
 
 const BulkEmailForm = ({ members }: { members: RosterMemberRow[] }) => {
   const composeRef = useRef<EmailComposeFieldsHandle>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
+  const [message, setMessage] = useState<null | string>(null);
+  const [messageTone, setMessageTone] = useState<'danger' | 'success'>(
     'success',
   );
   const [loading, setLoading] = useState(false);
 
-  const membersWithEmail = members.filter((member) => member.primaryEmail);
+  const membersWithEmail = members.filter(member => member.primaryEmail);
   const membershipNumbers = membersWithEmail.map(
-    (member) => member.membershipNumber,
+    member => member.membershipNumber,
   );
   const isSingle = members.length === 1;
   const singleMember = isSingle ? members[0] : null;
@@ -173,21 +179,21 @@ const BulkEmailForm = ({ members }: { members: RosterMemberRow[] }) => {
     };
 
     const response = await fetch('/api/members/email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(
         isSingle && singleMember
           ? {
+              membershipNumber: singleMember.membershipNumber,
               subject,
               text,
-              membershipNumber: singleMember.membershipNumber,
             }
           : {
+              membershipNumbers,
               subject,
               text,
-              membershipNumbers,
             },
       ),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
     });
 
     setLoading(false);
@@ -209,9 +215,10 @@ const BulkEmailForm = ({ members }: { members: RosterMemberRow[] }) => {
       setMessage(
         `Sent to ${payload.recipientEmail ?? singleMember.primaryEmail}.`,
       );
-    } else {
-      const skipped =
-        payload.skippedCount && payload.skippedCount > 0
+    }
+    else {
+      const skipped
+        = payload.skippedCount && payload.skippedCount > 0
           ? ` (${payload.skippedCount} skipped — no email on file)`
           : '';
       setMessage(
@@ -222,32 +229,34 @@ const BulkEmailForm = ({ members }: { members: RosterMemberRow[] }) => {
   };
 
   return (
-    <form onSubmit={submit} className='grid gap-4'>
+    <form className='grid gap-4' onSubmit={submit}>
       <EmailComposeFields
+        autoFocusSubject
+        messageId='roster-email-message'
         ref={composeRef}
         subjectId='roster-email-subject'
-        messageId='roster-email-message'
-        autoFocusSubject
       />
-      {message ? (
-        <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Description>{message}</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      ) : null}
+      {message
+        ? (
+            <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{message}</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          )
+        : null}
       <div className='flex flex-wrap justify-end gap-2'>
         <Button
+          isDisabled={loading || membersWithEmail.length === 0}
           type='submit'
           variant='primary'
-          isDisabled={loading || membersWithEmail.length === 0}
         >
           {loading
             ? 'Sending…'
-            : isSingle
-              ? 'Send email'
-              : `Send to ${membersWithEmail.length} member(s)`}
+            : (isSingle
+                ? 'Send email'
+                : `Send to ${membersWithEmail.length} member(s)`)}
         </Button>
       </div>
     </form>
@@ -255,19 +264,19 @@ const BulkEmailForm = ({ members }: { members: RosterMemberRow[] }) => {
 };
 
 const RosterEmailModal = ({
-  members,
   isOpen,
+  members,
   onOpenChange,
 }: {
-  members: RosterMemberRow[];
   isOpen: boolean;
+  members: RosterMemberRow[];
   onOpenChange: (open: boolean) => void;
 }) => {
   const overlay = useOverlayState({
     isOpen,
     onOpenChange,
   });
-  const membersWithEmail = members.filter((member) => member.primaryEmail);
+  const membersWithEmail = members.filter(member => member.primaryEmail);
   const isSingle = members.length === 1;
 
   return (
@@ -284,35 +293,45 @@ const RosterEmailModal = ({
               <Modal.CloseTrigger />
             </Modal.Header>
             <Modal.Body className='grid gap-3'>
-              {isSingle ? (
-                <dl className='grid gap-1 text-sm'>
-                  <div className='flex flex-wrap gap-x-2'>
-                    <dt className='text-muted-foreground'>Number</dt>
-                    <dd className='font-mono font-medium'>
-                      {members[0]?.membershipNumber}
-                    </dd>
-                  </div>
-                  <div className='flex flex-wrap gap-x-2'>
-                    <dt className='text-muted-foreground'>Email</dt>
-                    <dd className='break-all font-medium'>
-                      {members[0]?.primaryEmail ?? 'No email on file'}
-                    </dd>
-                  </div>
-                </dl>
-              ) : (
-                <p className='text-sm text-muted-foreground'>
-                  {membersWithEmail.length} of {members.length} selected have
-                  email on file.
-                </p>
-              )}
-              {membersWithEmail.length === 0 ? (
-                <p className='text-sm text-muted-foreground'>
-                  No email on file for the selected member
-                  {members.length === 1 ? '' : 's'}.
-                </p>
-              ) : (
-                <BulkEmailForm members={members} />
-              )}
+              {isSingle
+                ? (
+                    <dl className='grid gap-1 text-sm'>
+                      <div className='flex flex-wrap gap-x-2'>
+                        <dt className='text-muted-foreground'>Number</dt>
+                        <dd className='font-mono font-medium'>
+                          {members[0]?.membershipNumber}
+                        </dd>
+                      </div>
+                      <div className='flex flex-wrap gap-x-2'>
+                        <dt className='text-muted-foreground'>Email</dt>
+                        <dd className='break-all font-medium'>
+                          {members[0]?.primaryEmail ?? 'No email on file'}
+                        </dd>
+                      </div>
+                    </dl>
+                  )
+                : (
+                    <p className='text-sm text-muted-foreground'>
+                      {membersWithEmail.length}
+                      {' '}
+                      of
+                      {members.length}
+                      {' '}
+                      selected have
+                      email on file.
+                    </p>
+                  )}
+              {membersWithEmail.length === 0
+                ? (
+                    <p className='text-sm text-muted-foreground'>
+                      No email on file for the selected member
+                      {members.length === 1 ? '' : 's'}
+                      .
+                    </p>
+                  )
+                : (
+                    <BulkEmailForm members={members} />
+                  )}
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>
@@ -333,9 +352,13 @@ const MemberDetails = ({ member }: { member: RosterMemberRow }) => (
         <dt className='text-muted-foreground'>Highest degree</dt>
         <dd className='font-medium'>{member.highestDegree ?? '—'}</dd>
       </div>
-      {degreeDateFields.map((field) => (
+      {degreeDateFields.map(field => (
         <div key={field.key}>
-          <dt className='text-muted-foreground'>{field.label} degree date</dt>
+          <dt className='text-muted-foreground'>
+            {field.label}
+            {' '}
+            degree date
+          </dt>
           <dd className='font-medium'>{member[field.key]}</dd>
         </div>
       ))}
@@ -348,11 +371,11 @@ const MemberDetails = ({ member }: { member: RosterMemberRow }) => (
 );
 
 export const RosterTable = ({
-  members,
   canSendEmail = false,
-  showDuesTools = false,
   councilYear = null,
+  members,
   paidMembershipNumbers = [],
+  showDuesTools = false,
 }: RosterTableProps) => {
   const [query, setQuery] = useState('');
   const [classFilter, setClassFilter] = useState<string>('all');
@@ -375,8 +398,8 @@ export const RosterTable = ({
     () => new Set(paidMembershipNumbers),
     [paidMembershipNumbers],
   );
-  const columnCount =
-    6 + (showDuesTools ? 1 : 0) + (enableRowSelection ? 1 : 0);
+  const columnCount
+    = 6 + (showDuesTools ? 1 : 0) + (enableRowSelection ? 1 : 0);
 
   useEffect(() => {
     setPage(1);
@@ -401,9 +424,9 @@ export const RosterTable = ({
       if (degreeFilter !== 'all') {
         const rank = getHighestDegreeRank({
           firstDegreeDate: member.firstDegreeDateRaw,
+          fourthDegreeDate: member.fourthDegreeDateRaw,
           secondDegreeDate: member.secondDegreeDateRaw,
           thirdDegreeDate: member.thirdDegreeDateRaw,
-          fourthDegreeDate: member.fourthDegreeDateRaw,
         });
         if (String(rank) !== degreeFilter) {
           return false;
@@ -460,49 +483,17 @@ export const RosterTable = ({
       let result = 0;
 
       switch (column) {
-        case 'membershipNumber':
-          result = compareStrings(
-            left.membershipNumber,
-            right.membershipNumber,
-          );
+        case 'active': {
+          result = Number(left.active) - Number(right.active);
           break;
-        case 'displayName':
+        }
+        case 'displayName': {
           result = compareStrings(left.lastName, right.lastName);
           if (result === 0) {
             result = compareStrings(left.firstName, right.firstName);
           }
           break;
-        case 'memberClassLabel':
-          result = compareNullableStrings(
-            left.memberClassLabel,
-            right.memberClassLabel,
-          );
-          break;
-        case 'highestDegree': {
-          const leftRank = getHighestDegreeRank({
-            firstDegreeDate: left.firstDegreeDateRaw,
-            secondDegreeDate: left.secondDegreeDateRaw,
-            thirdDegreeDate: left.thirdDegreeDateRaw,
-            fourthDegreeDate: left.fourthDegreeDateRaw,
-          });
-          const rightRank = getHighestDegreeRank({
-            firstDegreeDate: right.firstDegreeDateRaw,
-            secondDegreeDate: right.secondDegreeDateRaw,
-            thirdDegreeDate: right.thirdDegreeDateRaw,
-            fourthDegreeDate: right.fourthDegreeDateRaw,
-          });
-          result = leftRank - rightRank;
-          break;
         }
-        case 'primaryEmail':
-          result = compareNullableStrings(
-            left.primaryEmail,
-            right.primaryEmail,
-          );
-          break;
-        case 'active':
-          result = Number(left.active) - Number(right.active);
-          break;
         case 'duesPaid': {
           const leftStatus = getDuesStatus(left, paidSet);
           const rightStatus = getDuesStatus(right, paidSet);
@@ -518,8 +509,46 @@ export const RosterTable = ({
           result = rank(leftStatus) - rank(rightStatus);
           break;
         }
-        default:
+        case 'highestDegree': {
+          const leftRank = getHighestDegreeRank({
+            firstDegreeDate: left.firstDegreeDateRaw,
+            fourthDegreeDate: left.fourthDegreeDateRaw,
+            secondDegreeDate: left.secondDegreeDateRaw,
+            thirdDegreeDate: left.thirdDegreeDateRaw,
+          });
+          const rightRank = getHighestDegreeRank({
+            firstDegreeDate: right.firstDegreeDateRaw,
+            fourthDegreeDate: right.fourthDegreeDateRaw,
+            secondDegreeDate: right.secondDegreeDateRaw,
+            thirdDegreeDate: right.thirdDegreeDateRaw,
+          });
+          result = leftRank - rightRank;
+          break;
+        }
+        case 'memberClassLabel': {
+          result = compareNullableStrings(
+            left.memberClassLabel,
+            right.memberClassLabel,
+          );
+          break;
+        }
+        case 'membershipNumber': {
+          result = compareStrings(
+            left.membershipNumber,
+            right.membershipNumber,
+          );
+          break;
+        }
+        case 'primaryEmail': {
+          result = compareNullableStrings(
+            left.primaryEmail,
+            right.primaryEmail,
+          );
+          break;
+        }
+        default: {
           result = 0;
+        }
       }
 
       return sortDescriptor.direction === 'descending' ? -result : result;
@@ -545,42 +574,42 @@ export const RosterTable = ({
     return toParentRows(sortedMembers.slice(start, start + ROWS_PER_PAGE));
   }, [sortedMembers, safePage]);
 
-  const pageStart =
-    sortedMembers.length === 0 ? 0 : (safePage - 1) * ROWS_PER_PAGE + 1;
+  const pageStart
+    = sortedMembers.length === 0 ? 0 : (safePage - 1) * ROWS_PER_PAGE + 1;
   const pageEnd = Math.min(safePage * ROWS_PER_PAGE, sortedMembers.length);
   const pages = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   const selectedMembers = useMemo(
     () =>
-      members.filter((member) =>
+      members.filter(member =>
         selectedMembershipNumbers.has(member.membershipNumber),
       ),
     [members, selectedMembershipNumbers],
   );
 
   const filteredMembershipNumbers = useMemo(
-    () => sortedMembers.map((member) => member.membershipNumber),
+    () => sortedMembers.map(member => member.membershipNumber),
     [sortedMembers],
   );
 
   const pageMembershipNumbers = useMemo(
-    () => paginatedRows.map((row) => row.membershipNumber),
+    () => paginatedRows.map(row => row.membershipNumber),
     [paginatedRows],
   );
 
-  const allFilteredSelected =
-    filteredMembershipNumbers.length > 0 &&
-    filteredMembershipNumbers.every((membershipNumber) =>
-      selectedMembershipNumbers.has(membershipNumber),
-    );
+  const allFilteredSelected
+    = filteredMembershipNumbers.length > 0
+      && filteredMembershipNumbers.every(membershipNumber =>
+        selectedMembershipNumbers.has(membershipNumber),
+      );
 
-  const allPageSelected =
-    pageMembershipNumbers.length > 0 &&
-    pageMembershipNumbers.every((membershipNumber) =>
-      selectedMembershipNumbers.has(membershipNumber),
-    );
+  const allPageSelected
+    = pageMembershipNumbers.length > 0
+      && pageMembershipNumbers.every(membershipNumber =>
+        selectedMembershipNumbers.has(membershipNumber),
+      );
 
-  const somePageSelected = pageMembershipNumbers.some((membershipNumber) =>
+  const somePageSelected = pageMembershipNumbers.some(membershipNumber =>
     selectedMembershipNumbers.has(membershipNumber),
   );
 
@@ -592,7 +621,8 @@ export const RosterTable = ({
       const next = new Set(current);
       if (checked) {
         next.add(membershipNumber);
-      } else {
+      }
+      else {
         next.delete(membershipNumber);
       }
       return next;
@@ -608,7 +638,8 @@ export const RosterTable = ({
       for (const membershipNumber of membershipNumbers) {
         if (checked) {
           next.add(membershipNumber);
-        } else {
+        }
+        else {
           next.delete(membershipNumber);
         }
       }
@@ -618,14 +649,15 @@ export const RosterTable = ({
 
   const toggleRowExpanded = (rowId: string): void => {
     setExpandedKeys((current) => {
-      const keys =
-        current === 'all'
+      const keys
+        = current === 'all'
           ? new Set<string>()
           : new Set(current as Iterable<string>);
 
       if (keys.has(rowId)) {
         keys.delete(rowId);
-      } else {
+      }
+      else {
         keys.add(rowId);
       }
 
@@ -647,44 +679,45 @@ export const RosterTable = ({
       );
     }
 
-    const isExpanded =
-      expandedKeys !== 'all' &&
-      (expandedKeys as Set<string>).has(item.membershipNumber);
+    const isExpanded
+      = expandedKeys !== 'all'
+        && (expandedKeys as Set<string>).has(item.membershipNumber);
     const duesStatus = getDuesStatus(item, paidSet);
     const isSelected = selectedMembershipNumbers.has(item.membershipNumber);
     const selectedCellClass = isSelected ? 'roster-cell--selected' : undefined;
 
     return (
       <Table.Row
-        id={item.id}
-        textValue={item.displayName}
         aria-selected={isSelected}
         className='touch-manipulation'
+        id={item.id}
+        textValue={item.displayName}
       >
-        {enableRowSelection ? (
-          <Table.Cell
-            className={['w-10', selectedCellClass].filter(Boolean).join(' ')}
-            data-selected={isSelected || undefined}
-            onPointerDown={stopRowActivation}
-            onClick={stopRowActivation}
-            onMouseDown={stopRowActivation}
-          >
-            <RosterCheckbox
-              ariaLabel={`Select ${item.displayName}`}
-              checked={isSelected}
-              onChange={(checked) =>
-                toggleMemberSelected(item.membershipNumber, checked)
-              }
-            />
-          </Table.Cell>
-        ) : null}
+        {enableRowSelection
+          ? (
+              <Table.Cell
+                className={['w-10', selectedCellClass].filter(Boolean).join(' ')}
+                data-selected={isSelected || undefined}
+                onClick={stopRowActivation}
+                onMouseDown={stopRowActivation}
+                onPointerDown={stopRowActivation}
+              >
+                <RosterCheckbox
+                  ariaLabel={`Select ${item.displayName}`}
+                  checked={isSelected}
+                  onChange={checked =>
+                    toggleMemberSelected(item.membershipNumber, checked)}
+                />
+              </Table.Cell>
+            )
+          : null}
         <Table.Cell
-          textValue={item.membershipNumber}
           className={['cursor-pointer', selectedCellClass]
             .filter(Boolean)
             .join(' ')}
           data-selected={isSelected || undefined}
           onClick={() => toggleRowExpanded(item.id)}
+          textValue={item.membershipNumber}
         >
           <span className='flex min-w-0 items-center gap-2'>
             <ChevronRightIcon
@@ -698,63 +731,65 @@ export const RosterTable = ({
           </span>
         </Table.Cell>
         <Table.Cell
-          textValue={item.displayName}
           className={['cursor-pointer', selectedCellClass]
             .filter(Boolean)
             .join(' ')}
           data-selected={isSelected || undefined}
           onClick={() => toggleRowExpanded(item.id)}
+          textValue={item.displayName}
         >
           <span className='truncate'>{item.displayName}</span>
         </Table.Cell>
         <Table.Cell
-          textValue={item.memberClassLabel ?? ''}
           className={selectedCellClass}
           data-selected={isSelected || undefined}
+          textValue={item.memberClassLabel ?? ''}
         >
           {item.memberClassLabel ?? '—'}
         </Table.Cell>
         <Table.Cell
-          textValue={item.highestDegree ?? ''}
           className={['hidden sm:table-cell', selectedCellClass]
             .filter(Boolean)
             .join(' ')}
           data-selected={isSelected || undefined}
+          textValue={item.highestDegree ?? ''}
         >
           {item.highestDegree ?? '—'}
         </Table.Cell>
         <Table.Cell
-          textValue={item.primaryEmail ?? ''}
           className={['hidden md:table-cell', selectedCellClass]
             .filter(Boolean)
             .join(' ')}
           data-selected={isSelected || undefined}
+          textValue={item.primaryEmail ?? ''}
         >
           <span className='break-all'>{item.primaryEmail ?? '—'}</span>
         </Table.Cell>
-        {showDuesTools ? (
-          <Table.Cell
-            textValue={formatDuesStatus(duesStatus)}
-            className={selectedCellClass}
-            data-selected={isSelected || undefined}
-          >
-            <span
-              className={
-                duesStatus === 'paid'
-                  ? 'font-medium text-emerald-700 dark:text-emerald-400'
-                  : duesStatus === 'unpaid'
-                    ? 'font-medium text-red-600 dark:text-red-400'
-                    : 'text-muted-foreground'
-              }
-            >
-              {formatDuesStatus(duesStatus)}
-            </span>
-          </Table.Cell>
-        ) : null}
+        {showDuesTools
+          ? (
+              <Table.Cell
+                className={selectedCellClass}
+                data-selected={isSelected || undefined}
+                textValue={formatDuesStatus(duesStatus)}
+              >
+                <span
+                  className={
+                    duesStatus === 'paid'
+                      ? 'font-medium text-emerald-700 dark:text-emerald-400'
+                      : (duesStatus === 'unpaid'
+                          ? 'font-medium text-red-600 dark:text-red-400'
+                          : 'text-muted-foreground')
+                  }
+                >
+                  {formatDuesStatus(duesStatus)}
+                </span>
+              </Table.Cell>
+            )
+          : null}
         <Table.Cell
-          textValue={item.active ? 'Active' : 'Inactive'}
           className={selectedCellClass}
           data-selected={isSelected || undefined}
+          textValue={item.active ? 'Active' : 'Inactive'}
         >
           {item.active ? 'Yes' : 'No'}
         </Table.Cell>
@@ -774,20 +809,20 @@ export const RosterTable = ({
           <TextField className='sm:col-span-2 lg:col-span-1'>
             <Label>Search</Label>
             <Input
+              onChange={event => setQuery(event.target.value)}
+              placeholder='Name, number, email…'
               type='search'
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder='Name, number, email…'
             />
           </TextField>
 
           <Select
-            selectedKey={classFilter}
             onSelectionChange={(key) => {
               if (key != null) {
                 setClassFilter(String(key));
               }
             }}
+            selectedKey={classFilter}
           >
             <Label>Class</Label>
             <Select.Trigger>
@@ -799,10 +834,10 @@ export const RosterTable = ({
                 <ListBox.Item id='all' textValue='All classes'>
                   All classes
                 </ListBox.Item>
-                {memberClassCodes.map((code) => (
+                {memberClassCodes.map(code => (
                   <ListBox.Item
-                    key={code}
                     id={code}
+                    key={code}
                     textValue={memberClassLabels[code]}
                   >
                     {memberClassLabels[code]}
@@ -813,12 +848,12 @@ export const RosterTable = ({
           </Select>
 
           <Select
-            selectedKey={degreeFilter}
             onSelectionChange={(key) => {
               if (key != null) {
                 setDegreeFilter(String(key));
               }
             }}
+            selectedKey={degreeFilter}
           >
             <Label>Degree</Label>
             <Select.Trigger>
@@ -850,12 +885,12 @@ export const RosterTable = ({
           </Select>
 
           <Select
-            selectedKey={activeFilter}
             onSelectionChange={(key) => {
               if (key != null) {
                 setActiveFilter(String(key) as ActiveFilter);
               }
             }}
+            selectedKey={activeFilter}
           >
             <Label>Status</Label>
             <Select.Trigger>
@@ -877,40 +912,57 @@ export const RosterTable = ({
             </Select.Popover>
           </Select>
 
-          {showDuesTools ? (
-            <Select
-              selectedKey={duesFilter}
-              onSelectionChange={(key) => {
-                if (key != null) {
-                  setDuesFilter(String(key) as DuesFilter);
-                }
-              }}
-            >
-              <Label>Dues{councilYear ? ` (${councilYear})` : ''}</Label>
-              <Select.Trigger>
-                <Select.Value />
-                <Select.Indicator />
-              </Select.Trigger>
-              <Select.Popover>
-                <ListBox>
-                  <ListBox.Item id='all' textValue='All dues statuses'>
-                    All dues statuses
-                  </ListBox.Item>
-                  <ListBox.Item id='paid' textValue='Paid'>
-                    Paid
-                  </ListBox.Item>
-                  <ListBox.Item id='unpaid' textValue='Unpaid'>
-                    Unpaid
-                  </ListBox.Item>
-                </ListBox>
-              </Select.Popover>
-            </Select>
-          ) : null}
+          {showDuesTools
+            ? (
+                <Select
+                  onSelectionChange={(key) => {
+                    if (key != null) {
+                      setDuesFilter(String(key) as DuesFilter);
+                    }
+                  }}
+                  selectedKey={duesFilter}
+                >
+                  <Label>
+                    Dues
+                    {councilYear ? ` (${councilYear})` : ''}
+                  </Label>
+                  <Select.Trigger>
+                    <Select.Value />
+                    <Select.Indicator />
+                  </Select.Trigger>
+                  <Select.Popover>
+                    <ListBox>
+                      <ListBox.Item id='all' textValue='All dues statuses'>
+                        All dues statuses
+                      </ListBox.Item>
+                      <ListBox.Item id='paid' textValue='Paid'>
+                        Paid
+                      </ListBox.Item>
+                      <ListBox.Item id='unpaid' textValue='Unpaid'>
+                        Unpaid
+                      </ListBox.Item>
+                    </ListBox>
+                  </Select.Popover>
+                </Select>
+              )
+            : null}
         </div>
 
         <p className='border-b border-border px-4 py-2 text-sm text-muted-foreground'>
-          Showing {sortedMembers.length === 0 ? 0 : pageStart}–{pageEnd} of{' '}
-          {sortedMembers.length} filtered ({members.length} total)
+          Showing
+          {' '}
+          {sortedMembers.length === 0 ? 0 : pageStart}
+          –
+          {pageEnd}
+          {' '}
+          of
+          {' '}
+          {sortedMembers.length}
+          {' '}
+          filtered (
+          {members.length}
+          {' '}
+          total)
         </p>
 
         <Table className='roster-table'>
@@ -919,26 +971,27 @@ export const RosterTable = ({
               aria-label='Council roster'
               className='min-w-[640px]'
               expandedKeys={expandedKeys}
-              sortDescriptor={sortDescriptor}
               onExpandedChange={setExpandedKeys}
               onSortChange={setSortDescriptor}
+              sortDescriptor={sortDescriptor}
             >
               <Table.Header>
-                {enableRowSelection ? (
-                  <Table.Column className='w-10'>
-                    <RosterCheckbox
-                      ariaLabel='Select all members on this page'
-                      checked={allPageSelected}
-                      indeterminate={!allPageSelected && somePageSelected}
-                      onChange={(checked) =>
-                        setSelectionForMembershipNumbers(
-                          pageMembershipNumbers,
-                          checked,
-                        )
-                      }
-                    />
-                  </Table.Column>
-                ) : null}
+                {enableRowSelection
+                  ? (
+                      <Table.Column className='w-10'>
+                        <RosterCheckbox
+                          ariaLabel='Select all members on this page'
+                          checked={allPageSelected}
+                          indeterminate={!allPageSelected && somePageSelected}
+                          onChange={checked =>
+                            setSelectionForMembershipNumbers(
+                              pageMembershipNumbers,
+                              checked,
+                            )}
+                        />
+                      </Table.Column>
+                    )
+                  : null}
                 <Table.Column allowsSorting id='membershipNumber'>
                   {({ sortDirection }) => (
                     <Table.SortableColumnHeader sortDirection={sortDirection}>
@@ -946,7 +999,7 @@ export const RosterTable = ({
                     </Table.SortableColumnHeader>
                   )}
                 </Table.Column>
-                <Table.Column allowsSorting isRowHeader id='displayName'>
+                <Table.Column allowsSorting id='displayName' isRowHeader>
                   {({ sortDirection }) => (
                     <Table.SortableColumnHeader sortDirection={sortDirection}>
                       Name
@@ -962,8 +1015,8 @@ export const RosterTable = ({
                 </Table.Column>
                 <Table.Column
                   allowsSorting
-                  id='highestDegree'
                   className='hidden sm:table-cell'
+                  id='highestDegree'
                 >
                   {({ sortDirection }) => (
                     <Table.SortableColumnHeader sortDirection={sortDirection}>
@@ -973,8 +1026,8 @@ export const RosterTable = ({
                 </Table.Column>
                 <Table.Column
                   allowsSorting
-                  id='primaryEmail'
                   className='hidden md:table-cell'
+                  id='primaryEmail'
                 >
                   {({ sortDirection }) => (
                     <Table.SortableColumnHeader sortDirection={sortDirection}>
@@ -982,15 +1035,17 @@ export const RosterTable = ({
                     </Table.SortableColumnHeader>
                   )}
                 </Table.Column>
-                {showDuesTools ? (
-                  <Table.Column allowsSorting id='duesPaid'>
-                    {({ sortDirection }) => (
-                      <Table.SortableColumnHeader sortDirection={sortDirection}>
-                        Dues
-                      </Table.SortableColumnHeader>
-                    )}
-                  </Table.Column>
-                ) : null}
+                {showDuesTools
+                  ? (
+                      <Table.Column allowsSorting id='duesPaid'>
+                        {({ sortDirection }) => (
+                          <Table.SortableColumnHeader sortDirection={sortDirection}>
+                            Dues
+                          </Table.SortableColumnHeader>
+                        )}
+                      </Table.Column>
+                    )
+                  : null}
                 <Table.Column allowsSorting id='active'>
                   {({ sortDirection }) => (
                     <Table.SortableColumnHeader sortDirection={sortDirection}>
@@ -1000,8 +1055,8 @@ export const RosterTable = ({
                 </Table.Column>
               </Table.Header>
               <Table.Body
-                key={[...selectedMembershipNumbers].sort().join(',')}
                 items={paginatedRows}
+                key={[...selectedMembershipNumbers].sort().join(',')}
                 renderEmptyState={() => (
                   <div className='p-6 text-center text-muted-foreground'>
                     No members match the current filters.
@@ -1012,117 +1067,126 @@ export const RosterTable = ({
               </Table.Body>
             </Table.Content>
           </Table.ScrollContainer>
-          {sortedMembers.length > 0 ? (
-            <Table.Footer>
-              <Pagination size='sm'>
-                <Pagination.Summary>
-                  {pageStart}–{pageEnd} of {sortedMembers.length}
-                </Pagination.Summary>
-                <Pagination.Content>
-                  <Pagination.Item>
-                    <Pagination.Previous
-                      isDisabled={safePage === 1}
-                      onPress={() =>
-                        setPage((current) => Math.max(1, current - 1))
-                      }
-                    >
-                      <Pagination.PreviousIcon />
-                      Prev
-                    </Pagination.Previous>
-                  </Pagination.Item>
-                  {pages.map((pageNumber) => (
-                    <Pagination.Item key={pageNumber}>
-                      <Pagination.Link
-                        isActive={pageNumber === safePage}
-                        onPress={() => setPage(pageNumber)}
-                      >
-                        {pageNumber}
-                      </Pagination.Link>
-                    </Pagination.Item>
-                  ))}
-                  <Pagination.Item>
-                    <Pagination.Next
-                      isDisabled={safePage === totalPages}
-                      onPress={() =>
-                        setPage((current) => Math.min(totalPages, current + 1))
-                      }
-                    >
-                      Next
-                      <Pagination.NextIcon />
-                    </Pagination.Next>
-                  </Pagination.Item>
-                </Pagination.Content>
-              </Pagination>
-            </Table.Footer>
-          ) : null}
+          {sortedMembers.length > 0
+            ? (
+                <Table.Footer>
+                  <Pagination size='sm'>
+                    <Pagination.Summary>
+                      {pageStart}
+                      –
+                      {pageEnd}
+                      {' '}
+                      of
+                      {sortedMembers.length}
+                    </Pagination.Summary>
+                    <Pagination.Content>
+                      <Pagination.Item>
+                        <Pagination.Previous
+                          isDisabled={safePage === 1}
+                          onPress={() =>
+                            setPage(current => Math.max(1, current - 1))}
+                        >
+                          <Pagination.PreviousIcon />
+                          Prev
+                        </Pagination.Previous>
+                      </Pagination.Item>
+                      {pages.map(pageNumber => (
+                        <Pagination.Item key={pageNumber}>
+                          <Pagination.Link
+                            isActive={pageNumber === safePage}
+                            onPress={() => setPage(pageNumber)}
+                          >
+                            {pageNumber}
+                          </Pagination.Link>
+                        </Pagination.Item>
+                      ))}
+                      <Pagination.Item>
+                        <Pagination.Next
+                          isDisabled={safePage === totalPages}
+                          onPress={() =>
+                            setPage(current => Math.min(totalPages, current + 1))}
+                        >
+                          Next
+                          <Pagination.NextIcon />
+                        </Pagination.Next>
+                      </Pagination.Item>
+                    </Pagination.Content>
+                  </Pagination>
+                </Table.Footer>
+              )
+            : null}
         </Table>
       </section>
 
-      {enableRowSelection ? (
-        <>
-          <div className='pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]'>
-            <div className='pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-2 rounded-lg border border-border bg-card/95 px-3 py-2 text-sm shadow-lg backdrop-blur-sm sm:gap-3 sm:px-4'>
-              <Button
-                type='button'
-                variant='ghost'
-                size='sm'
-                onPress={() =>
-                  setSelectionForMembershipNumbers(
-                    filteredMembershipNumbers,
-                    !allFilteredSelected,
-                  )
-                }
-              >
-                {allFilteredSelected
-                  ? 'Deselect all filtered'
-                  : 'Select all filtered'}
-              </Button>
-              <Button
-                type='button'
-                variant='ghost'
-                size='sm'
-                onPress={() =>
-                  setSelectionForMembershipNumbers(
-                    pageMembershipNumbers,
-                    !allPageSelected,
-                  )
-                }
-              >
-                {allPageSelected ? 'Deselect page' : 'Select page'}
-              </Button>
-              {selectedMembershipNumbers.size > 0 ? (
-                <>
-                  <span className='text-muted-foreground'>
-                    {selectedMembershipNumbers.size} selected
-                  </span>
+      {enableRowSelection
+        ? (
+            <>
+              <div className='pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]'>
+                <div className='pointer-events-auto flex max-w-full flex-wrap items-center justify-center gap-2 rounded-lg border border-border bg-card/95 px-3 py-2 text-sm shadow-lg backdrop-blur-sm sm:gap-3 sm:px-4'>
                   <Button
-                    type='button'
-                    variant='primary'
+                    onPress={() =>
+                      setSelectionForMembershipNumbers(
+                        filteredMembershipNumbers,
+                        !allFilteredSelected,
+                      )}
                     size='sm'
-                    onPress={() => setEmailModalOpen(true)}
-                  >
-                    Email selected
-                  </Button>
-                  <Button
                     type='button'
                     variant='ghost'
-                    size='sm'
-                    onPress={() => setSelectedMembershipNumbers(new Set())}
                   >
-                    Clear selection
+                    {allFilteredSelected
+                      ? 'Deselect all filtered'
+                      : 'Select all filtered'}
                   </Button>
-                </>
-              ) : null}
-            </div>
-          </div>
-          <div className='h-16' aria-hidden />
-          <RosterEmailModal
-            members={selectedMembers}
-            isOpen={emailModalOpen}
-            onOpenChange={setEmailModalOpen}
-          />
-        </>
-      ) : null}
+                  <Button
+                    onPress={() =>
+                      setSelectionForMembershipNumbers(
+                        pageMembershipNumbers,
+                        !allPageSelected,
+                      )}
+                    size='sm'
+                    type='button'
+                    variant='ghost'
+                  >
+                    {allPageSelected ? 'Deselect page' : 'Select page'}
+                  </Button>
+                  {selectedMembershipNumbers.size > 0
+                    ? (
+                        <>
+                          <span className='text-muted-foreground'>
+                            {selectedMembershipNumbers.size}
+                            {' '}
+                            selected
+                          </span>
+                          <Button
+                            onPress={() => setEmailModalOpen(true)}
+                            size='sm'
+                            type='button'
+                            variant='primary'
+                          >
+                            Email selected
+                          </Button>
+                          <Button
+                            onPress={() => setSelectedMembershipNumbers(new Set())}
+                            size='sm'
+                            type='button'
+                            variant='ghost'
+                          >
+                            Clear selection
+                          </Button>
+                        </>
+                      )
+                    : null}
+                </div>
+              </div>
+              <div aria-hidden className='h-16' />
+              <RosterEmailModal
+                isOpen={emailModalOpen}
+                members={selectedMembers}
+                onOpenChange={setEmailModalOpen}
+              />
+            </>
+          )
+        : null}
     </div>
   );
 };

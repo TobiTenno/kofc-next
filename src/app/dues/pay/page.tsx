@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+
 import PayDuesForm from '@/components/PayDuesForm';
 import { getCanonicalAppOrigin, getLocalDevOrigin } from '@/lib/app-origin';
 import { isPayPalConfigured } from '@/lib/dues';

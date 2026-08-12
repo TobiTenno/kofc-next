@@ -1,7 +1,8 @@
+import { eq } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { eq } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { appMeta } from '@/db/schema';
 import {
@@ -12,12 +13,12 @@ import {
 
 const cacheDir = path.join(process.cwd(), 'data', 'cache', 'calendar');
 
-export type CalendarFeed = 'council' | 'member-events' | 'birthdays';
+export type CalendarFeed = 'birthdays' | 'council' | 'member-events';
 
 const feedFiles: Record<CalendarFeed, string> = {
-  council: 'council.ics',
+  'birthdays': 'birthdays.ics',
+  'council': 'council.ics',
   'member-events': 'member-events.ics',
-  birthdays: 'birthdays.ics',
 };
 
 const ensureCacheDir = (): void => {
@@ -28,12 +29,12 @@ const ensureCacheDir = (): void => {
 
 const writeFeed = async (feed: CalendarFeed): Promise<string> => {
   ensureCacheDir();
-  const content =
-    feed === 'council'
+  const content
+    = feed === 'council'
       ? await buildCouncilCalendar()
-      : feed === 'member-events'
-        ? await buildMemberEventsCalendar()
-        : await buildBirthdaysCalendar();
+      : (feed === 'member-events'
+          ? await buildMemberEventsCalendar()
+          : await buildBirthdaysCalendar());
 
   const filePath = path.join(cacheDir, feedFiles[feed]);
   fs.writeFileSync(filePath, content, 'utf8');
@@ -43,8 +44,8 @@ const writeFeed = async (feed: CalendarFeed): Promise<string> => {
     .insert(appMeta)
     .values({ key: `calendar_${feed}_hash`, value: hash })
     .onConflictDoUpdate({
-      target: appMeta.key,
       set: { value: hash },
+      target: appMeta.key,
     });
 
   return filePath;
@@ -59,7 +60,7 @@ export const rebuildCalendarCache = async (): Promise<void> => {
 export const getCachedFeedPath = (feed: CalendarFeed): string =>
   path.join(cacheDir, feedFiles[feed]);
 
-export const readCachedFeed = (feed: CalendarFeed): string | null => {
+export const readCachedFeed = (feed: CalendarFeed): null | string => {
   const filePath = getCachedFeedPath(feed);
   if (!fs.existsSync(filePath)) {
     return null;
@@ -77,7 +78,7 @@ export const ensureFeedCached = async (feed: CalendarFeed): Promise<string> => {
 
 export const getCalendarMeta = async (
   feed: CalendarFeed,
-): Promise<{ hash: string | null; mtime: Date | null }> => {
+): Promise<{ hash: null | string; mtime: Date | null }> => {
   const rows = await db
     .select()
     .from(appMeta)

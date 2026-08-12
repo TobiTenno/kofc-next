@@ -1,7 +1,9 @@
-/** Month/day from roster birth dates (MM-DD-YYYY, M/D/YYYY, YYYY-MM-DD). */
+/**
+Month/day from roster birth dates (MM-DD-YYYY, M/D/YYYY, YYYY-MM-DD).
+*/
 export const parseMemberBirthMonthDay = (
   value: string,
-): { month: number; day: number } | null => {
+): null | { day: number; month: number } => {
   const trimmed = value.trim();
   if (!trimmed) {
     return null;
@@ -9,17 +11,17 @@ export const parseMemberBirthMonthDay = (
 
   const dashed = trimmed.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
   if (dashed) {
-    return { month: Number(dashed[1]), day: Number(dashed[2]) };
+    return { day: Number(dashed[2]), month: Number(dashed[1]) };
   }
 
   const slashed = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (slashed) {
-    return { month: Number(slashed[1]), day: Number(slashed[2]) };
+    return { day: Number(slashed[2]), month: Number(slashed[1]) };
   }
 
   const iso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
   if (iso) {
-    return { month: Number(iso[2]), day: Number(iso[3]) };
+    return { day: Number(iso[3]), month: Number(iso[2]) };
   }
 
   return null;

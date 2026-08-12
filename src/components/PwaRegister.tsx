@@ -14,7 +14,7 @@ export const PwaRegister = () => {
 
     const onControllerChange = (): void => {
       // New SW took control — reload once to get fresh assets.
-      window.location.reload();
+      location.reload();
     };
 
     void navigator.serviceWorker
@@ -33,15 +33,15 @@ export const PwaRegister = () => {
           }
           worker.addEventListener('statechange', () => {
             if (
-              worker.state === 'installed' &&
-              navigator.serviceWorker.controller
+              worker.state === 'installed'
+              && navigator.serviceWorker.controller
             ) {
               setUpdateReady(true);
             }
           });
         });
       })
-      .catch(() => undefined);
+      .catch(() => {});
 
     navigator.serviceWorker.addEventListener(
       'controllerchange',
@@ -62,7 +62,7 @@ export const PwaRegister = () => {
       reg?.waiting?.postMessage({ type: 'SKIP_WAITING' });
       // skipWaiting already in sw install; claim + controllerchange reloads.
       reg?.waiting?.postMessage({ type: 'SKIP_WAITING' });
-      window.location.reload();
+      location.reload();
     });
   };
 
@@ -75,9 +75,9 @@ export const PwaRegister = () => {
       <div className='flex items-center justify-between gap-3'>
         <span>App update ready.</span>
         <button
-          type='button'
           className='rounded bg-blue-900 px-3 py-1 text-white'
           onClick={applyUpdate}
+          type='button'
         >
           Reload
         </button>

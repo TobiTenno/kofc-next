@@ -36,8 +36,8 @@ const run = (command, commandArgs, label) => {
   console.log(`\n> ${label}`);
   const result = spawnSync(command, commandArgs, {
     cwd: root,
-    stdio: 'inherit',
     env: process.env,
+    stdio: 'inherit',
   });
 
   if (result.status !== 0) {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { photoGalleries } from '@/db/schema';
 import { isImmichConfigured, listImmichAlbums } from '@/lib/immich/client';
@@ -27,22 +28,23 @@ export const GET = async (): Promise<NextResponse> => {
         .from(photoGalleries),
     ]);
 
-    const linkedIds = new Set(linkedRows.map((row) => row.immichAlbumId));
+    const linkedIds = new Set(linkedRows.map(row => row.immichAlbumId));
 
     return NextResponse.json({
       albums: albums
-        .filter((album) => !linkedIds.has(album.id))
-        .map((album) => ({
+        .filter(album => !linkedIds.has(album.id))
+        .map(album => ({
+          assetCount: album.assetCount ?? 0,
+          description: album.description,
           id: album.id,
           name: album.albumName,
-          description: album.description,
-          assetCount: album.assetCount ?? 0,
           thumbnailAssetId: album.albumThumbnailAssetId ?? null,
         })),
     });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Could not load Immich albums';
+  }
+  catch (error) {
+    const message
+      = error instanceof Error ? error.message : 'Could not load Immich albums';
     return NextResponse.json({ error: message }, { status: 502 });
   }
 };

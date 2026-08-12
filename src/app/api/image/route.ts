@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { parseImageRequest, serveCachedImage } from '@/lib/image-cache';
 
 export const GET = async (request: Request): Promise<NextResponse> => {
@@ -13,12 +14,13 @@ export const GET = async (request: Request): Promise<NextResponse> => {
 
     return new NextResponse(new Uint8Array(body), {
       headers: {
-        'Content-Type': 'image/webp',
         'Cache-Control': cacheControl,
+        'Content-Type': 'image/webp',
         'X-Image-Cache': cacheHit ? 'HIT' : 'MISS',
       },
     });
-  } catch {
+  }
+  catch {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 };

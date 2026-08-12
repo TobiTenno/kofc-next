@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { account, members, session, user } from '@/db/schema';
 import { serverSignUpAuth } from '@/lib/auth';
@@ -11,17 +12,17 @@ export type SeedMemberPasswordOptions = {
   reset?: boolean;
 };
 
-export type SeedMemberPasswordResult =
-  | { action: 'created'; membershipNumber: string; email: string }
-  | { action: 'reset'; membershipNumber: string; email: string }
-  | { action: 'skipped'; membershipNumber: string; reason: string };
+export type SeedMemberPasswordResult
+  = | { action: 'created'; email: string; membershipNumber: string }
+    | { action: 'reset'; email: string; membershipNumber: string }
+    | { action: 'skipped'; membershipNumber: string; reason: string };
 
 const devEmailForMember = (membershipNumber: string): string =>
   `member-${membershipNumber}@dev.local`;
 
 const resolveMemberEmail = (member: {
   membershipNumber: string;
-  primaryEmail: string | null;
+  primaryEmail: null | string;
 }): string => {
   if (member.primaryEmail) {
     return normalizeEmail(member.primaryEmail);
@@ -97,8 +98,8 @@ export const seedMemberPassword = async (
   const result = await serverSignUpAuth.api.signUpEmail({
     body: {
       email,
-      password,
       name: formatMemberName(member),
+      password,
       username: membershipNumber,
     },
   });
@@ -109,7 +110,7 @@ export const seedMemberPassword = async (
 
   return {
     action: hadUser ? 'reset' : 'created',
-    membershipNumber,
     email,
+    membershipNumber,
   };
 };

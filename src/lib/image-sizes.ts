@@ -1,4 +1,6 @@
-/** Allowed `w` values for `/api/image` (must match next.config.ts images.*). */
+/**
+Allowed `w` values for `/api/image` (must match next.config.ts images.*).
+*/
 export const IMAGE_DEVICE_SIZES = [
   512, 640, 750, 828, 1080, 1200, 1920, 2048, 3840,
 ] as const;

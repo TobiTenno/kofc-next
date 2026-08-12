@@ -14,13 +14,13 @@ import {
 import { useEffect, useState } from 'react';
 
 type ImmichSettings = {
-  url: string;
-  apiKeyMasked: string | null;
-  uploadApiKeyMasked: string | null;
+  apiKeyMasked: null | string;
+  configured: boolean;
   deviceId: string;
   maxUploadMb: number;
-  configured: boolean;
-  source: 'stored' | 'env-legacy' | 'none';
+  source: 'env-legacy' | 'none' | 'stored';
+  uploadApiKeyMasked: null | string;
+  url: string;
 };
 
 export const GallerySettingsModal = ({
@@ -40,8 +40,8 @@ export const GallerySettingsModal = ({
   const [maxUploadMb, setMaxUploadMb] = useState('25');
   const [settings, setSettings] = useState<ImmichSettings | null>(null);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
+  const [message, setMessage] = useState<null | string>(null);
+  const [messageTone, setMessageTone] = useState<'danger' | 'success'>(
     'success',
   );
 
@@ -53,8 +53,8 @@ export const GallerySettingsModal = ({
     void fetch('/api/members/admin/galleries/settings').then(
       async (response) => {
         const payload = (await response.json()) as {
-          settings?: ImmichSettings;
           error?: string;
+          settings?: ImmichSettings;
         };
         if (!response.ok) {
           setMessageTone('danger');
@@ -79,20 +79,20 @@ export const GallerySettingsModal = ({
     setMessage(null);
 
     const response = await fetch('/api/members/admin/galleries/settings', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        url,
         apiKey: apiKey.trim() || undefined,
-        uploadApiKey: uploadApiKey.trim() || undefined,
         deviceId,
         maxUploadMb: Number(maxUploadMb),
+        uploadApiKey: uploadApiKey.trim() || undefined,
+        url,
       }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PUT',
     });
 
     const payload = (await response.json()) as {
-      settings?: ImmichSettings;
       error?: string;
+      settings?: ImmichSettings;
     };
 
     if (response.ok && payload.settings) {
@@ -102,7 +102,8 @@ export const GallerySettingsModal = ({
       setMessageTone('success');
       setMessage('Immich settings saved');
       onSaved?.(payload.settings);
-    } else {
+    }
+    else {
       setMessageTone('danger');
       setMessage(payload.error ?? 'Save failed');
     }
@@ -125,35 +126,37 @@ export const GallerySettingsModal = ({
                 manageGalleries.
               </p>
 
-              {settings ? (
-                <Alert status={settings.configured ? 'success' : 'warning'}>
-                  <Alert.Indicator />
-                  <Alert.Content>
-                    <Alert.Description>
-                      {settings.configured
-                        ? `Immich configured (${settings.source === 'env-legacy' ? 'migrated from env' : 'stored'}).`
-                        : 'Immich is not configured yet.'}
-                    </Alert.Description>
-                  </Alert.Content>
-                </Alert>
-              ) : null}
+              {settings
+                ? (
+                    <Alert status={settings.configured ? 'success' : 'warning'}>
+                      <Alert.Indicator />
+                      <Alert.Content>
+                        <Alert.Description>
+                          {settings.configured
+                            ? `Immich configured (${settings.source === 'env-legacy' ? 'migrated from env' : 'stored'}).`
+                            : 'Immich is not configured yet.'}
+                        </Alert.Description>
+                      </Alert.Content>
+                    </Alert>
+                  )
+                : null}
 
-              <Form onSubmit={save} className='grid gap-4'>
-                <TextField fullWidth isRequired value={url} onChange={setUrl}>
+              <Form className='grid gap-4' onSubmit={save}>
+                <TextField fullWidth isRequired onChange={setUrl} value={url}>
                   <Label>Immich URL</Label>
                   <Input placeholder='https://photos.example.com' />
                 </TextField>
 
-                <TextField fullWidth value={apiKey} onChange={setApiKey}>
+                <TextField fullWidth onChange={setApiKey} value={apiKey}>
                   <Label>API key</Label>
                   <Input
-                    type='password'
                     autoComplete='off'
                     placeholder={
                       settings?.apiKeyMasked
                         ? `Current ${settings.apiKeyMasked}`
                         : 'Server API key'
                     }
+                    type='password'
                   />
                   <Description>
                     Server key for album/asset read and write. Leave blank to
@@ -163,50 +166,52 @@ export const GallerySettingsModal = ({
 
                 <TextField
                   fullWidth
-                  value={uploadApiKey}
                   onChange={setUploadApiKey}
+                  value={uploadApiKey}
                 >
                   <Label>Upload API key (optional)</Label>
                   <Input
-                    type='password'
                     autoComplete='off'
                     placeholder={
                       settings?.uploadApiKeyMasked
                         ? `Current ${settings.uploadApiKeyMasked}`
                         : 'Defaults to API key'
                     }
+                    type='password'
                   />
                 </TextField>
 
-                <TextField fullWidth value={deviceId} onChange={setDeviceId}>
+                <TextField fullWidth onChange={setDeviceId} value={deviceId}>
                   <Label>Device ID</Label>
                   <Input placeholder='kofc-council' />
                 </TextField>
 
                 <TextField
                   fullWidth
-                  value={maxUploadMb}
                   onChange={setMaxUploadMb}
+                  value={maxUploadMb}
                 >
                   <Label>Max upload (MB)</Label>
-                  <Input type='number' min={1} step={1} />
+                  <Input min={1} step={1} type='number' />
                 </TextField>
 
-                <Button type='submit' variant='primary' isDisabled={saving}>
+                <Button isDisabled={saving} type='submit' variant='primary'>
                   {saving ? 'Saving…' : 'Save Immich settings'}
                 </Button>
               </Form>
 
-              {message ? (
-                <Alert
-                  status={messageTone === 'success' ? 'success' : 'danger'}
-                >
-                  <Alert.Indicator />
-                  <Alert.Content>
-                    <Alert.Description>{message}</Alert.Description>
-                  </Alert.Content>
-                </Alert>
-              ) : null}
+              {message
+                ? (
+                    <Alert
+                      status={messageTone === 'success' ? 'success' : 'danger'}
+                    >
+                      <Alert.Indicator />
+                      <Alert.Content>
+                        <Alert.Description>{message}</Alert.Description>
+                      </Alert.Content>
+                    </Alert>
+                  )
+                : null}
             </Modal.Body>
           </Modal.Dialog>
         </Modal.Container>

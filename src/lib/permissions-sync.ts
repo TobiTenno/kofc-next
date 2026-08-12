@@ -1,6 +1,7 @@
+import { and, eq, isNull, ne, or } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
-import { and, eq, isNull, ne, or } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { appMeta, duesRates, permissions, user } from '@/db/schema';
 import { loadCouncilConfig, writeCouncilConfig } from '@/lib/council-config';
@@ -9,14 +10,14 @@ import {
   emptyPermissionLists,
   isPermissionKey,
   PERMISSION_KEYS,
-  type PermissionKey,
-} from '@/lib/utilities';
 
-export type { PermissionKey };
+} from '@/lib/utilities';
 
 const councilJsonHashKey = 'council_json_hash';
 
-/** Webmaster always has every permission key (matches hasPermission). */
+/**
+Webmaster always has every permission key (matches hasPermission).
+*/
 export const withWebmaster = (
   membershipNumbers: string[],
   webmaster = loadCouncilConfig().webmaster?.membershipNumber,
@@ -42,7 +43,7 @@ export const syncPermissionsFromJson = async (): Promise<void> => {
   const now = new Date();
   const permissionBlock = permissionListsWithWebmaster({
     ...emptyPermissionLists(),
-    ...(config.permissions ?? {}),
+    ...config.permissions,
   });
 
   for (const key of PERMISSION_KEYS) {
@@ -55,11 +56,11 @@ export const syncPermissionsFromJson = async (): Promise<void> => {
         updatedAt: now,
       })
       .onConflictDoUpdate({
-        target: permissions.key,
         set: {
           membershipNumbers: JSON.stringify(membershipNumbers),
           updatedAt: now,
         },
+        target: permissions.key,
       });
   }
 
@@ -90,7 +91,9 @@ export const isWebmaster = (membershipNumber: string): boolean => {
   return config.webmaster?.membershipNumber === membershipNumber;
 };
 
-/** Keep Better Auth `admin` role aligned with council.json webmaster. */
+/**
+Keep Better Auth `admin` role aligned with council.json webmaster.
+*/
 export const syncWebmasterAuthRole = async (): Promise<void> => {
   const webmaster = loadCouncilConfig().webmaster?.membershipNumber ?? null;
 
@@ -124,7 +127,7 @@ export const syncWebmasterAuthRole = async (): Promise<void> => {
     .where(or(isNull(user.role), eq(user.role, '')));
 };
 
-export const hashCouncilJsonContent = (): string | null => {
+export const hashCouncilJsonContent = (): null | string => {
   const configPath = getCouncilJsonPath();
   if (!fs.existsSync(configPath)) {
     return null;
@@ -134,7 +137,9 @@ export const hashCouncilJsonContent = (): string | null => {
   return createHash('sha256').update(content).digest('hex');
 };
 
-/** Re-sync permissions/dues when mounted council.json changes (no restart). */
+/**
+Re-sync permissions/dues when mounted council.json changes (no restart).
+*/
 export const ensureCouncilConfigSynced = async (): Promise<void> => {
   const hash = hashCouncilJsonContent();
   if (!hash) {
@@ -150,9 +155,9 @@ export const ensureCouncilConfigSynced = async (): Promise<void> => {
     db.select({ key: permissions.key }).from(permissions),
   ]);
 
-  const existingKeys = new Set(permissionKeyRows.map((row) => row.key));
+  const existingKeys = new Set(permissionKeyRows.map(row => row.key));
   const missingPermissionKey = PERMISSION_KEYS.some(
-    (key) => !existingKeys.has(key),
+    key => !existingKeys.has(key),
   );
 
   const configPath = getCouncilJsonPath();
@@ -163,14 +168,14 @@ export const ensureCouncilConfigSynced = async (): Promise<void> => {
     };
     const rawPermissions = raw.permissions ?? {};
     missingJsonPermissionKey = PERMISSION_KEYS.some(
-      (key) => !(key in rawPermissions),
+      key => !(key in rawPermissions),
     );
   }
 
   if (
-    hashRows[0]?.value === hash &&
-    !missingPermissionKey &&
-    !missingJsonPermissionKey
+    hashRows[0]?.value === hash
+    && !missingPermissionKey
+    && !missingJsonPermissionKey
   ) {
     return;
   }
@@ -184,8 +189,8 @@ export const ensureCouncilConfigSynced = async (): Promise<void> => {
     .insert(appMeta)
     .values({ key: councilJsonHashKey, value: nextHash })
     .onConflictDoUpdate({
-      target: appMeta.key,
       set: { value: nextHash },
+      target: appMeta.key,
     });
 };
 
@@ -236,8 +241,8 @@ export const hasPermission = async (
   // Anyone who can assign permissions can use every permission-gated feature
   // (including newly added keys) and edit those lists in the Permissions UI.
   if (
-    key !== 'managePermissions' &&
-    (await memberListedForKey(membershipNumber, 'managePermissions'))
+    key !== 'managePermissions'
+    && (await memberListedForKey(membershipNumber, 'managePermissions'))
   ) {
     return true;
   }
@@ -248,7 +253,7 @@ export const hasPermission = async (
 export const updatePermissions = async (
   key: PermissionKey,
   membershipNumbers: string[],
-  actorMembershipNumber?: string | null,
+  actorMembershipNumber?: null | string,
 ): Promise<void> => {
   const now = new Date();
   const nextMembers = withWebmaster(membershipNumbers);
@@ -260,11 +265,11 @@ export const updatePermissions = async (
       updatedAt: now,
     })
     .onConflictDoUpdate({
-      target: permissions.key,
       set: {
         membershipNumbers: JSON.stringify(nextMembers),
         updatedAt: now,
       },
+      target: permissions.key,
     });
 
   const config = loadCouncilConfig();
@@ -272,7 +277,7 @@ export const updatePermissions = async (
     ...config,
     permissions: {
       ...emptyPermissionLists(),
-      ...(config.permissions ?? {}),
+      ...config.permissions,
       [key]: nextMembers,
     },
   };
@@ -284,17 +289,17 @@ export const updatePermissions = async (
       .insert(appMeta)
       .values({ key: councilJsonHashKey, value: hash })
       .onConflictDoUpdate({
-        target: appMeta.key,
         set: { value: hash },
+        target: appMeta.key,
       });
   }
 
   const { recordAuditEvent } = await import('@/lib/audit');
   await recordAuditEvent({
-    actorMembershipNumber,
     action: 'permissions.update',
+    actorMembershipNumber,
+    metadata: { count: nextMembers.length, key },
     summary: `Updated ${key} (${nextMembers.length} member${nextMembers.length === 1 ? '' : 's'})`,
-    metadata: { key, count: nextMembers.length },
   });
 };
 
@@ -311,18 +316,18 @@ export const syncDuesFromJson = async (): Promise<void> => {
     await db
       .insert(duesRates)
       .values({
-        memberClass,
         amountCents,
         councilYear,
+        memberClass,
         updatedAt: now,
       })
       .onConflictDoUpdate({
-        target: duesRates.memberClass,
         set: {
           amountCents,
           councilYear,
           updatedAt: now,
         },
+        target: duesRates.memberClass,
       });
   }
 
@@ -330,12 +335,12 @@ export const syncDuesFromJson = async (): Promise<void> => {
     .insert(appMeta)
     .values({ key: 'dues_council_year', value: councilYear })
     .onConflictDoUpdate({
-      target: appMeta.key,
       set: { value: councilYear },
+      target: appMeta.key,
     });
 };
 
-export const getCurrentCouncilYear = async (): Promise<string | null> => {
+export const getCurrentCouncilYear = async (): Promise<null | string> => {
   const rows = await db
     .select()
     .from(appMeta)
@@ -343,3 +348,5 @@ export const getCurrentCouncilYear = async (): Promise<string | null> => {
     .limit(1);
   return rows[0]?.value ?? loadCouncilConfig().dues?.councilYear ?? null;
 };
+
+export { type PermissionKey } from '@/lib/utilities';

@@ -1,4 +1,5 @@
 import { and, eq, ne } from 'drizzle-orm';
+
 import { db } from '@/db';
 import {
   duesPayments,
@@ -16,11 +17,11 @@ import { getCurrentCouncilYear } from '@/lib/permissions-sync';
 
 export const getMemberDuesAmount = async (
   membershipNumber: string,
-): Promise<{
+): Promise<null | {
   amountCents: number;
-  memberClass: string;
   councilYear: string;
-} | null> => {
+  memberClass: string;
+}> => {
   const member = await db.query.members.findFirst({
     where: eq(members.membershipNumber, membershipNumber),
   });
@@ -40,8 +41,8 @@ export const getMemberDuesAmount = async (
 
   return {
     amountCents: rate.amountCents,
-    memberClass: member.memberClass,
     councilYear: rate.councilYear ?? councilYear,
+    memberClass: member.memberClass,
   };
 };
 
@@ -58,26 +59,26 @@ export const getPaidMembershipNumbersForCouncilYear = async (
       ),
     );
 
-  return new Set(rows.map((row) => row.membershipNumber));
+  return new Set(rows.map(row => row.membershipNumber));
 };
 
 export const getMemberPaymentStatus = async (
   membershipNumber: string,
 ): Promise<{
+  amountCents: null | number;
+  councilYear: null | string;
   paid: boolean;
-  payment: typeof duesPayments.$inferSelect | null;
-  amountCents: number | null;
-  councilYear: string | null;
+  payment: null | typeof duesPayments.$inferSelect;
 }> => {
   const dues = await getMemberDuesAmount(membershipNumber);
   const councilYear = dues?.councilYear ?? (await getCurrentCouncilYear());
 
   if (!councilYear) {
     return {
-      paid: false,
-      payment: null,
       amountCents: dues?.amountCents ?? null,
       councilYear: null,
+      paid: false,
+      payment: null,
     };
   }
 
@@ -90,16 +91,16 @@ export const getMemberPaymentStatus = async (
   });
 
   return {
-    paid: Boolean(payment),
-    payment: payment ?? null,
     amountCents: dues?.amountCents ?? null,
     councilYear,
+    paid: Boolean(payment),
+    payment: payment ?? null,
   };
 };
 
 export const getMemberSubscription = async (
   membershipNumber: string,
-): Promise<typeof duesSubscriptions.$inferSelect | null> => {
+): Promise<null | typeof duesSubscriptions.$inferSelect> => {
   const rows = await db
     .select()
     .from(duesSubscriptions)
@@ -109,18 +110,18 @@ export const getMemberSubscription = async (
     return null;
   }
 
-  const active = rows.find((row) => row.status === 'active');
+  const active = rows.find(row => row.status === 'active');
   if (active) {
     return active;
   }
 
   return (
-    rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0] ??
-    null
+    rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0]
+    ?? null
   );
 };
 
-export const getPaypalBusinessEmail = (): string | null => {
+export const getPaypalBusinessEmail = (): null | string => {
   const fromConfig = loadCouncilConfig().dues?.paypalBusinessEmail?.trim();
   if (fromConfig) {
     return fromConfig;
@@ -138,7 +139,9 @@ export const isPayPalSubscribeConfigured = (): boolean =>
 export const isPayPalRestEnvConfigured = (): boolean =>
   isPaypalRestConfigured();
 
-/** Council year + at least one dues rate — portal Dues visible when true. */
+/**
+Council year + at least one dues rate — portal Dues visible when true.
+*/
 export const isDuesConfigured = async (): Promise<boolean> => {
   const councilYear = await getCurrentCouncilYear();
   if (!councilYear) {
@@ -158,20 +161,20 @@ export const canManageDuesAdmin = async (
   const { hasPermission } = await import('@/lib/permissions-sync');
   const { isFinancialSecretary } = await import('@/lib/officers');
   return (
-    (await hasPermission(membershipNumber, 'manageDues')) ||
-    (await isFinancialSecretary(membershipNumber))
+    (await hasPermission(membershipNumber, 'manageDues'))
+    || (await isFinancialSecretary(membershipNumber))
   );
 };
 
 export const recordPaypalPayment = async (options: {
-  membershipNumber: string;
-  councilYear: string;
   amountCents: number;
+  councilYear: string;
   memberClass: string;
-  paypalTxnId: string;
+  membershipNumber: string;
   payerEmail?: string;
-  source?: 'paypal_ipn' | 'paypal_subscription';
   paypalSubscriptionId?: string;
+  paypalTxnId: string;
+  source?: 'paypal_ipn' | 'paypal_subscription';
 }): Promise<boolean> => {
   const existing = await db.query.duesPayments.findFirst({
     where: eq(duesPayments.paypalTxnId, options.paypalTxnId),
@@ -198,56 +201,56 @@ export const recordPaypalPayment = async (options: {
   const source = options.source ?? 'paypal_ipn';
 
   await db.insert(duesPayments).values({
-    id: createId(),
-    membershipNumber: options.membershipNumber,
-    memberClass: options.memberClass,
     amountCents: options.amountCents,
     councilYear: options.councilYear,
-    source,
-    status: 'completed',
-    paypalTxnId: options.paypalTxnId,
-    paypalSubscriptionId: options.paypalSubscriptionId ?? null,
-    payerEmail: options.payerEmail ?? null,
+    createdAt: now,
+    id: createId(),
+    memberClass: options.memberClass,
+    membershipNumber: options.membershipNumber,
     method: 'paypal',
     paidAt: now,
-    createdAt: now,
+    payerEmail: options.payerEmail ?? null,
+    paypalSubscriptionId: options.paypalSubscriptionId ?? null,
+    paypalTxnId: options.paypalTxnId,
+    source,
+    status: 'completed',
   });
 
   const { recordAuditEvent } = await import('@/lib/audit');
   await recordAuditEvent({
-    actorMembershipNumber: null,
     action:
       source === 'paypal_subscription'
         ? 'dues.paypal_subscription_payment'
         : 'dues.paypal_ipn',
-    summary: `PayPal dues payment for ${options.membershipNumber} (${options.councilYear})`,
+    actorMembershipNumber: null,
     metadata: {
-      membershipNumber: options.membershipNumber,
-      councilYear: options.councilYear,
       amountCents: options.amountCents,
+      councilYear: options.councilYear,
+      membershipNumber: options.membershipNumber,
       paypalSubscriptionId: options.paypalSubscriptionId ?? null,
     },
+    summary: `PayPal dues payment for ${options.membershipNumber} (${options.councilYear})`,
   });
 
   return true;
 };
 
 export const upsertDuesSubscription = async (options: {
+  amountCents: number;
+  lastPaymentAt?: Date | null;
+  memberClass: string;
   membershipNumber: string;
-  paypalSubscriptionId: string;
+  nextBillingAt?: Date | null;
+  payerEmail?: null | string;
   paypalPlanId: string;
+  paypalSubscriptionId: string;
   status:
+    | 'active'
     | 'approval_pending'
     | 'approved'
-    | 'active'
-    | 'suspended'
     | 'cancelled'
-    | 'expired';
-  memberClass: string;
-  amountCents: number;
-  payerEmail?: string | null;
-  nextBillingAt?: Date | null;
-  lastPaymentAt?: Date | null;
+    | 'expired'
+    | 'suspended';
 }): Promise<void> => {
   const now = new Date();
   const existing = await db.query.duesSubscriptions.findFirst({
@@ -261,20 +264,20 @@ export const upsertDuesSubscription = async (options: {
     await db
       .update(duesSubscriptions)
       .set({
-        status: options.status,
-        paypalPlanId: options.paypalPlanId,
-        memberClass: options.memberClass,
         amountCents: options.amountCents,
-        payerEmail: options.payerEmail ?? existing.payerEmail,
-        nextBillingAt:
-          options.nextBillingAt === undefined
-            ? existing.nextBillingAt
-            : options.nextBillingAt,
         lastPaymentAt:
           options.lastPaymentAt === undefined
             ? existing.lastPaymentAt
             : options.lastPaymentAt,
         lastSyncedAt: now,
+        memberClass: options.memberClass,
+        nextBillingAt:
+          options.nextBillingAt === undefined
+            ? existing.nextBillingAt
+            : options.nextBillingAt,
+        payerEmail: options.payerEmail ?? existing.payerEmail,
+        paypalPlanId: options.paypalPlanId,
+        status: options.status,
         updatedAt: now,
       })
       .where(eq(duesSubscriptions.id, existing.id));
@@ -300,28 +303,28 @@ export const upsertDuesSubscription = async (options: {
 
   const { createId } = await import('@/lib/utils');
   await db.insert(duesSubscriptions).values({
-    id: createId(),
-    membershipNumber: options.membershipNumber,
-    paypalSubscriptionId: options.paypalSubscriptionId,
-    paypalPlanId: options.paypalPlanId,
-    status: options.status,
-    memberClass: options.memberClass,
     amountCents: options.amountCents,
-    payerEmail: options.payerEmail ?? null,
-    nextBillingAt: options.nextBillingAt ?? null,
+    createdAt: now,
+    id: createId(),
     lastPaymentAt: options.lastPaymentAt ?? null,
     lastSyncedAt: now,
-    createdAt: now,
+    memberClass: options.memberClass,
+    membershipNumber: options.membershipNumber,
+    nextBillingAt: options.nextBillingAt ?? null,
+    payerEmail: options.payerEmail ?? null,
+    paypalPlanId: options.paypalPlanId,
+    paypalSubscriptionId: options.paypalSubscriptionId,
+    status: options.status,
     updatedAt: now,
   });
 };
 
 export const getPlanIdForMember = async (
   membershipNumber: string,
-): Promise<{
-  planId: string;
+): Promise<null | {
   dues: NonNullable<Awaited<ReturnType<typeof getMemberDuesAmount>>>;
-} | null> => {
+  planId: string;
+}> => {
   const dues = await getMemberDuesAmount(membershipNumber);
   if (!dues) {
     return null;
@@ -332,17 +335,17 @@ export const getPlanIdForMember = async (
     return null;
   }
 
-  return { planId, dues };
+  return { dues, planId };
 };
 
 export const recordManualPayment = async (options: {
-  membershipNumber: string;
-  memberClass: string;
   amountCents: number;
   councilYear: string;
-  method: 'cash' | 'check' | 'paypal' | 'other';
-  notes?: string;
   markedByMembershipNumber: string;
+  memberClass: string;
+  membershipNumber: string;
+  method: 'cash' | 'check' | 'other' | 'paypal';
+  notes?: string;
 }): Promise<void> => {
   const existing = await db.query.duesPayments.findFirst({
     where: and(
@@ -360,30 +363,30 @@ export const recordManualPayment = async (options: {
   const { createId } = await import('@/lib/utils');
 
   await db.insert(duesPayments).values({
-    id: createId(),
-    membershipNumber: options.membershipNumber,
-    memberClass: options.memberClass,
     amountCents: options.amountCents,
     councilYear: options.councilYear,
-    source: 'manual',
-    status: 'completed',
+    createdAt: now,
+    id: createId(),
+    markedByMembershipNumber: options.markedByMembershipNumber,
+    memberClass: options.memberClass,
+    membershipNumber: options.membershipNumber,
     method: options.method,
     notes: options.notes ?? null,
-    markedByMembershipNumber: options.markedByMembershipNumber,
     paidAt: now,
-    createdAt: now,
+    source: 'manual',
+    status: 'completed',
   });
 
   const { recordAuditEvent } = await import('@/lib/audit');
   await recordAuditEvent({
-    actorMembershipNumber: options.markedByMembershipNumber,
     action: 'dues.manual_payment',
-    summary: `Marked dues paid for ${options.membershipNumber} (${options.councilYear}, ${options.method})`,
+    actorMembershipNumber: options.markedByMembershipNumber,
     metadata: {
-      membershipNumber: options.membershipNumber,
-      councilYear: options.councilYear,
-      method: options.method,
       amountCents: options.amountCents,
+      councilYear: options.councilYear,
+      membershipNumber: options.membershipNumber,
+      method: options.method,
     },
+    summary: `Marked dues paid for ${options.membershipNumber} (${options.councilYear}, ${options.method})`,
   });
 };

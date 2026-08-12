@@ -4,11 +4,11 @@ import { authClient } from '@/lib/auth-client';
 
 const postSignOut = async (): Promise<boolean> => {
   const response = await fetch('/api/auth/sign-out', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
     body: '{}',
     cache: 'no-store',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
   });
 
   return response.ok;
@@ -20,7 +20,8 @@ export const signOutAndRedirect = async (redirectTo = '/'): Promise<void> => {
   try {
     const result = await authClient.signOut();
     cleared = !result.error;
-  } catch {
+  }
+  catch {
     cleared = false;
   }
 
@@ -28,5 +29,5 @@ export const signOutAndRedirect = async (redirectTo = '/'): Promise<void> => {
     cleared = await postSignOut();
   }
 
-  window.location.replace(redirectTo);
+  location.replace(redirectTo);
 };

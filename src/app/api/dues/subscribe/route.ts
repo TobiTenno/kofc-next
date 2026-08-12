@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { getPlanIdForMember, upsertDuesSubscription } from '@/lib/dues';
 import {
   createPaypalSubscription,
@@ -15,8 +16,8 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   const body = (await request.json()) as {
-    membershipNumber?: string;
     lastName?: string;
+    membershipNumber?: string;
   };
 
   if (!body.membershipNumber || !body.lastName) {
@@ -53,27 +54,28 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   try {
     const subscription = await createPaypalSubscription({
-      planId: plan.planId,
-      membershipNumber,
-      councilYear: plan.dues.councilYear,
-      returnUrl: `${base}/dues/thank-you`,
       cancelUrl: `${base}/dues/pay?member=${encodeURIComponent(membershipNumber)}`,
+      councilYear: plan.dues.councilYear,
+      membershipNumber,
+      planId: plan.planId,
+      returnUrl: `${base}/dues/thank-you`,
     });
 
     await upsertDuesSubscription({
-      membershipNumber,
-      paypalSubscriptionId: subscription.id,
-      paypalPlanId: plan.planId,
-      status: 'approval_pending',
-      memberClass: plan.dues.memberClass,
       amountCents: plan.dues.amountCents,
+      memberClass: plan.dues.memberClass,
+      membershipNumber,
+      paypalPlanId: plan.planId,
+      paypalSubscriptionId: subscription.id,
+      status: 'approval_pending',
     });
 
     return NextResponse.json({
-      subscriptionId: subscription.id,
       approveUrl: subscription.approveUrl,
+      subscriptionId: subscription.id,
     });
-  } catch (error) {
+  }
+  catch (error) {
     return NextResponse.json(
       {
         error:

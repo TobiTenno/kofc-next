@@ -1,56 +1,57 @@
 import type { members } from '@/db/schema';
+
 import { formatMemberClass } from '@/lib/member-class';
 import {
-  degreeDateFields,
+
   formatDegreeDate,
   getHighestDegreeLabel,
 } from '@/lib/member-degrees';
 import { formatMemberName } from '@/lib/utils';
 
 export type RosterMember = {
-  membershipNumber: string;
-  firstName: string;
-  lastName: string;
+  active: boolean;
   displayName: string;
-  memberClass: string | null;
-  memberClassLabel: string | null;
-  highestDegree: string | null;
   firstDegreeDate: string;
+  firstName: string;
+  fourthDegreeDate: string;
+  highestDegree: null | string;
+  lastName: string;
+  memberClass: null | string;
+  memberClassLabel: null | string;
+  membershipNumber: string;
+  primaryEmail: null | string;
   secondDegreeDate: string;
   thirdDegreeDate: string;
-  fourthDegreeDate: string;
-  primaryEmail: string | null;
-  active: boolean;
 };
 
 export type RosterMemberRow = RosterMember & {
-  firstDegreeDateRaw: string | null;
-  secondDegreeDateRaw: string | null;
-  thirdDegreeDateRaw: string | null;
-  fourthDegreeDateRaw: string | null;
+  firstDegreeDateRaw: null | string;
+  fourthDegreeDateRaw: null | string;
+  secondDegreeDateRaw: null | string;
+  thirdDegreeDateRaw: null | string;
 };
 
 export const serializeRosterMembers = (
   rows: (typeof members.$inferSelect)[],
 ): RosterMemberRow[] =>
-  rows.map((member) => ({
-    membershipNumber: member.membershipNumber,
-    firstName: member.firstName,
-    lastName: member.lastName,
+  rows.map(member => ({
+    active: member.active,
     displayName: formatMemberName(member),
+    firstDegreeDate: formatDegreeDate(member.firstDegreeDate),
+    firstDegreeDateRaw: member.firstDegreeDate,
+    firstName: member.firstName,
+    fourthDegreeDate: formatDegreeDate(member.fourthDegreeDate),
+    fourthDegreeDateRaw: member.fourthDegreeDate,
+    highestDegree: getHighestDegreeLabel(member),
+    lastName: member.lastName,
     memberClass: member.memberClass,
     memberClassLabel: formatMemberClass(member.memberClass),
-    highestDegree: getHighestDegreeLabel(member),
-    firstDegreeDate: formatDegreeDate(member.firstDegreeDate),
-    secondDegreeDate: formatDegreeDate(member.secondDegreeDate),
-    thirdDegreeDate: formatDegreeDate(member.thirdDegreeDate),
-    fourthDegreeDate: formatDegreeDate(member.fourthDegreeDate),
-    firstDegreeDateRaw: member.firstDegreeDate,
-    secondDegreeDateRaw: member.secondDegreeDate,
-    thirdDegreeDateRaw: member.thirdDegreeDate,
-    fourthDegreeDateRaw: member.fourthDegreeDate,
+    membershipNumber: member.membershipNumber,
     primaryEmail: member.primaryEmail,
-    active: member.active,
+    secondDegreeDate: formatDegreeDate(member.secondDegreeDate),
+    secondDegreeDateRaw: member.secondDegreeDate,
+    thirdDegreeDate: formatDegreeDate(member.thirdDegreeDate),
+    thirdDegreeDateRaw: member.thirdDegreeDate,
   }));
 
-export { degreeDateFields };
+export { degreeDateFields } from '@/lib/member-degrees';

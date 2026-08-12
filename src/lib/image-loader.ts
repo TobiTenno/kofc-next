@@ -1,10 +1,12 @@
 import type { ImageLoaderProps } from 'next/image';
 
-/** Routes local static images through `/api/image` (resize + disk cache). */
+/**
+Routes local static images through `/api/image` (resize + disk cache).
+*/
 export default function imageLoader({
+  quality,
   src,
   width,
-  quality,
 }: ImageLoaderProps): string {
   if (src.startsWith('http://') || src.startsWith('https://')) {
     return src;

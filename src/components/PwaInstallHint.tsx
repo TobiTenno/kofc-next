@@ -11,10 +11,10 @@ const isStandalone = (): boolean => {
   if (typeof window === 'undefined') {
     return false;
   }
-  const media = window.matchMedia('(display-mode: standalone)').matches;
-  const iosStandalone =
-    'standalone' in navigator &&
-    Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+  const media = globalThis.matchMedia('(display-mode: standalone)').matches;
+  const iosStandalone
+    = 'standalone' in navigator
+      && Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
   return media || iosStandalone;
 };
 
@@ -23,9 +23,9 @@ const isIosSafari = (): boolean => {
     return false;
   }
   const ua = navigator.userAgent;
-  const iOS =
-    /iPad|iPhone|iPod/.test(ua) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const iOS
+    = /iPad|iPhone|iPod/.test(ua)
+      || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const webkit = /WebKit/.test(ua);
   const chromeIos = /CriOS|FxiOS|EdgiOS/.test(ua);
   return iOS && webkit && !chromeIos;
@@ -48,7 +48,8 @@ export const PwaInstallHint = () => {
         setDismissed(true);
         return;
       }
-    } catch {
+    }
+    catch {
       // ignore
     }
 
@@ -57,14 +58,14 @@ export const PwaInstallHint = () => {
       setDeferred(event as BeforeInstallPromptEvent);
     };
 
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    globalThis.addEventListener('beforeinstallprompt', onBeforeInstall);
 
     if (isIosSafari()) {
       setShowIosTip(true);
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', onBeforeInstall);
+      globalThis.removeEventListener('beforeinstallprompt', onBeforeInstall);
     };
   }, []);
 
@@ -74,7 +75,8 @@ export const PwaInstallHint = () => {
     setShowIosTip(false);
     try {
       sessionStorage.setItem('pwa-install-dismissed', '1');
-    } catch {
+    }
+    catch {
       // ignore
     }
   };
@@ -99,40 +101,45 @@ export const PwaInstallHint = () => {
 
   return (
     <div className='fixed bottom-3 right-3 z-[190] w-[min(100%-1.5rem,20rem)] rounded-lg border bg-background px-3 py-2 text-sm shadow-lg'>
-      {deferred ? (
-        <div className='grid gap-2'>
-          <p>Install this app on your device for quicker access.</p>
-          <div className='flex gap-2'>
-            <button
-              type='button'
-              className='rounded bg-blue-900 px-3 py-1 text-white'
-              onClick={() => void install()}
-            >
-              Install
-            </button>
-            <button
-              type='button'
-              className='rounded border px-3 py-1'
-              onClick={dismiss}
-            >
-              Not now
-            </button>
-          </div>
-        </div>
-      ) : (
-        <div className='grid gap-2'>
-          <p>
-            Install: tap Share, then <strong>Add to Home Screen</strong>.
-          </p>
-          <button
-            type='button'
-            className='w-fit rounded border px-3 py-1'
-            onClick={dismiss}
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
+      {deferred
+        ? (
+            <div className='grid gap-2'>
+              <p>Install this app on your device for quicker access.</p>
+              <div className='flex gap-2'>
+                <button
+                  className='rounded bg-blue-900 px-3 py-1 text-white'
+                  onClick={() => void install()}
+                  type='button'
+                >
+                  Install
+                </button>
+                <button
+                  className='rounded border px-3 py-1'
+                  onClick={dismiss}
+                  type='button'
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+          )
+        : (
+            <div className='grid gap-2'>
+              <p>
+                Install: tap Share, then
+                {' '}
+                <strong>Add to Home Screen</strong>
+                .
+              </p>
+              <button
+                className='w-fit rounded border px-3 py-1'
+                onClick={dismiss}
+                type='button'
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
     </div>
   );
 };

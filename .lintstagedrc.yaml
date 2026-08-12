@@ -1,7 +1,5 @@
-'*.**,!package*.json':
-  - 'biome check --write --staged'
-'*.ts':
-  - 'biome check --write --staged'
+'*.{js,mjs,cjs,jsx,ts,tsx,mts,cts,json,yml,yaml}':
+  - eslint --fix --no-warn-ignored
 package*.json:
   - npm dedupe
-  - npx sort-package-json
+  - sort-package-json

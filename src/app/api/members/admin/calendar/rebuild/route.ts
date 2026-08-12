@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { recordAuditEvent } from '@/lib/audit';
 import { rebuildCalendarCache } from '@/lib/calendar/cache';
 import { hasPermission } from '@/lib/permissions-sync';
@@ -16,8 +17,8 @@ export const POST = async (): Promise<NextResponse> => {
 
   await rebuildCalendarCache();
   await recordAuditEvent({
-    actorMembershipNumber: membershipNumber,
     action: 'calendar.rebuild',
+    actorMembershipNumber: membershipNumber,
     summary: 'Rebuilt calendar cache',
   });
   return NextResponse.json({ ok: true });

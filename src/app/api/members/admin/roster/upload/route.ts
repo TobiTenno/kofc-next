@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { recordAuditEvent } from '@/lib/audit';
 import { rebuildCalendarCache } from '@/lib/calendar/cache';
 import { syncCouncilCsv, writeCouncilCsv } from '@/lib/csv-sync';
@@ -36,15 +37,16 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     const result = await syncCouncilCsv();
     await rebuildCalendarCache();
     await recordAuditEvent({
-      actorMembershipNumber: membershipNumber,
       action: 'roster.upload',
-      summary: `Uploaded roster CSV (${written.rowCount} rows, ${result.upserted} active)`,
+      actorMembershipNumber: membershipNumber,
       metadata: { ...written, ...result, filename: file.name },
+      summary: `Uploaded roster CSV (${written.rowCount} rows, ${result.upserted} active)`,
     });
     return NextResponse.json({ ok: true, ...written, ...result });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Could not process CSV';
+  }
+  catch (error) {
+    const message
+      = error instanceof Error ? error.message : 'Could not process CSV';
     return NextResponse.json({ error: message }, { status: 400 });
   }
 };

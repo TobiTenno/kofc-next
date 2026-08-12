@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+
 import {
   buildExternalRequestUrl,
   getRequestHost,
@@ -21,7 +22,7 @@ export const proxy = async (request: NextRequest): Promise<NextResponse> => {
 
   const { pathname } = request.nextUrl;
 
-  if (publicPaths.some((path) => pathname.startsWith(path))) {
+  if (publicPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
   }
 

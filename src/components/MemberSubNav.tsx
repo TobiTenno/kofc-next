@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+
+import type { MemberNavContext } from '@/lib/member-nav';
+
 import { MemberNavMetaPanel } from '@/components/MemberNavMetaPanel';
 import { SignOutButton } from '@/components/SignOutButton';
-import type { MemberNavContext } from '@/lib/member-nav';
 
 type MemberSubNavProps = {
   context: MemberNavContext;
@@ -36,39 +38,41 @@ export const MemberSubNav = ({ context }: MemberSubNavProps) => {
             <span className='mr-1 shrink-0 text-xs font-semibold uppercase tracking-wide text-white/50'>
               Portal
             </span>
-            {links.member.map((link) => (
+            {links.member.map(link => (
               <Link
-                key={link.href}
-                href={link.href}
                 aria-current={
                   isActivePath(pathname, link.href) ? 'page' : undefined
                 }
                 className={linkClass(isActivePath(pathname, link.href))}
+                href={link.href}
+                key={link.href}
               >
                 {link.label}
               </Link>
             ))}
           </div>
 
-          {links.admin.length > 0 ? (
-            <div className='flex min-w-0 flex-wrap items-center gap-1 border-t border-white/10 pt-2'>
-              <span className='mr-1 shrink-0 text-xs font-semibold uppercase tracking-wide text-white/50'>
-                Admin
-              </span>
-              {links.admin.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  aria-current={
-                    isActivePath(pathname, link.href) ? 'page' : undefined
-                  }
-                  className={linkClass(isActivePath(pathname, link.href))}
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          ) : null}
+          {links.admin.length > 0
+            ? (
+                <div className='flex min-w-0 flex-wrap items-center gap-1 border-t border-white/10 pt-2'>
+                  <span className='mr-1 shrink-0 text-xs font-semibold uppercase tracking-wide text-white/50'>
+                    Admin
+                  </span>
+                  {links.admin.map(link => (
+                    <Link
+                      aria-current={
+                        isActivePath(pathname, link.href) ? 'page' : undefined
+                      }
+                      className={linkClass(isActivePath(pathname, link.href))}
+                      href={link.href}
+                      key={link.href}
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+              )
+            : null}
         </div>
 
         <div className='flex shrink-0 items-center gap-3'>

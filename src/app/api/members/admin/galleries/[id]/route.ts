@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { getGalleryById, updateGallery } from '@/lib/galleries';
 import { isImmichConfigured } from '@/lib/immich/client';
 import { hasPermission } from '@/lib/permissions-sync';
@@ -28,26 +29,22 @@ export const PATCH = async (
   }
 
   const body = (await request.json()) as {
-    title?: string;
-    description?: string;
-    allowMemberUploads?: boolean;
     active?: boolean;
+    allowMemberUploads?: boolean;
+    description?: string;
+    title?: string;
   };
 
   const updated = await updateGallery(
     id,
     {
-      ...(body.title !== undefined ? { title: body.title.trim() } : {}),
-      ...(body.description !== undefined
-        ? { description: body.description.trim() || null }
-        : {}),
-      ...(body.allowMemberUploads !== undefined
-        ? { allowMemberUploads: body.allowMemberUploads }
-        : {}),
-      ...(body.active !== undefined ? { active: body.active } : {}),
+      ...((body.title !== undefined) && { title: body.title.trim() }),
+      ...((body.description !== undefined) && { description: body.description.trim() || null }),
+      ...((body.allowMemberUploads !== undefined) && { allowMemberUploads: body.allowMemberUploads }),
+      ...((body.active !== undefined) && { active: body.active }),
     },
     membershipNumber,
   );
 
-  return NextResponse.json({ ok: true, gallery: updated });
+  return NextResponse.json({ gallery: updated, ok: true });
 };

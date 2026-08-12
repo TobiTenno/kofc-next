@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 
 import { notFound } from 'next/navigation';
+
 import { CalendarPreview } from '@/components/calendar/CalendarPreview';
 import { CalendarSubscribeLinks } from '@/components/calendar/CalendarSubscribeLinks';
 import { getCanonicalAppOrigin, getLocalDevOrigin } from '@/lib/app-origin';
@@ -28,7 +29,7 @@ export default async function MembersCalendarViewPage({
   const membershipNumber = await getMembershipNumber();
   const baseUrl = getCanonicalAppOrigin() ?? getLocalDevOrigin();
   const token = membershipNumber
-    ? await mintCalendarToken({ membershipNumber, feed: 'birthdays' })
+    ? await mintCalendarToken({ feed: 'birthdays', membershipNumber })
     : null;
   const birthdayUrl = token
     ? `${baseUrl}/api/calendar/birthdays.ics?token=${token}`

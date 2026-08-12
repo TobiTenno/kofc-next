@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { recordAuditEvent } from '@/lib/audit';
 import { rebuildCalendarCache } from '@/lib/calendar/cache';
 import { syncCouncilCsv } from '@/lib/csv-sync';
@@ -18,10 +19,10 @@ export const POST = async (): Promise<NextResponse> => {
   const result = await syncCouncilCsv();
   await rebuildCalendarCache();
   await recordAuditEvent({
-    actorMembershipNumber: membershipNumber,
     action: 'roster.sync',
-    summary: `Synced roster from disk (${result.upserted} active, ${result.deactivated} deactivated)`,
+    actorMembershipNumber: membershipNumber,
     metadata: result,
+    summary: `Synced roster from disk (${result.upserted} active, ${result.deactivated} deactivated)`,
   });
   return NextResponse.json({ ok: true, ...result });
 };

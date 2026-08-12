@@ -6,7 +6,7 @@ export const hashToken = (token: string): string =>
   createHash('sha256').update(token).digest('hex');
 
 export const generateCode = (): string =>
-  String(Math.floor(100000 + Math.random() * 900000));
+  String(Math.floor(100_000 + Math.random() * 900_000));
 
 export const normalizeEmail = (email: string): string =>
   email.trim().toLowerCase();
@@ -15,22 +15,22 @@ const hasSirKnightPrefix = (prefix: string): boolean =>
   /^(SK|Sir Knight)\b/i.test(prefix.trim());
 
 export const isFourthDegreeKnight = (member: {
-  fourthDegreeDate?: string | null;
+  fourthDegreeDate?: null | string;
 }): boolean => Boolean(member.fourthDegreeDate?.trim());
 
 export const formatMemberName = (member: {
-  prefix?: string | null;
   firstName: string;
-  middleName?: string | null;
+  fourthDegreeDate?: null | string;
   lastName: string;
-  suffix?: string | null;
-  fourthDegreeDate?: string | null;
+  middleName?: null | string;
+  prefix?: null | string;
+  suffix?: null | string;
 }): string => {
   const csvPrefix = member.prefix?.trim();
   const honorific = isFourthDegreeKnight(member)
-    ? csvPrefix && hasSirKnightPrefix(csvPrefix)
-      ? csvPrefix
-      : 'SK'
+    ? (csvPrefix && hasSirKnightPrefix(csvPrefix)
+        ? csvPrefix
+        : 'SK')
     : csvPrefix || null;
 
   return [
@@ -52,7 +52,7 @@ export const maskMemberName = (member: {
 export const centsToDollars = (cents: number): string =>
   (cents / 100).toFixed(2);
 
-export const maskSecret = (value: string | undefined | null): string | null => {
+export const maskSecret = (value: null | string | undefined): null | string => {
   const trimmed = value?.trim();
   if (!trimmed) {
     return null;

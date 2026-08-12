@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { getGalleryById } from '@/lib/galleries';
 import {
   getImmichUploadSession,
@@ -36,9 +37,9 @@ export const GET = async (
   }
 
   return NextResponse.json({
-    uploadUrl: session.uploadUrl,
     apiKey: session.apiKey,
     deviceId: session.deviceId,
     maxBytes: session.maxBytes,
+    uploadUrl: session.uploadUrl,
   });
 };

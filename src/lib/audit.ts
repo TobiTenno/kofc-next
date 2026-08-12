@@ -1,13 +1,14 @@
 import { desc } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { auditLog } from '@/db/schema';
 import { createId } from '@/lib/utils';
 
 export type AuditEventInput = {
-  actorMembershipNumber?: string | null;
   action: string;
-  summary: string;
+  actorMembershipNumber?: null | string;
   metadata?: Record<string, unknown>;
+  summary: string;
 };
 
 export const recordAuditEvent = async (
@@ -15,14 +16,15 @@ export const recordAuditEvent = async (
 ): Promise<void> => {
   try {
     await db.insert(auditLog).values({
-      id: createId(),
-      actorMembershipNumber: input.actorMembershipNumber ?? null,
       action: input.action,
-      summary: input.summary,
-      metadata: input.metadata ? JSON.stringify(input.metadata) : null,
+      actorMembershipNumber: input.actorMembershipNumber ?? null,
       createdAt: new Date(),
+      id: createId(),
+      metadata: input.metadata ? JSON.stringify(input.metadata) : null,
+      summary: input.summary,
     });
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Failed to record audit event', {
       action: input.action,
       error,

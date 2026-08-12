@@ -1,8 +1,10 @@
-import { ThemeProvider } from '@mui/material/styles';
 import type { Metadata, Viewport } from 'next';
+
+import { ThemeProvider } from '@mui/material/styles';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Image from 'next/image';
 import Script from 'next/script';
+
 import { DevCookieCleanup } from '@/components/DevCookieCleanup';
 import { PwaInstallHint } from '@/components/PwaInstallHint';
 import { PwaRegister } from '@/components/PwaRegister';
@@ -12,81 +14,82 @@ import { getPwaLabels, pwaThemeColorDark, pwaThemeColorLight } from '@/lib/pwa';
 import { ColorSchemeProvider } from '@/providers/color-scheme';
 import CouncilProvider from '@/providers/council';
 import { AppRouterCacheProvider } from '@/providers/mui-cache';
+
 import theme from '../theme';
 import './globals.css';
 
 export const dynamic = 'force-dynamic';
 
 const geistSans = Geist({
-  variable: '--font-geist-sans',
   subsets: ['latin'],
+  variable: '--font-geist-sans',
 });
 
 const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
   subsets: ['latin'],
+  variable: '--font-geist-mono',
 });
 
 export const viewport: Viewport = {
-  width: 'device-width',
   initialScale: 1,
-  viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: pwaThemeColorLight },
-    { media: '(prefers-color-scheme: dark)', color: pwaThemeColorDark },
+    { color: pwaThemeColorLight, media: '(prefers-color-scheme: light)' },
+    { color: pwaThemeColorDark, media: '(prefers-color-scheme: dark)' },
   ],
+  viewportFit: 'cover',
+  width: 'device-width',
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { fullName, shortName, description } = getPwaLabels();
+  const { description, fullName, shortName } = getPwaLabels();
 
   return {
-    title: fullName,
-    description,
-    applicationName: shortName,
-    manifest: '/manifest.webmanifest',
     appleWebApp: {
       capable: true,
-      title: shortName,
       statusBarStyle: 'default',
+      title: shortName,
     },
+    applicationName: shortName,
+    description,
     formatDetection: {
       telephone: false,
     },
-    robots: {
-      index: true,
-      follow: false,
-    },
     icons: {
-      icon: '/favicon.ico',
       apple: '/apple-touch-icon.png',
+      icon: '/favicon.ico',
       other: [
         {
-          url: '/android-chrome-512x512.png',
           rel: 'android-chrome',
           sizes: '512x512',
           type: 'image/png',
+          url: '/android-chrome-512x512.png',
         },
         {
-          url: '/android-chrome-192x192.png',
           rel: 'android-chrome',
           sizes: '192x192',
           type: 'image/png',
+          url: '/android-chrome-192x192.png',
         },
         {
-          url: '/favicon-16x16.png',
           rel: 'icon',
           sizes: '16x16',
           type: 'image/png',
+          url: '/favicon-16x16.png',
         },
         {
-          url: '/favicon-32x32.png',
           rel: 'icon',
           sizes: '32x32',
           type: 'image/png',
+          url: '/favicon-32x32.png',
         },
       ],
     },
+    manifest: '/manifest.webmanifest',
+    robots: {
+      follow: false,
+      index: true,
+    },
+    title: fullName,
   };
 }
 
@@ -102,15 +105,15 @@ export default async function RootLayout({
       <a
         className='flex items-center gap-2 hover:underline hover:underline-offset-4'
         href={`https://www.kofc.org/en/index.html?ref=co${council?.number ?? ''}`}
-        target='_blank'
         rel='noopener noreferrer'
+        target='_blank'
       >
         <Image
-          aria-hidden
-          src='/file.svg'
           alt='File icon'
-          width={16}
+          aria-hidden
           height={16}
+          src='/file.svg'
+          width={16}
         />
         About
       </a>
@@ -132,9 +135,11 @@ export default async function RootLayout({
                 />
                 <PwaRegister />
                 <PwaInstallHint />
-                {process.env.NODE_ENV === 'development' ? (
-                  <DevCookieCleanup />
-                ) : null}
+                {process.env.NODE_ENV === 'development'
+                  ? (
+                      <DevCookieCleanup />
+                    )
+                  : null}
                 <div className='w-full min-w-0 justify-self-stretch'>
                   <SiteHeader />
                 </div>

@@ -1,4 +1,5 @@
 import { eq, inArray } from 'drizzle-orm';
+
 import { db } from '@/db';
 import { duesSubscriptions } from '@/db/schema';
 import { recordAuditEvent } from '@/lib/audit';
@@ -8,8 +9,8 @@ import {
   upsertDuesSubscription,
 } from '@/lib/dues';
 import {
-  getPaypalSubSyncIntervalMs,
   getPaypalSubscription,
+  getPaypalSubSyncIntervalMs,
   isPaypalRestConfigured,
   mapPaypalStatusToLocal,
 } from '@/lib/paypal';
@@ -17,9 +18,9 @@ import { getCurrentCouncilYear } from '@/lib/permissions-sync';
 
 export type PaypalSubscriptionSyncResult = {
   checked: number;
-  updated: number;
-  paymentsRecorded: number;
   errors: number;
+  paymentsRecorded: number;
+  updated: number;
 };
 
 const parseBillingTime = (value: string | undefined): Date | null => {
@@ -32,7 +33,7 @@ const parseBillingTime = (value: string | undefined): Date | null => {
 
 const syncOneSubscription = async (
   row: typeof duesSubscriptions.$inferSelect,
-): Promise<{ updated: boolean; paymentRecorded: boolean }> => {
+): Promise<{ paymentRecorded: boolean; updated: boolean }> => {
   const details = await getPaypalSubscription(row.paypalSubscriptionId);
   const status = mapPaypalStatusToLocal(details.status);
   const nextBillingAt = parseBillingTime(
@@ -44,15 +45,15 @@ const syncOneSubscription = async (
   const payerEmail = details.subscriber?.email_address ?? row.payerEmail;
 
   await upsertDuesSubscription({
-    membershipNumber: row.membershipNumber,
-    paypalSubscriptionId: row.paypalSubscriptionId,
-    paypalPlanId: details.plan_id ?? row.paypalPlanId,
-    status,
-    memberClass: row.memberClass,
     amountCents: row.amountCents,
-    payerEmail,
-    nextBillingAt,
     lastPaymentAt,
+    memberClass: row.memberClass,
+    membershipNumber: row.membershipNumber,
+    nextBillingAt,
+    payerEmail,
+    paypalPlanId: details.plan_id ?? row.paypalPlanId,
+    paypalSubscriptionId: row.paypalSubscriptionId,
+    status,
   });
 
   let paymentRecorded = false;
@@ -61,32 +62,32 @@ const syncOneSubscription = async (
 
   if (lastPaymentValue && lastPaymentTime && status === 'active') {
     const dues = await getMemberDuesAmount(row.membershipNumber);
-    const councilYear =
-      dues?.councilYear ?? (await getCurrentCouncilYear()) ?? null;
+    const councilYear
+      = dues?.councilYear ?? (await getCurrentCouncilYear()) ?? null;
 
     if (dues && councilYear) {
       // Synthetic but stable txn id when PayPal billing_info lacks sale id.
       const paypalTxnId = `sub:${row.paypalSubscriptionId}:${lastPaymentTime}`;
       paymentRecorded = await recordPaypalPayment({
-        membershipNumber: row.membershipNumber,
-        councilYear,
         amountCents: dues.amountCents,
+        councilYear,
         memberClass: dues.memberClass,
-        paypalTxnId,
+        membershipNumber: row.membershipNumber,
         payerEmail: payerEmail ?? undefined,
-        source: 'paypal_subscription',
         paypalSubscriptionId: row.paypalSubscriptionId,
+        paypalTxnId,
+        source: 'paypal_subscription',
       });
     }
   }
 
-  return { updated: true, paymentRecorded };
+  return { paymentRecorded, updated: true };
 };
 
-export const syncPaypalSubscriptions =
-  async (): Promise<PaypalSubscriptionSyncResult> => {
+export const syncPaypalSubscriptions
+  = async (): Promise<PaypalSubscriptionSyncResult> => {
     if (!isPaypalRestConfigured()) {
-      return { checked: 0, updated: 0, paymentsRecorded: 0, errors: 0 };
+      return { checked: 0, errors: 0, paymentsRecorded: 0, updated: 0 };
     }
 
     const rows = await db
@@ -114,7 +115,8 @@ export const syncPaypalSubscriptions =
         if (result.paymentRecorded) {
           paymentsRecorded += 1;
         }
-      } catch (error) {
+      }
+      catch (error) {
         errors += 1;
         console.error(
           `PayPal subscription sync failed for ${row.paypalSubscriptionId}:`,
@@ -133,32 +135,33 @@ export const syncPaypalSubscriptions =
       try {
         await syncOneSubscription(row);
         updated += 1;
-      } catch {
+      }
+      catch {
         // Ignore terminal refresh failures.
       }
     }
 
     await recordAuditEvent({
-      actorMembershipNumber: null,
       action: 'dues.paypal_subscription_sync',
-      summary: `Synced ${updated}/${rows.length} PayPal subscriptions (${paymentsRecorded} payments, ${errors} errors)`,
+      actorMembershipNumber: null,
       metadata: {
         checked: rows.length,
-        updated,
-        paymentsRecorded,
         errors,
+        paymentsRecorded,
+        updated,
       },
+      summary: `Synced ${updated}/${rows.length} PayPal subscriptions (${paymentsRecorded} payments, ${errors} errors)`,
     });
 
     return {
       checked: rows.length,
-      updated,
-      paymentsRecorded,
       errors,
+      paymentsRecorded,
+      updated,
     };
   };
 
-let syncTimer: ReturnType<typeof setInterval> | null = null;
+let syncTimer: null | ReturnType<typeof setInterval> = null;
 let syncRunning = false;
 
 export const runPaypalSubscriptionSyncSafe = async (): Promise<void> => {
@@ -169,9 +172,11 @@ export const runPaypalSubscriptionSyncSafe = async (): Promise<void> => {
   syncRunning = true;
   try {
     await syncPaypalSubscriptions();
-  } catch (error) {
+  }
+  catch (error) {
     console.error('PayPal subscription sync crashed:', error);
-  } finally {
+  }
+  finally {
     syncRunning = false;
   }
 };
@@ -206,7 +211,7 @@ export const startPaypalSubscriptionSyncScheduler = (): void => {
 
 export const findSubscriptionByPaypalId = async (
   paypalSubscriptionId: string,
-): Promise<typeof duesSubscriptions.$inferSelect | null> =>
+): Promise<null | typeof duesSubscriptions.$inferSelect> =>
   (await db.query.duesSubscriptions.findFirst({
     where: eq(duesSubscriptions.paypalSubscriptionId, paypalSubscriptionId),
   })) ?? null;

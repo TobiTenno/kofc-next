@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+
 import { completeGalleryUpload, getGalleryById } from '@/lib/galleries';
 import {
   ImmichUploadValidationError,
@@ -40,16 +41,17 @@ export const POST = async (
 
   try {
     const result = await completeGalleryUpload({
-      gallery,
-      membershipNumber,
       assetId: body.assetId.trim(),
       filename: body.filename.trim(),
+      gallery,
+      membershipNumber,
     });
 
-    return NextResponse.json({ ok: true, assetId: result.assetId });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : 'Complete upload failed';
+    return NextResponse.json({ assetId: result.assetId, ok: true });
+  }
+  catch (error) {
+    const message
+      = error instanceof Error ? error.message : 'Complete upload failed';
     const status = error instanceof ImmichUploadValidationError ? 400 : 500;
     return NextResponse.json({ error: message }, { status });
   }

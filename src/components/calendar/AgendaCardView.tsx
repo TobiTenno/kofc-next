@@ -1,7 +1,6 @@
 'use client';
 
 import { Chip, Description, Header, Label, ListBox } from '@heroui/react';
-import type { SyntheticEvent } from 'react';
 import { useMemo } from 'react';
 import {
   Navigate,
@@ -10,10 +9,12 @@ import {
   type ViewProps,
   type ViewStatic,
 } from 'react-big-calendar';
+
 import type {
   CalendarEventVariant,
   CalendarPreviewEvent,
 } from '@/lib/calendar/calendar-event-types';
+
 import { calendarEventKindLabel } from '@/lib/calendar/calendar-event-types';
 
 const DEFAULT_LENGTH = 30;
@@ -22,14 +23,14 @@ type AgendaCardViewProps = ViewProps<CalendarPreviewEvent>;
 
 type AgendaDayGroup = {
   day: Date;
-  label: string;
   events: CalendarPreviewEvent[];
+  label: string;
 };
 
 const variantAccent: Record<CalendarEventVariant, string> = {
+  outline: 'calendar-agenda-item--outline',
   primary: 'calendar-agenda-item--primary',
   secondary: 'calendar-agenda-item--secondary',
-  outline: 'calendar-agenda-item--outline',
 };
 
 const eventInRange = (
@@ -41,10 +42,10 @@ const eventInRange = (
 ): boolean =>
   localizer.inEventRange({
     event: {
-      start: accessors.start(event),
       end: accessors.end(event),
+      start: accessors.start(event),
     },
-    range: { start: rangeStart, end: rangeEnd },
+    range: { end: rangeEnd, start: rangeStart },
   });
 
 const formatAgendaTime = (
@@ -65,7 +66,7 @@ const formatAgendaTime = (
   }
 
   if (localizer.isSameDate(start, end)) {
-    return localizer.format({ start, end }, 'agendaTimeRangeFormat');
+    return localizer.format({ end, start }, 'agendaTimeRangeFormat');
   }
 
   if (localizer.isSameDate(day, start)) {
@@ -93,7 +94,7 @@ const AgendaCardView = ({
   const dayGroups = useMemo((): AgendaDayGroup[] => {
     const range = localizer.range(date, end, 'day') as Date[];
     const filtered = [...events]
-      .filter((event) =>
+      .filter(event =>
         eventInRange(
           event,
           localizer.startOf(date, 'day'),
@@ -105,10 +106,9 @@ const AgendaCardView = ({
       .sort((left, right) => +accessors.start(left) - +accessors.start(right));
 
     return range
-      .map((day) => ({
+      .map(day => ({
         day,
-        label: localizer.format(day, 'agendaDateFormat') as string,
-        events: filtered.filter((event) =>
+        events: filtered.filter(event =>
           eventInRange(
             event,
             localizer.startOf(day, 'day'),
@@ -117,8 +117,9 @@ const AgendaCardView = ({
             localizer,
           ),
         ),
+        label: localizer.format(day, 'agendaDateFormat') as string,
       }))
-      .filter((group) => group.events.length > 0);
+      .filter(group => group.events.length > 0);
   }, [accessors, date, end, events, localizer]);
 
   if (dayGroups.length === 0) {
@@ -132,10 +133,10 @@ const AgendaCardView = ({
   return (
     <ListBox
       aria-label='Calendar events'
-      selectionMode='none'
       className='calendar-agenda-list'
+      selectionMode='none'
     >
-      {dayGroups.map((group) => (
+      {dayGroups.map(group => (
         <ListBox.Section key={group.day.toISOString()}>
           <Header className='text-sm font-semibold text-foreground'>
             {group.label}
@@ -145,20 +146,19 @@ const AgendaCardView = ({
 
             return (
               <ListBox.Item
-                key={itemId}
-                id={itemId}
-                textValue={event.title}
                 className={`calendar-agenda-item items-start py-2 ${variantAccent[event.variant]}`}
+                id={itemId}
+                key={itemId}
                 onAction={() =>
-                  onSelectEvent?.(event, {} as SyntheticEvent<HTMLElement>)
-                }
+                  onSelectEvent?.(event, {})}
+                textValue={event.title}
               >
                 <div className='grid min-w-0 flex-1 gap-1'>
                   <div className='flex flex-wrap items-start justify-between gap-2'>
                     <Label className='text-base font-semibold'>
                       {event.title}
                     </Label>
-                    <Chip size='sm' variant='soft' color='default'>
+                    <Chip color='default' size='sm' variant='soft'>
                       <Chip.Label>
                         {calendarEventKindLabel[event.kind]}
                       </Chip.Label>
@@ -167,9 +167,11 @@ const AgendaCardView = ({
                   <Description className='text-[inherit] opacity-90'>
                     {formatAgendaTime(group.day, event, accessors, localizer)}
                   </Description>
-                  {event.location ? (
-                    <Description>{event.location}</Description>
-                  ) : null}
+                  {event.location
+                    ? (
+                        <Description>{event.location}</Description>
+                      )
+                    : null}
                 </div>
               </ListBox.Item>
             );
@@ -185,7 +187,7 @@ AgendaCardView.range = (
   { length = DEFAULT_LENGTH, localizer }: TitleOptions,
 ) => {
   const rangeEnd = localizer.add(start, length, 'day');
-  return { start, end: rangeEnd };
+  return { end: rangeEnd, start };
 };
 
 AgendaCardView.navigate = (
@@ -194,12 +196,15 @@ AgendaCardView.navigate = (
   { length = DEFAULT_LENGTH, localizer }: TitleOptions,
 ) => {
   switch (action) {
-    case Navigate.PREVIOUS:
-      return localizer.add(currentDate, -length, 'day');
-    case Navigate.NEXT:
+    case Navigate.NEXT: {
       return localizer.add(currentDate, length, 'day');
-    default:
+    }
+    case Navigate.PREVIOUS: {
+      return localizer.add(currentDate, -length, 'day');
+    }
+    default: {
       return currentDate;
+    }
   }
 };
 
@@ -209,10 +214,10 @@ AgendaCardView.title = (
 ) => {
   const rangeEnd = localizer.add(start, length, 'day');
   return localizer.format(
-    { start, end: rangeEnd },
+    { end: rangeEnd, start },
     'agendaHeaderFormat',
   ) as string;
 };
 
-export const AgendaCardViewComponent = AgendaCardView as typeof AgendaCardView &
-  ViewStatic;
+export const AgendaCardViewComponent = AgendaCardView as typeof AgendaCardView
+  & ViewStatic;

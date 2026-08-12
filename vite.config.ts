@@ -11,13 +11,13 @@ const cjsInteropDeps = [
 ];
 
 export default defineConfig({
-  plugins: [vinext()],
   legacy: {
     inconsistentCjsInterop: true,
   },
   optimizeDeps: {
     include: cjsInteropDeps,
   },
+  plugins: [vinext()],
   ssr: {
     optimizeDeps: {
       include: cjsInteropDeps,

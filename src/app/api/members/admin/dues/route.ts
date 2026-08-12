@@ -1,5 +1,6 @@
 import { eq, like, or } from 'drizzle-orm';
 import { NextResponse } from 'next/server';
+
 import { db } from '@/db';
 import { members } from '@/db/schema';
 import {
@@ -26,7 +27,7 @@ export const GET = async (request: Request): Promise<NextResponse> => {
   const canManageSettings = await hasPermission(membershipNumber, 'manageDues');
 
   if (!query) {
-    return NextResponse.json({ members: [], canManageSettings });
+    return NextResponse.json({ canManageSettings, members: [] });
   }
 
   const rows = await db
@@ -42,17 +43,17 @@ export const GET = async (request: Request): Promise<NextResponse> => {
     .limit(20);
 
   const enriched = await Promise.all(
-    rows.map(async (member) => ({
-      member,
+    rows.map(async member => ({
       dues: await getMemberDuesAmount(member.membershipNumber),
+      member,
       status: await getMemberPaymentStatus(member.membershipNumber),
       subscription: await getMemberSubscription(member.membershipNumber),
     })),
   );
 
   return NextResponse.json({
-    members: enriched,
     canManageSettings,
+    members: enriched,
   });
 };
 
@@ -68,7 +69,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   const body = (await request.json()) as {
     membershipNumber?: string;
-    method?: 'cash' | 'check' | 'paypal' | 'other';
+    method?: 'cash' | 'check' | 'other' | 'paypal';
     notes?: string;
   };
 
@@ -86,15 +87,16 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   try {
     await recordManualPayment({
-      membershipNumber: body.membershipNumber,
-      memberClass: dues.memberClass,
       amountCents: dues.amountCents,
       councilYear: dues.councilYear,
+      markedByMembershipNumber: membershipNumber,
+      memberClass: dues.memberClass,
+      membershipNumber: body.membershipNumber,
       method: body.method,
       notes: body.notes,
-      markedByMembershipNumber: membershipNumber,
     });
-  } catch (error) {
+  }
+  catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed' },
       { status: 400 },

@@ -3,12 +3,13 @@
 import { Alert, Button, Link as HeroLink } from '@heroui/react';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
+
 import { isLoopbackHost } from '@/lib/app-origin';
 import { authClient } from '@/lib/auth-client';
 
 const fieldLabelClass = 'text-sm font-medium text-foreground';
-const inputClass =
-  'input input--primary input--full-width min-h-10 text-foreground';
+const inputClass
+  = 'input input--primary input--full-width min-h-10 text-foreground';
 
 const useCanonicalOriginRedirect = (): void => {
   useEffect(() => {
@@ -20,17 +21,18 @@ const useCanonicalOriginRedirect = (): void => {
     try {
       const canonicalUrl = new URL(canonical);
       if (
-        window.location.origin !== canonicalUrl.origin &&
-        isLoopbackHost(window.location.hostname) &&
-        !isLoopbackHost(canonicalUrl.hostname)
+        location.origin !== canonicalUrl.origin
+        && isLoopbackHost(location.hostname)
+        && !isLoopbackHost(canonicalUrl.hostname)
       ) {
         const target = new URL(
-          `${window.location.pathname}${window.location.search}`,
+          `${location.pathname}${location.search}`,
           canonicalUrl.origin,
         );
-        window.location.replace(target.href);
+        location.replace(target.href);
       }
-    } catch {
+    }
+    catch {
       // ignore invalid canonical URL
     }
   }, []);
@@ -41,7 +43,7 @@ const LoginForm = () => {
   const searchParams = useSearchParams();
   const [membershipNumber, setMembershipNumber] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<null | string>(null);
   const [loading, setLoading] = useState(false);
 
   const submit = async (event: React.FormEvent): Promise<void> => {
@@ -50,8 +52,8 @@ const LoginForm = () => {
     setError(null);
 
     const result = await authClient.signIn.username({
-      username: membershipNumber.trim(),
       password,
+      username: membershipNumber.trim(),
     });
 
     setLoading(false);
@@ -62,52 +64,54 @@ const LoginForm = () => {
     }
 
     const next = searchParams.get('next') ?? '/';
-    window.location.assign(next);
+    location.assign(next);
   };
 
   return (
-    <form onSubmit={submit} className='grid gap-4'>
+    <form className='grid gap-4' onSubmit={submit}>
       <div className='grid gap-1.5'>
-        <label htmlFor='membership-number' className={fieldLabelClass}>
+        <label className={fieldLabelClass} htmlFor='membership-number'>
           Membership number
         </label>
         <input
-          id='membership-number'
-          type='text'
-          inputMode='numeric'
           autoComplete='username'
-          required
-          value={membershipNumber}
-          onChange={(event) => setMembershipNumber(event.target.value)}
           className={inputClass}
+          id='membership-number'
+          inputMode='numeric'
+          onChange={event => setMembershipNumber(event.target.value)}
+          required
+          type='text'
+          value={membershipNumber}
         />
       </div>
 
       <div className='grid gap-1.5'>
-        <label htmlFor='membership-password' className={fieldLabelClass}>
+        <label className={fieldLabelClass} htmlFor='membership-password'>
           Password
         </label>
         <input
-          id='membership-password'
-          type='password'
           autoComplete='current-password'
-          required
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
           className={inputClass}
+          id='membership-password'
+          onChange={event => setPassword(event.target.value)}
+          required
+          type='password'
+          value={password}
         />
       </div>
 
-      {error ? (
-        <Alert status='danger'>
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Description>{error}</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      ) : null}
+      {error
+        ? (
+            <Alert status='danger'>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{error}</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          )
+        : null}
 
-      <Button type='submit' variant='primary' isDisabled={loading} fullWidth>
+      <Button fullWidth isDisabled={loading} type='submit' variant='primary'>
         {loading ? 'Signing in…' : 'Sign in'}
       </Button>
     </form>
@@ -122,10 +126,11 @@ export default function LoginPage() {
         <LoginForm />
       </Suspense>
       <p className='mt-4 text-sm text-muted-foreground'>
-        Need an account?{' '}
+        Need an account?
+        {' '}
         <HeroLink
-          href='/members/register'
           className='underline underline-offset-2'
+          href='/members/register'
         >
           Register
         </HeroLink>

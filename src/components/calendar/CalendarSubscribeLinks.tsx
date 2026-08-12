@@ -5,7 +5,7 @@ import { useState } from 'react';
 
 type CalendarSubscribeLinksProps = {
   baseUrl: string;
-  birthdayUrl?: string | null;
+  birthdayUrl?: null | string;
 };
 
 const CopyFeedButton = ({ label, url }: { label: string; url: string }) => {
@@ -14,24 +14,26 @@ const CopyFeedButton = ({ label, url }: { label: string; url: string }) => {
   const copy = async (): Promise<void> => {
     await navigator.clipboard.writeText(url);
     setCopied(true);
-    window.setTimeout(() => setCopied(false), 2000);
+    globalThis.setTimeout(() => setCopied(false), 2000);
   };
 
   return (
     <li className='flex flex-wrap items-center gap-2'>
       <span>{label}</span>
       <button
-        type='button'
+        aria-label={`Copy ${label} feed URL`}
         className='inline-flex items-center rounded border border-[var(--border)] p-1.5 hover:bg-[var(--muted)]'
         onClick={() => void copy()}
-        aria-label={`Copy ${label} feed URL`}
         title='Copy feed URL'
+        type='button'
       >
         <ContentCopyIcon sx={{ fontSize: 18 }} />
       </button>
-      {copied ? (
-        <span className='text-xs text-[var(--muted-foreground)]'>Copied</span>
-      ) : null}
+      {copied
+        ? (
+            <span className='text-xs text-[var(--muted-foreground)]'>Copied</span>
+          )
+        : null}
     </li>
   );
 };
@@ -51,9 +53,11 @@ export const CalendarSubscribeLinks = ({
         label='Member events'
         url={`${baseUrl}/api/calendar/member-events.ics`}
       />
-      {birthdayUrl ? (
-        <CopyFeedButton label='Birthdays (private)' url={birthdayUrl} />
-      ) : null}
+      {birthdayUrl
+        ? (
+            <CopyFeedButton label='Birthdays (private)' url={birthdayUrl} />
+          )
+        : null}
     </ul>
   </div>
 );

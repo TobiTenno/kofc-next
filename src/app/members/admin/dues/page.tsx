@@ -12,34 +12,35 @@ import {
   TextField,
 } from '@heroui/react';
 import { useEffect, useState } from 'react';
+
 import { AdminPageSurface } from '@/components/AdminPageSurface';
 import { DuesSettingsModal } from '@/components/DuesSettingsModal';
 
 type MemberResult = {
+  dues: null | { amountCents: number; councilYear: string };
   member: {
-    membershipNumber: string;
     firstName: string;
     lastName: string;
-    memberClass: string | null;
+    memberClass: null | string;
+    membershipNumber: string;
   };
   status: { paid: boolean };
-  dues: { amountCents: number; councilYear: string } | null;
-  subscription: {
-    status: string;
-    nextBillingAt: string | Date | null;
+  subscription: null | {
+    nextBillingAt: Date | null | string;
     paypalSubscriptionId: string;
-  } | null;
+    status: string;
+  };
 };
 
-type PaymentMethod = 'cash' | 'check' | 'paypal' | 'other';
+type PaymentMethod = 'cash' | 'check' | 'other' | 'paypal';
 
 export default function DuesAdminPage() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<MemberResult[]>([]);
   const [method, setMethod] = useState<PaymentMethod>('cash');
   const [notes, setNotes] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
+  const [message, setMessage] = useState<null | string>(null);
+  const [messageTone, setMessageTone] = useState<'danger' | 'success'>(
     'success',
   );
   const [canManageSettings, setCanManageSettings] = useState(false);
@@ -65,9 +66,9 @@ export default function DuesAdminPage() {
       `/api/members/admin/dues?q=${encodeURIComponent(query)}`,
     );
     const payload = (await response.json()) as {
-      members?: MemberResult[];
       canManageSettings?: boolean;
       error?: string;
+      members?: MemberResult[];
     };
     if (!response.ok) {
       setMessageTone('danger');
@@ -84,9 +85,9 @@ export default function DuesAdminPage() {
 
   const markPaid = async (membershipNumber: string): Promise<void> => {
     const response = await fetch('/api/members/admin/dues', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ membershipNumber, method, notes }),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
     });
 
     const payload = (await response.json()) as { error?: string };
@@ -98,7 +99,7 @@ export default function DuesAdminPage() {
   };
 
   const formatNextBilling = (
-    value: string | Date | null | undefined,
+    value: Date | null | string | undefined,
   ): string => {
     if (!value) {
       return '—';
@@ -112,11 +113,11 @@ export default function DuesAdminPage() {
 
   return (
     <AdminPageSurface
-      title='Dues Admin'
       description='Mark members paid (manageDues or Financial Secretary).'
       manageAriaLabel='Manage dues settings'
       maxWidth='3xl'
       onManage={canManageSettings ? () => setSettingsOpen(true) : undefined}
+      title='Dues Admin'
     >
       <Card>
         <Card.Header>
@@ -126,21 +127,21 @@ export default function DuesAdminPage() {
           </Card.Description>
         </Card.Header>
         <Card.Content>
-          <Form onSubmit={search} className='grid gap-4'>
-            <TextField fullWidth value={query} onChange={setQuery}>
+          <Form className='grid gap-4' onSubmit={search}>
+            <TextField fullWidth onChange={setQuery} value={query}>
               <Label>Membership number or name</Label>
               <Input placeholder='e.g. 1234567 or Smith' />
             </TextField>
 
             <Select
               fullWidth
-              selectedKey={method}
               onSelectionChange={(key) => {
                 if (key == null) {
                   return;
                 }
                 setMethod(String(key) as PaymentMethod);
               }}
+              selectedKey={method}
             >
               <Label>Payment method</Label>
               <Select.Trigger>
@@ -165,16 +166,16 @@ export default function DuesAdminPage() {
               </Select.Popover>
             </Select>
 
-            <TextField fullWidth value={notes} onChange={setNotes}>
+            <TextField fullWidth onChange={setNotes} value={notes}>
               <Label>Notes</Label>
               <Input placeholder='Optional' />
             </TextField>
 
             <Button
+              fullWidth
+              isDisabled={searching}
               type='submit'
               variant='primary'
-              isDisabled={searching}
-              fullWidth
             >
               {searching ? 'Searching…' : 'Search'}
             </Button>
@@ -182,69 +183,85 @@ export default function DuesAdminPage() {
         </Card.Content>
       </Card>
 
-      {message ? (
-        <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Description>{message}</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      ) : null}
+      {message
+        ? (
+            <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{message}</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          )
+        : null}
 
       <ul className='grid gap-3'>
-        {results.map((result) => (
+        {results.map(result => (
           <Card key={result.member.membershipNumber}>
             <Card.Content className='grid gap-2 pt-4'>
               <div className='flex flex-wrap items-start justify-between gap-3'>
                 <div className='grid gap-1'>
                   <p className='font-medium'>
-                    {result.member.firstName} {result.member.lastName} (
-                    {result.member.membershipNumber})
+                    {result.member.firstName}
+                    {' '}
+                    {result.member.lastName}
+                    {' '}
+                    (
+                    {result.member.membershipNumber}
+                    )
                   </p>
                   <p className='text-sm text-muted-foreground'>
                     {result.status.paid
                       ? 'Paid'
                       : `Unpaid — $${((result.dues?.amountCents ?? 0) / 100).toFixed(2)}`}
                   </p>
-                  {result.subscription ? (
-                    <p className='text-sm text-muted-foreground'>
-                      Sub: {result.subscription.status}
-                      {result.subscription.status === 'active'
-                        ? ` · next ${formatNextBilling(result.subscription.nextBillingAt)}`
-                        : ''}
-                      <span className='ml-1 font-mono text-xs'>
-                        ({result.subscription.paypalSubscriptionId})
-                      </span>
-                    </p>
-                  ) : (
-                    <p className='text-sm text-muted-foreground'>
-                      No subscription
-                    </p>
-                  )}
+                  {result.subscription
+                    ? (
+                        <p className='text-sm text-muted-foreground'>
+                          Sub:
+                          {' '}
+                          {result.subscription.status}
+                          {result.subscription.status === 'active'
+                            ? ` · next ${formatNextBilling(result.subscription.nextBillingAt)}`
+                            : ''}
+                          <span className='ml-1 font-mono text-xs'>
+                            (
+                            {result.subscription.paypalSubscriptionId}
+                            )
+                          </span>
+                        </p>
+                      )
+                    : (
+                        <p className='text-sm text-muted-foreground'>
+                          No subscription
+                        </p>
+                      )}
                 </div>
-                {!result.status.paid ? (
-                  <Button
-                    type='button'
-                    variant='primary'
-                    onPress={() =>
-                      void markPaid(result.member.membershipNumber)
-                    }
-                  >
-                    Mark as paid
-                  </Button>
-                ) : null}
+                {result.status.paid
+                  ? null
+                  : (
+                      <Button
+                        onPress={() =>
+                          void markPaid(result.member.membershipNumber)}
+                        type='button'
+                        variant='primary'
+                      >
+                        Mark as paid
+                      </Button>
+                    )}
               </div>
             </Card.Content>
           </Card>
         ))}
       </ul>
 
-      {canManageSettings ? (
-        <DuesSettingsModal
-          isOpen={settingsOpen}
-          onOpenChange={setSettingsOpen}
-        />
-      ) : null}
+      {canManageSettings
+        ? (
+            <DuesSettingsModal
+              isOpen={settingsOpen}
+              onOpenChange={setSettingsOpen}
+            />
+          )
+        : null}
     </AdminPageSurface>
   );
 }

@@ -17,16 +17,16 @@ const nodeOptions = [process.env.NODE_OPTIONS, headerSizeFlag]
 
 const env = {
   ...process.env,
-  NODE_OPTIONS: nodeOptions,
-  PORT: String(port),
   BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? defaultOrigin,
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? defaultOrigin,
+  NODE_OPTIONS: nodeOptions,
+  PORT: String(port),
 };
 
 console.log(`Dev server: ${defaultOrigin} (port ${port}, isolated cookie jar)`);
 console.log(
-  'LAN: set ALLOWED_DEV_ORIGINS and BETTER_AUTH_URL / NEXT_PUBLIC_APP_URL to http://<ip>:' +
-    port,
+  'LAN: set ALLOWED_DEV_ORIGINS and BETTER_AUTH_URL / NEXT_PUBLIC_APP_URL to http://<ip>:'
+  + port,
 );
 
 const child = spawn(
@@ -34,8 +34,8 @@ const child = spawn(
   ['dev', '--hostname', '0.0.0.0', '--port', String(port)],
   {
     cwd: root,
-    stdio: 'inherit',
     env,
+    stdio: 'inherit',
   },
 );
 

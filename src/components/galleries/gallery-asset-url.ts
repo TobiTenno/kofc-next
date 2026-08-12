@@ -1,10 +1,10 @@
 export type GalleryAsset = {
-  id: string;
+  capturedAt: null | string;
   filename: string;
-  capturedAt: string | null;
+  id: string;
 };
 
 export const galleryAssetUrl = (
   assetId: string,
-  size: 'preview' | 'fullsize',
+  size: 'fullsize' | 'preview',
 ): string => `/api/members/galleries/assets/${assetId}?size=${size}`;

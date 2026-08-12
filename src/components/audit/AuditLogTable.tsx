@@ -1,5 +1,7 @@
 'use client';
 
+import type { SortDescriptor } from 'react-aria-components';
+
 import {
   Input,
   Label,
@@ -10,18 +12,17 @@ import {
   TextField,
 } from '@heroui/react';
 import { useEffect, useMemo, useState } from 'react';
-import type { SortDescriptor } from 'react-aria-components';
 
 const ROWS_PER_PAGE = 25;
 const SYSTEM_ACTOR = 'system';
 
 export type AuditEventRow = {
-  id: string;
-  actorMembershipNumber: string | null;
   action: string;
+  actorMembershipNumber: null | string;
+  createdAt: Date | string;
+  id: string;
+  metadata: null | Record<string, unknown>;
   summary: string;
-  metadata: Record<string, unknown> | null;
-  createdAt: string | Date;
 };
 
 type AuditLogTableProps = {
@@ -31,15 +32,15 @@ type AuditLogTableProps = {
 const compareStrings = (left: string, right: string): number =>
   left.localeCompare(right, undefined, { sensitivity: 'base' });
 
-const toTimestamp = (value: string | Date): number => {
+const toTimestamp = (value: Date | string): number => {
   const time = value instanceof Date ? value.getTime() : Date.parse(value);
   return Number.isFinite(time) ? time : 0;
 };
 
-const actorLabel = (actor: string | null): string =>
+const actorLabel = (actor: null | string): string =>
   actor?.trim() ? actor : SYSTEM_ACTOR;
 
-const startOfLocalDay = (yyyyMmDd: string): number | null => {
+const startOfLocalDay = (yyyyMmDd: string): null | number => {
   if (!yyyyMmDd) {
     return null;
   }
@@ -47,7 +48,7 @@ const startOfLocalDay = (yyyyMmDd: string): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const endOfLocalDay = (yyyyMmDd: string): number | null => {
+const endOfLocalDay = (yyyyMmDd: string): null | number => {
   if (!yyyyMmDd) {
     return null;
   }
@@ -55,7 +56,7 @@ const endOfLocalDay = (yyyyMmDd: string): number | null => {
   return Number.isFinite(parsed) ? parsed : null;
 };
 
-const formatWhen = (value: string | Date): string => {
+const formatWhen = (value: Date | string): string => {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) {
     return '—';
@@ -137,21 +138,25 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
     return [...filteredEvents].sort((left, right) => {
       let result = 0;
       switch (column) {
-        case 'actor':
+        case 'action': {
+          result = compareStrings(left.action, right.action);
+          break;
+        }
+        case 'actor': {
           result = compareStrings(
             actorLabel(left.actorMembershipNumber),
             actorLabel(right.actorMembershipNumber),
           );
           break;
-        case 'action':
-          result = compareStrings(left.action, right.action);
-          break;
-        case 'summary':
+        }
+        case 'summary': {
           result = compareStrings(left.summary, right.summary);
           break;
-        default:
+        }
+        default: {
           result = toTimestamp(left.createdAt) - toTimestamp(right.createdAt);
           break;
+        }
       }
       return result * direction;
     });
@@ -174,8 +179,8 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
     }
   }, [page, totalPages]);
 
-  const pageStart =
-    sortedEvents.length === 0 ? 0 : (safePage - 1) * ROWS_PER_PAGE + 1;
+  const pageStart
+    = sortedEvents.length === 0 ? 0 : (safePage - 1) * ROWS_PER_PAGE + 1;
   const pageEnd = Math.min(safePage * ROWS_PER_PAGE, sortedEvents.length);
   const paginatedEvents = sortedEvents.slice(
     (safePage - 1) * ROWS_PER_PAGE,
@@ -201,20 +206,20 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
         <TextField className='sm:col-span-2 lg:col-span-1'>
           <Label>Search</Label>
           <Input
+            onChange={event => setQuery(event.target.value)}
+            placeholder='Summary, action, actor…'
             type='search'
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder='Summary, action, actor…'
           />
         </TextField>
 
         <Select
-          selectedKey={actorFilter}
           onSelectionChange={(key) => {
             if (key != null) {
               setActorFilter(String(key));
             }
           }}
+          selectedKey={actorFilter}
         >
           <Label>Actor</Label>
           <Select.Trigger>
@@ -226,8 +231,8 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
               <ListBox.Item id='all' textValue='All actors'>
                 All actors
               </ListBox.Item>
-              {actorOptions.map((actor) => (
-                <ListBox.Item key={actor} id={actor} textValue={actor}>
+              {actorOptions.map(actor => (
+                <ListBox.Item id={actor} key={actor} textValue={actor}>
                   {actor}
                 </ListBox.Item>
               ))}
@@ -236,12 +241,12 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
         </Select>
 
         <Select
-          selectedKey={actionFilter}
           onSelectionChange={(key) => {
             if (key != null) {
               setActionFilter(String(key));
             }
           }}
+          selectedKey={actionFilter}
         >
           <Label>Action</Label>
           <Select.Trigger>
@@ -253,8 +258,8 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
               <ListBox.Item id='all' textValue='All actions'>
                 All actions
               </ListBox.Item>
-              {actionOptions.map((action) => (
-                <ListBox.Item key={action} id={action} textValue={action}>
+              {actionOptions.map(action => (
+                <ListBox.Item id={action} key={action} textValue={action}>
                   {action}
                 </ListBox.Item>
               ))}
@@ -265,25 +270,37 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
         <TextField>
           <Label>From date</Label>
           <Input
+            onChange={event => setFromDate(event.target.value)}
             type='date'
             value={fromDate}
-            onChange={(event) => setFromDate(event.target.value)}
           />
         </TextField>
 
         <TextField>
           <Label>To date</Label>
           <Input
+            onChange={event => setToDate(event.target.value)}
             type='date'
             value={toDate}
-            onChange={(event) => setToDate(event.target.value)}
           />
         </TextField>
       </div>
 
       <p className='border-b border-border px-4 py-2 text-sm text-muted-foreground'>
-        Showing {sortedEvents.length === 0 ? 0 : pageStart}–{pageEnd} of{' '}
-        {sortedEvents.length} filtered ({events.length} loaded)
+        Showing
+        {' '}
+        {sortedEvents.length === 0 ? 0 : pageStart}
+        –
+        {pageEnd}
+        {' '}
+        of
+        {' '}
+        {sortedEvents.length}
+        {' '}
+        filtered (
+        {events.length}
+        {' '}
+        loaded)
       </p>
 
       <Table className='roster-table'>
@@ -291,8 +308,8 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
           <Table.Content
             aria-label='Audit log'
             className='min-w-[720px]'
-            sortDescriptor={sortDescriptor}
             onSortChange={setSortDescriptor}
+            sortDescriptor={sortDescriptor}
           >
             <Table.Header>
               <Table.Column allowsSorting id='createdAt'>
@@ -316,7 +333,7 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
                   </Table.SortableColumnHeader>
                 )}
               </Table.Column>
-              <Table.Column allowsSorting isRowHeader id='summary'>
+              <Table.Column allowsSorting id='summary' isRowHeader>
                 {({ sortDirection }) => (
                   <Table.SortableColumnHeader sortDirection={sortDirection}>
                     Summary
@@ -332,7 +349,7 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
                 </div>
               )}
             >
-              {(event) => (
+              {event => (
                 <Table.Row id={event.id}>
                   <Table.Cell className='whitespace-nowrap text-sm text-muted-foreground'>
                     {formatWhen(event.createdAt)}
@@ -349,49 +366,54 @@ export const AuditLogTable = ({ events }: AuditLogTableProps) => {
             </Table.Body>
           </Table.Content>
         </Table.ScrollContainer>
-        {sortedEvents.length > 0 ? (
-          <Table.Footer>
-            <Pagination size='sm'>
-              <Pagination.Summary>
-                {pageStart}–{pageEnd} of {sortedEvents.length}
-              </Pagination.Summary>
-              <Pagination.Content>
-                <Pagination.Item>
-                  <Pagination.Previous
-                    isDisabled={safePage === 1}
-                    onPress={() =>
-                      setPage((current) => Math.max(1, current - 1))
-                    }
-                  >
-                    <Pagination.PreviousIcon />
-                    Prev
-                  </Pagination.Previous>
-                </Pagination.Item>
-                {pages.map((pageNumber) => (
-                  <Pagination.Item key={pageNumber}>
-                    <Pagination.Link
-                      isActive={pageNumber === safePage}
-                      onPress={() => setPage(pageNumber)}
-                    >
-                      {pageNumber}
-                    </Pagination.Link>
-                  </Pagination.Item>
-                ))}
-                <Pagination.Item>
-                  <Pagination.Next
-                    isDisabled={safePage === totalPages}
-                    onPress={() =>
-                      setPage((current) => Math.min(totalPages, current + 1))
-                    }
-                  >
-                    Next
-                    <Pagination.NextIcon />
-                  </Pagination.Next>
-                </Pagination.Item>
-              </Pagination.Content>
-            </Pagination>
-          </Table.Footer>
-        ) : null}
+        {sortedEvents.length > 0
+          ? (
+              <Table.Footer>
+                <Pagination size='sm'>
+                  <Pagination.Summary>
+                    {pageStart}
+                    –
+                    {pageEnd}
+                    {' '}
+                    of
+                    {sortedEvents.length}
+                  </Pagination.Summary>
+                  <Pagination.Content>
+                    <Pagination.Item>
+                      <Pagination.Previous
+                        isDisabled={safePage === 1}
+                        onPress={() =>
+                          setPage(current => Math.max(1, current - 1))}
+                      >
+                        <Pagination.PreviousIcon />
+                        Prev
+                      </Pagination.Previous>
+                    </Pagination.Item>
+                    {pages.map(pageNumber => (
+                      <Pagination.Item key={pageNumber}>
+                        <Pagination.Link
+                          isActive={pageNumber === safePage}
+                          onPress={() => setPage(pageNumber)}
+                        >
+                          {pageNumber}
+                        </Pagination.Link>
+                      </Pagination.Item>
+                    ))}
+                    <Pagination.Item>
+                      <Pagination.Next
+                        isDisabled={safePage === totalPages}
+                        onPress={() =>
+                          setPage(current => Math.min(totalPages, current + 1))}
+                      >
+                        Next
+                        <Pagination.NextIcon />
+                      </Pagination.Next>
+                    </Pagination.Item>
+                  </Pagination.Content>
+                </Pagination>
+              </Table.Footer>
+            )
+          : null}
       </Table>
     </section>
   );

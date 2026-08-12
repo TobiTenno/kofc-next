@@ -2,6 +2,7 @@
 
 import { Alert, Button, Card, Form, Label } from '@heroui/react';
 import { useRef, useState } from 'react';
+
 import { AdminPageSurface } from '@/components/AdminPageSurface';
 
 export default function RosterAdminPage() {
@@ -9,8 +10,8 @@ export default function RosterAdminPage() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [messageTone, setMessageTone] = useState<'success' | 'danger'>(
+  const [message, setMessage] = useState<null | string>(null);
+  const [messageTone, setMessageTone] = useState<'danger' | 'success'>(
     'success',
   );
 
@@ -29,14 +30,14 @@ export default function RosterAdminPage() {
     body.set('file', file);
 
     const response = await fetch('/api/members/admin/roster/upload', {
-      method: 'POST',
       body,
+      method: 'POST',
     });
     const payload = (await response.json()) as {
-      error?: string;
-      upserted?: number;
       deactivated?: number;
+      error?: string;
       rowCount?: number;
+      upserted?: number;
     };
 
     if (response.ok) {
@@ -48,7 +49,8 @@ export default function RosterAdminPage() {
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
-    } else {
+    }
+    else {
       setMessageTone('danger');
       setMessage(payload.error ?? 'Upload failed');
     }
@@ -64,9 +66,9 @@ export default function RosterAdminPage() {
       method: 'POST',
     });
     const payload = (await response.json()) as {
+      deactivated?: number;
       error?: string;
       upserted?: number;
-      deactivated?: number;
     };
 
     if (response.ok) {
@@ -74,7 +76,8 @@ export default function RosterAdminPage() {
       setMessage(
         `Synced from disk. ${payload.upserted ?? 0} active, ${payload.deactivated ?? 0} deactivated.`,
       );
-    } else {
+    }
+    else {
       setMessageTone('danger');
       setMessage(payload.error ?? 'Sync failed');
     }
@@ -93,25 +96,27 @@ export default function RosterAdminPage() {
           </Card.Description>
         </Card.Header>
         <Card.Content>
-          <Form onSubmit={upload} className='grid gap-4'>
+          <Form className='grid gap-4' onSubmit={upload}>
             <div className='grid gap-2'>
               <Label>CSV file</Label>
               <input
-                ref={fileInputRef}
-                type='file'
                 accept='.csv,text/csv'
                 className='block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-blue-900 file:px-3 file:py-2 file:text-sm file:font-medium file:text-white hover:file:bg-blue-800'
-                onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+                onChange={event => setFile(event.target.files?.[0] ?? null)}
+                ref={fileInputRef}
+                type='file'
               />
-              {file ? (
-                <p className='text-sm text-muted-foreground'>{file.name}</p>
-              ) : null}
+              {file
+                ? (
+                    <p className='text-sm text-muted-foreground'>{file.name}</p>
+                  )
+                : null}
             </div>
             <Button
+              fullWidth
+              isDisabled={uploading}
               type='submit'
               variant='primary'
-              isDisabled={uploading}
-              fullWidth
             >
               {uploading ? 'Uploading…' : 'Upload and sync'}
             </Button>
@@ -129,24 +134,26 @@ export default function RosterAdminPage() {
         </Card.Header>
         <Card.Content>
           <Button
-            variant='secondary'
-            isDisabled={syncing}
             fullWidth
+            isDisabled={syncing}
             onPress={() => void syncFromDisk()}
+            variant='secondary'
           >
             {syncing ? 'Syncing…' : 'Sync current CSV'}
           </Button>
         </Card.Content>
       </Card>
 
-      {message ? (
-        <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
-          <Alert.Indicator />
-          <Alert.Content>
-            <Alert.Description>{message}</Alert.Description>
-          </Alert.Content>
-        </Alert>
-      ) : null}
+      {message
+        ? (
+            <Alert status={messageTone === 'success' ? 'success' : 'danger'}>
+              <Alert.Indicator />
+              <Alert.Content>
+                <Alert.Description>{message}</Alert.Description>
+              </Alert.Content>
+            </Alert>
+          )
+        : null}
     </AdminPageSurface>
   );
 }

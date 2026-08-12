@@ -6,7 +6,7 @@ export default function ThankYouPage() {
         Your PayPal payment was submitted. The Financial Secretary will record
         it once confirmed.
       </p>
-      <a href='/' className='underline'>
+      <a className='underline' href='/'>
         Return home
       </a>
     </section>
