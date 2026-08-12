@@ -67,7 +67,9 @@ const applySettingsToForm = (
   setters.setPaypalSubSyncIntervalMs(
     String(settings.paypalSubSyncIntervalMs ?? 3_600_000),
   );
-  setters.setPaypalClientSecretMasked(settings.paypalClientSecretMasked ?? null);
+  setters.setPaypalClientSecretMasked(
+    settings.paypalClientSecretMasked ?? null,
+  );
   setters.setPaypalWebhookIdMasked(settings.paypalWebhookIdMasked ?? null);
   setters.setPaypalPlans(settings.paypalPlans ?? {});
   const next = emptyRates();
@@ -98,9 +100,8 @@ export const DuesSettingsModal = ({
   const [paypalWebhookIdMasked, setPaypalWebhookIdMasked] = useState<
     string | null
   >(null);
-  const [paypalSubSyncIntervalMs, setPaypalSubSyncIntervalMs] = useState(
-    '3600000',
-  );
+  const [paypalSubSyncIntervalMs, setPaypalSubSyncIntervalMs] =
+    useState('3600000');
   const [rateDrafts, setRateDrafts] = useState(emptyRates);
   const [paypalPlans, setPaypalPlans] = useState<Record<string, string>>({});
   const [paypalMeta, setPaypalMeta] = useState<PaypalMeta | null>(null);
@@ -324,10 +325,7 @@ export const DuesSettingsModal = ({
                     onChange={setPaypalClientId}
                   >
                     <Label>Client ID</Label>
-                    <Input
-                      autoComplete='off'
-                      placeholder='PAYPAL_CLIENT_ID'
-                    />
+                    <Input autoComplete='off' placeholder='PAYPAL_CLIENT_ID' />
                   </TextField>
 
                   <TextField
