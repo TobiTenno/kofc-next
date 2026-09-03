@@ -11,6 +11,10 @@ import { recordAuditEvent } from '@/lib/audit';
 import { getAuthTrustedOrigins } from '@/lib/auth-trusted-origins';
 
 const authOptions = {
+  account: {
+    // 1.7+: provider-scoped namespaces (local:credential / local:oauth:*).
+    identityStrategy: 'provider-id' as const,
+  },
   baseURL: process.env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
     provider: 'sqlite',
