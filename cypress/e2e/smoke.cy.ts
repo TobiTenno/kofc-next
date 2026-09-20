@@ -31,16 +31,17 @@ describe('public site (example council.json)', () => {
 
 describe('member login (example council.csv + seeded password)', () => {
   it('signs in with the CI test member', () => {
-    cy.visit('/members/login');
-    cy.get('#membership-number').type(
-      Cypress.env('TEST_MEMBER_NUMBER') as string,
+    cy.env(['TEST_MEMBER_NUMBER', 'TEST_MEMBER_PASSWORD']).then(
+      ({ TEST_MEMBER_NUMBER, TEST_MEMBER_PASSWORD }) => {
+        cy.visit('/members/login');
+        cy.get('#membership-number').type(TEST_MEMBER_NUMBER);
+        cy.get('#membership-password').type(TEST_MEMBER_PASSWORD, {
+          log: false,
+        });
+        cy.contains('button', 'Sign in').click();
+        cy.url().should('eq', `${Cypress.config('baseUrl')}/`);
+        cy.contains('nav a', 'Sign in').should('not.exist');
+      },
     );
-    cy.get('#membership-password').type(
-      Cypress.env('TEST_MEMBER_PASSWORD') as string,
-      { log: false },
-    );
-    cy.contains('button', 'Sign in').click();
-    cy.url().should('eq', `${Cypress.config('baseUrl')}/`);
-    cy.contains('nav a', 'Sign in').should('not.exist');
   });
 });
