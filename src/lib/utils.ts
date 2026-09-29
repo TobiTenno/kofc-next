@@ -57,8 +57,5 @@ export const maskSecret = (value: null | string | undefined): null | string => {
   if (!trimmed) {
     return null;
   }
-  if (trimmed.length <= 4) {
-    return '••••';
-  }
-  return `••••${trimmed.slice(-4)}`;
+  return trimmed.length <= 4 ? '••••' : `••••${trimmed.slice(-4)}`;
 };

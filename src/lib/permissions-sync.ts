@@ -22,10 +22,7 @@ export const withWebmaster = (
   membershipNumbers: string[],
   webmaster = loadCouncilConfig().webmaster?.membershipNumber,
 ): string[] => {
-  if (!webmaster || membershipNumbers.includes(webmaster)) {
-    return membershipNumbers;
-  }
-  return [...membershipNumbers, webmaster];
+  return !webmaster || membershipNumbers.includes(webmaster) ? membershipNumbers : [...membershipNumbers, webmaster];
 };
 
 const permissionListsWithWebmaster = (
@@ -209,11 +206,7 @@ const membersForPermissionKey = async (
     .where(eq(permissions.key, key))
     .limit(1);
 
-  if (rows[0]) {
-    return withWebmaster(JSON.parse(rows[0].membershipNumbers) as string[]);
-  }
-
-  return permissionMembersFromConfig(key);
+  return rows[0] ? withWebmaster(JSON.parse(rows[0].membershipNumbers) as string[]) : permissionMembersFromConfig(key);
 };
 
 const memberListedForKey = async (
@@ -240,14 +233,11 @@ export const hasPermission = async (
 
   // Anyone who can assign permissions can use every permission-gated feature
   // (including newly added keys) and edit those lists in the Permissions UI.
-  if (
-    key !== 'managePermissions'
-    && (await memberListedForKey(membershipNumber, 'managePermissions'))
-  ) {
-    return true;
-  }
-
-  return memberListedForKey(membershipNumber, key);
+  return (
+    (key !== 'managePermissions'
+      && (await memberListedForKey(membershipNumber, 'managePermissions')))
+    || memberListedForKey(membershipNumber, key)
+  );
 };
 
 export const updatePermissions = async (

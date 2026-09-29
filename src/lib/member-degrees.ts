@@ -18,11 +18,7 @@ export const formatDegreeDate = (value: null | string | undefined): string => {
   }
 
   const match = value.trim().match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (!match) {
-    return value.trim();
-  }
-
-  return `${match[1]}/${match[2]}/${match[3]}`;
+  return match ? `${match[1]}/${match[2]}/${match[3]}` : value.trim();
 };
 
 export const getHighestDegreeLabel = (member: DegreeMember): null | string => {
@@ -38,11 +34,7 @@ export const getHighestDegreeLabel = (member: DegreeMember): null | string => {
     return '2nd Degree';
   }
 
-  if (member.firstDegreeDate?.trim()) {
-    return '1st Degree';
-  }
-
-  return null;
+  return member.firstDegreeDate?.trim() ? '1st Degree' : null;
 };
 
 export const getHighestDegreeRank = (member: DegreeMember): number => {
@@ -58,11 +50,7 @@ export const getHighestDegreeRank = (member: DegreeMember): number => {
     return 2;
   }
 
-  if (member.firstDegreeDate?.trim()) {
-    return 1;
-  }
-
-  return 0;
+  return member.firstDegreeDate?.trim() ? 1 : 0;
 };
 
 export const parseDegreeDate = (
@@ -73,13 +61,9 @@ export const parseDegreeDate = (
   }
 
   const match = value.trim().match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (!match) {
-    return null;
-  }
-
-  return new Date(
+  return match ? new Date(
     Number(match[3]),
     Number(match[1]) - 1,
     Number(match[2]),
-  ).getTime();
+  ).getTime() : null;
 };

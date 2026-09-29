@@ -24,9 +24,5 @@ export const formatMemberClass = (
   }
 
   const normalized = code.trim().toUpperCase();
-  if (isMemberClassCode(normalized)) {
-    return memberClassLabels[normalized];
-  }
-
-  return code.trim();
+  return isMemberClassCode(normalized) ? memberClassLabels[normalized] : code.trim();
 };

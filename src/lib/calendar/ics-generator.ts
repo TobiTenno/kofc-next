@@ -14,10 +14,7 @@ const councilName = (): string => {
   if (name && number) {
     return `Council ${number} ${name}`;
   }
-  if (number) {
-    return `Council ${number}`;
-  }
-  return 'Knights of Columbus Council';
+  return number ? `Council ${number}` : 'Knights of Columbus Council';
 };
 
 const addMeetingEvents = (calendar: ReturnType<typeof ical>): void => {

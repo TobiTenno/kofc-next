@@ -12,10 +12,7 @@ const resolveDatabasePath = (): string => {
   if (configured) {
     return configured;
   }
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
-    return ':memory:';
-  }
-  return path.join(process.cwd(), 'data', 'app.db');
+  return process.env.NEXT_PHASE === 'phase-production-build' ? ':memory:' : path.join(process.cwd(), 'data', 'app.db');
 };
 
 const databasePath = resolveDatabasePath();

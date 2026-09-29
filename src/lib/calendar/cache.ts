@@ -62,18 +62,12 @@ export const getCachedFeedPath = (feed: CalendarFeed): string =>
 
 export const readCachedFeed = (feed: CalendarFeed): null | string => {
   const filePath = getCachedFeedPath(feed);
-  if (!fs.existsSync(filePath)) {
-    return null;
-  }
-  return fs.readFileSync(filePath, 'utf8');
+  return fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf8') : null;
 };
 
 export const ensureFeedCached = async (feed: CalendarFeed): Promise<string> => {
   const filePath = getCachedFeedPath(feed);
-  if (!fs.existsSync(filePath)) {
-    return writeFeed(feed);
-  }
-  return filePath;
+  return fs.existsSync(filePath) ? filePath : writeFeed(feed);
 };
 
 export const getCalendarMeta = async (

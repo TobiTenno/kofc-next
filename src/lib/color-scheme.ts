@@ -23,11 +23,7 @@ export const readStoredColorScheme = (): ColorSchemePreference => {
   }
 
   const stored = localStorage.getItem(colorSchemeStorageKey);
-  if (stored === 'light' || stored === 'dark' || stored === 'system') {
-    return stored;
-  }
-
-  return 'system';
+  return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
 };
 
 export const applyColorScheme = (preference: ColorSchemePreference): void => {

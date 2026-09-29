@@ -20,9 +20,5 @@ export const parseMemberBirthMonthDay = (
   }
 
   const iso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (iso) {
-    return { day: Number(iso[3]), month: Number(iso[2]) };
-  }
-
-  return null;
+  return iso ? { day: Number(iso[3]), month: Number(iso[2]) } : null;
 };

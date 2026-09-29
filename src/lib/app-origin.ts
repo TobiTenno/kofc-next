@@ -39,11 +39,7 @@ export const getRequestProtocol = (
   fallbackProtocol: string,
 ): string => {
   const forwarded = firstForwardedHeaderValue(headers.get('x-forwarded-proto'));
-  if (forwarded === 'https' || forwarded === 'http') {
-    return `${forwarded}:`;
-  }
-
-  return fallbackProtocol;
+  return forwarded === 'https' || forwarded === 'http' ? `${forwarded}:` : fallbackProtocol;
 };
 
 /**
@@ -97,16 +93,10 @@ export const shouldRedirectToCanonicalOrigin = (
   try {
     const canonicalUrl = new URL(canonical);
     const requestHostname = requestHost.split(':', 1)[0] ?? requestHost;
-    if (
-      canonicalUrl.hostname === requestHostname
-      || canonicalUrl.host === requestHost
-    ) {
-      return false;
-    }
-
-    return (
-      isLoopbackHost(requestHostname) && !isLoopbackHost(canonicalUrl.hostname)
-    );
+    return canonicalUrl.hostname === requestHostname
+      || canonicalUrl.host === requestHost ? false : (
+        isLoopbackHost(requestHostname) && !isLoopbackHost(canonicalUrl.hostname)
+      );
   }
   catch {
     return false;

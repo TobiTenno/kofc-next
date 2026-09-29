@@ -10,11 +10,7 @@ import { getMembershipNumber } from '@/lib/session';
 export const runtime = 'nodejs';
 
 const parseSize = (value: null | string): ImmichAssetSize => {
-  if (value === 'preview' || value === 'fullsize') {
-    return value;
-  }
-
-  return 'thumbnail';
+  return value === 'preview' || value === 'fullsize' ? value : 'thumbnail';
 };
 
 export const GET = async (

@@ -115,10 +115,7 @@ export default function DuesAdminPage() {
       return '—';
     }
     const date = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(date.getTime())) {
-      return '—';
-    }
-    return date.toLocaleDateString();
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
   };
 
   return (

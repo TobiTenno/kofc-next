@@ -38,10 +38,7 @@ const parseCustomId = (
     return null;
   }
   const [membershipNumber, councilYear] = customId.split('|', 2);
-  if (!membershipNumber || !councilYear) {
-    return null;
-  }
-  return { councilYear, membershipNumber };
+  return !membershipNumber || !councilYear ? null : { councilYear, membershipNumber };
 };
 
 const parseTime = (value: string | undefined): Date | null => {
@@ -87,25 +84,27 @@ const handleSubscriptionLifecycle = async (
   });
 
   // First activation often includes initial payment — credit current year if unpaid.
-  if (mapPaypalStatusToLocal(resource.status) === 'active') {
-    const councilYear
-      = custom?.councilYear
-        ?? dues?.councilYear
-        ?? (await getCurrentCouncilYear());
-    if (dues && councilYear) {
-      const txnId = `sub-activate:${subscriptionId}:${event.id ?? resource.status}`;
-      await recordPaypalPayment({
-        amountCents: dues.amountCents,
-        councilYear,
-        memberClass: dues.memberClass,
-        membershipNumber,
-        payerEmail: resource.subscriber?.email_address,
-        paypalSubscriptionId: subscriptionId,
-        paypalTxnId: txnId,
-        source: 'paypal_subscription',
-      });
-    }
+  if (mapPaypalStatusToLocal(resource.status) !== 'active') {
+    return;
   }
+  const councilYear
+    = custom?.councilYear
+      ?? dues?.councilYear
+      ?? (await getCurrentCouncilYear());
+  if (!dues || !councilYear) {
+    return;
+  }
+  const txnId = `sub-activate:${subscriptionId}:${event.id ?? resource.status}`;
+  await recordPaypalPayment({
+    amountCents: dues.amountCents,
+    councilYear,
+    memberClass: dues.memberClass,
+    membershipNumber,
+    payerEmail: resource.subscriber?.email_address,
+    paypalSubscriptionId: subscriptionId,
+    paypalTxnId: txnId,
+    source: 'paypal_subscription',
+  });
 };
 
 const handleSaleCompleted = async (

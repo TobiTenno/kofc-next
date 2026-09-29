@@ -62,11 +62,7 @@ Upload-only key for browser direct uploads; falls back to admin key.
 */
 export const getImmichUploadApiKey = (): null | string => {
   const stored = getStoredImmichConfig();
-  if (!stored) {
-    return null;
-  }
-
-  return stored.uploadApiKey?.trim() || stored.apiKey;
+  return stored ? stored.uploadApiKey?.trim() || stored.apiKey : null;
 };
 
 export const getImmichUploadSession = (): ImmichUploadSession | null => {
@@ -87,11 +83,7 @@ export const getImmichUploadSession = (): ImmichUploadSession | null => {
 
 export const getMaxUploadBytes = (): number => {
   const megabytes = getStoredImmichConfig()?.maxUploadMb ?? 25;
-  if (!Number.isFinite(megabytes) || megabytes <= 0) {
-    return 25 * 1024 * 1024;
-  }
-
-  return megabytes * 1024 * 1024;
+  return ((!Number.isFinite(megabytes) || megabytes <= 0 ? 25 : megabytes) * 1024) * 1024;
 };
 
 const immichRequest = async <T>(
@@ -119,11 +111,7 @@ const immichRequest = async <T>(
     );
   }
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return response.json() as Promise<T>;
+  return response.status === 204 ? (undefined as T) : (response.json() as Promise<T>);
 };
 
 export type ImmichAlbumSummary = {

@@ -111,11 +111,7 @@ export const getMemberSubscription = async (
   }
 
   const active = rows.find(row => row.status === 'active');
-  if (active) {
-    return active;
-  }
-
-  return (
+  return active ? active : (
     rows.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())[0]
     ?? null
   );
@@ -123,11 +119,7 @@ export const getMemberSubscription = async (
 
 export const getPaypalBusinessEmail = (): null | string => {
   const fromConfig = loadCouncilConfig().dues?.paypalBusinessEmail?.trim();
-  if (fromConfig) {
-    return fromConfig;
-  }
-
-  return process.env.PAYPAL_BUSINESS_EMAIL?.trim() || null;
+  return fromConfig ? fromConfig : process.env.PAYPAL_BUSINESS_EMAIL?.trim() || null;
 };
 
 export const isPayPalConfigured = (): boolean =>
@@ -331,11 +323,7 @@ export const getPlanIdForMember = async (
   }
 
   const planId = getPaypalPlanIdForClass(dues.memberClass);
-  if (!planId) {
-    return null;
-  }
-
-  return { dues, planId };
+  return planId ? { dues, planId } : null;
 };
 
 export const recordManualPayment = async (options: {

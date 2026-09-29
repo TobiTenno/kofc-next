@@ -499,10 +499,7 @@ export const RosterTable = ({
             if (status === 'paid') {
               return 2;
             }
-            if (status === 'unpaid') {
-              return 1;
-            }
-            return 0;
+            return status === 'unpaid' ? 1 : 0;
           };
           result = rank(leftStatus) - rank(rightStatus);
           break;
