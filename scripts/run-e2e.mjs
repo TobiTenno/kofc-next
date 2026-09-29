@@ -60,10 +60,7 @@ let serverProcess = null;
 
 const resolveDatabasePath = () => {
   const configured = e2eEnv.DATABASE_PATH.replace(/^\.\//, '') || 'data/app.db';
-  if (configured === ':memory:') {
-    return ':memory:';
-  }
-  return path.resolve(root, configured);
+  return configured === ':memory:' ? ':memory:' : path.resolve(root, configured);
 };
 
 const runEnv = (extraEnv = {}) => ({
@@ -247,7 +244,7 @@ try {
     startServer();
     await waitForServer(baseUrl);
 
-    const cypressArgs = openMode ? ['cypress', 'open'] : ['cypress', 'run'];
+    const cypressArgs = ['cypress', openMode ? 'open' : 'run'];
     console.log(`\n> ${openMode ? 'Cypress open' : 'Cypress run'}`);
 
     const cypressResult = spawnSync('npx', cypressArgs, {

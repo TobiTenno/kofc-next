@@ -58,10 +58,7 @@ const endOfLocalDay = (yyyyMmDd: string): null | number => {
 
 const formatWhen = (value: Date | string): string => {
   const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '—';
-  }
-  return date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString();
 };
 
 export const AuditLogTable = ({ events }: AuditLogTableProps) => {

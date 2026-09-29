@@ -57,11 +57,7 @@ const parseOrdinalWeekday = (
 
   const nth = Number(match[1]);
   const weekday = weekdayIndex[match[2].toLowerCase()];
-  if (!weekday || nth < 1 || nth > 5) {
-    return null;
-  }
-
-  return { nth, weekday };
+  return !weekday || nth < 1 || nth > 5 ? null : { nth, weekday };
 };
 
 const parseMeetingTime = (
@@ -110,11 +106,7 @@ const nthWeekdayOfMonth = (
 
 const formatMeetingLocation = (): null | string => {
   const location = loadCouncilConfig().council?.meetingLocation;
-  if (!location) {
-    return null;
-  }
-
-  return formatPostalAddress(location);
+  return location ? formatPostalAddress(location) : null;
 };
 
 const expandMonthlyMeeting = (options: {

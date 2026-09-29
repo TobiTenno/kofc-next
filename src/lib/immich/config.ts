@@ -167,11 +167,7 @@ export const ensureImmichConfigSynced = async (): Promise<void> => {
 };
 
 export const getStoredImmichConfig = (): ImmichStoredConfig | null => {
-  if (cachedStored !== undefined) {
-    return cachedStored;
-  }
-
-  return readImmichFromCouncilJson() ?? readImmichFromEnv();
+  return cachedStored === undefined ? readImmichFromCouncilJson() ?? readImmichFromEnv() : cachedStored;
 };
 
 export const toImmichPublicSettings = (
@@ -198,11 +194,7 @@ export const getImmichPublicSettings = (): ImmichPublicSettings => {
     return toImmichPublicSettings(stored, 'stored');
   }
 
-  if (readImmichFromEnv()) {
-    return toImmichPublicSettings(stored, 'env-legacy');
-  }
-
-  return toImmichPublicSettings(null, 'none');
+  return readImmichFromEnv() ? toImmichPublicSettings(stored, 'env-legacy') : toImmichPublicSettings(null, 'none');
 };
 
 export { trimTrailingSlash };

@@ -48,11 +48,7 @@ Dues column, dues filter, and bulk roster email — financial secretary or webma
 export const canUseRosterAdminTools = async (
   membershipNumber: string,
 ): Promise<boolean> => {
-  if (isWebmaster(membershipNumber)) {
-    return true;
-  }
-
-  return isFinancialSecretary(membershipNumber);
+  return isWebmaster(membershipNumber) ? true : isFinancialSecretary(membershipNumber);
 };
 
 /**
@@ -61,11 +57,7 @@ Single or bulk roster email — admin tools or sendCouncilEmail permission.
 export const canSendRosterEmail = async (
   membershipNumber: string,
 ): Promise<boolean> => {
-  if (await canUseRosterAdminTools(membershipNumber)) {
-    return true;
-  }
-
-  return hasPermission(membershipNumber, 'sendCouncilEmail');
+  return (await canUseRosterAdminTools(membershipNumber)) ? true : hasPermission(membershipNumber, 'sendCouncilEmail');
 };
 
 /**

@@ -25,10 +25,12 @@ const addOrigin = (origins: Set<string>, value?: null | string): void => {
   origins.add(`http://${host}`);
   origins.add(`https://${host}`);
 
-  if (!host.includes(':')) {
-    origins.add(`http://${host}:${devTrustedPort}`);
-    origins.add(`https://${host}:${devTrustedPort}`);
+  if (host.includes(':')) {
+    return;
   }
+
+  origins.add(`http://${host}:${devTrustedPort}`);
+  origins.add(`https://${host}:${devTrustedPort}`);
 };
 
 /**

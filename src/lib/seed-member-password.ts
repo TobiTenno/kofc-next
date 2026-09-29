@@ -24,10 +24,7 @@ const resolveMemberEmail = (member: {
   membershipNumber: string;
   primaryEmail: null | string;
 }): string => {
-  if (member.primaryEmail) {
-    return normalizeEmail(member.primaryEmail);
-  }
-  return devEmailForMember(member.membershipNumber);
+  return member.primaryEmail ? normalizeEmail(member.primaryEmail) : devEmailForMember(member.membershipNumber);
 };
 
 const removeExistingUser = async (

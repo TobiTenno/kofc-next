@@ -73,11 +73,7 @@ const formatAgendaTime = (
     return localizer.format(start, 'agendaTimeFormat');
   }
 
-  if (localizer.isSameDate(day, end)) {
-    return localizer.format(end, 'agendaTimeFormat');
-  }
-
-  return localizer.format(start, 'agendaTimeFormat');
+  return localizer.isSameDate(day, end) ? localizer.format(end, 'agendaTimeFormat') : localizer.format(start, 'agendaTimeFormat');
 };
 
 const EMPTY_AGENDA_EVENTS: CalendarPreviewEvent[] = [];

@@ -106,10 +106,7 @@ export const getPaypalPlanIdForClass = (memberClass: string): null | string => {
 
 export const hasPaypalPlansConfigured = (): boolean => {
   const plans = getDuesPaypal()?.paypalPlans;
-  if (!plans) {
-    return false;
-  }
-  return Object.values(plans).some(id => Boolean(id?.trim()));
+  return plans ? Object.values(plans).some(id => Boolean(id?.trim())) : false;
 };
 
 export const isPaypalSubscriptionsReady = (): boolean =>
@@ -194,11 +191,7 @@ const paypalFetch = async <T>(path: string, init?: RequestInit): Promise<T> => {
     throw new Error(`PayPal API ${path} failed (${response.status}): ${body}`);
   }
 
-  if (response.status === 204) {
-    return undefined as T;
-  }
-
-  return (await response.json()) as T;
+  return response.status === 204 ? (undefined as T) : ((await response.json()) as T);
 };
 
 const ensurePaypalProduct = async (
@@ -431,8 +424,5 @@ export const verifyPaypalWebhookSignature = async (
 
 export const getAppReturnBase = (): string => {
   const origin = getCanonicalAppOrigin();
-  if (origin) {
-    return origin;
-  }
-  return 'http://localhost:47831';
+  return origin ? origin : 'http://localhost:47831';
 };

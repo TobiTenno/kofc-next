@@ -19,18 +19,10 @@ const formatEventWhen = (event: CalendarPreviewEvent): string => {
 
   if (event.allDay) {
     const lastDay = end.subtract(1, 'day');
-    if (start.isSame(lastDay, 'day')) {
-      return start.format('dddd, MMMM D, YYYY');
-    }
-
-    return `${start.format('MMM D, YYYY')} – ${lastDay.format('MMM D, YYYY')}`;
+    return start.isSame(lastDay, 'day') ? start.format('dddd, MMMM D, YYYY') : `${start.format('MMM D, YYYY')} – ${lastDay.format('MMM D, YYYY')}`;
   }
 
-  if (start.isSame(end, 'day')) {
-    return `${start.format('dddd, MMMM D, YYYY')} · ${start.format('h:mm A')} – ${end.format('h:mm A')}`;
-  }
-
-  return `${start.format('MMM D, YYYY h:mm A')} – ${end.format('MMM D, YYYY h:mm A')}`;
+  return start.isSame(end, 'day') ? `${start.format('dddd, MMMM D, YYYY')} · ${start.format('h:mm A')} – ${end.format('h:mm A')}` : `${start.format('MMM D, YYYY h:mm A')} – ${end.format('MMM D, YYYY h:mm A')}`;
 };
 
 export const CalendarEventDialog = ({

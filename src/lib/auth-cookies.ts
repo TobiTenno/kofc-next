@@ -19,11 +19,7 @@ const getBetterAuthSuffix = (name: string): null | string => {
     ? name.slice('__Secure-'.length)
     : name;
 
-  if (!withoutSecurePrefix.startsWith(`${BETTER_AUTH_MARKER}.`)) {
-    return null;
-  }
-
-  return withoutSecurePrefix.slice(`${BETTER_AUTH_MARKER}.`.length);
+  return withoutSecurePrefix.startsWith(`${BETTER_AUTH_MARKER}.`) ? withoutSecurePrefix.slice(`${BETTER_AUTH_MARKER}.`.length) : null;
 };
 
 const isDisabledCacheCookie = (suffix: string): boolean =>
