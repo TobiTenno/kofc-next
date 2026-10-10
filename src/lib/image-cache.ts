@@ -1,9 +1,19 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import sharp from 'sharp';
+import sharpModule from 'sharp';
 
 import { ALLOWED_IMAGE_WIDTHS } from '@/lib/image-sizes';
+
+interface SharpPipeline {
+  resize: (options: { width: number; withoutEnlargement: boolean }) => SharpPipeline;
+  rotate: () => SharpPipeline;
+  toBuffer: () => Promise<Buffer>;
+  webp: (options: { quality: number }) => SharpPipeline;
+}
+
+// vinext's ambient `declare module "sharp"` stub types the default export as `unknown`.
+const sharp = sharpModule as (input: string) => SharpPipeline;
 
 const CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
