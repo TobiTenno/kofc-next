@@ -61,11 +61,6 @@ const EMPTY_PAID_MEMBERSHIP_NUMBERS: string[] = [];
 const compareStrings = (left: string, right: string): number =>
   left.localeCompare(right, undefined, { sensitivity: 'base' });
 
-const compareNullableStrings = (
-  left: null | string,
-  right: null | string,
-): number => compareStrings(left ?? '', right ?? '');
-
 const toParentRows = (members: RosterMemberRow[]): RosterParentRow[] =>
   members.map(member => ({
     ...member,
@@ -521,9 +516,9 @@ export const RosterTable = ({
           break;
         }
         case 'memberClassLabel': {
-          result = compareNullableStrings(
-            left.memberClassLabel,
-            right.memberClassLabel,
+          result = compareStrings(
+            left.memberClassLabel ?? '',
+            right.memberClassLabel ?? '',
           );
           break;
         }
@@ -535,9 +530,9 @@ export const RosterTable = ({
           break;
         }
         case 'primaryEmail': {
-          result = compareNullableStrings(
-            left.primaryEmail,
-            right.primaryEmail,
+          result = compareStrings(
+            left.primaryEmail ?? '',
+            right.primaryEmail ?? '',
           );
           break;
         }
