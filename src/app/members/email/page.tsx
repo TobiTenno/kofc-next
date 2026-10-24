@@ -54,12 +54,11 @@ const EmailForm = () => {
     }
 
     setMessageTone('success');
-    if (payload.recipientEmail) {
-      setMessage(`Sent to ${payload.recipientEmail}.`);
-    }
-    else {
-      setMessage(`Sent to ${payload.recipientCount ?? 0} members.`);
-    }
+    setMessage(
+      payload.recipientEmail
+        ? `Sent to ${payload.recipientEmail}.`
+        : `Sent to ${payload.recipientCount ?? 0} members.`,
+    );
     composeRef.current?.reset();
   };
 

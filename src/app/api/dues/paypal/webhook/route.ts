@@ -38,7 +38,9 @@ const parseCustomId = (
     return null;
   }
   const [membershipNumber, councilYear] = customId.split('|', 2);
-  return !membershipNumber || !councilYear ? null : { councilYear, membershipNumber };
+  return membershipNumber && councilYear
+    ? { councilYear, membershipNumber }
+    : null;
 };
 
 const parseTime = (value: string | undefined): Date | null => {

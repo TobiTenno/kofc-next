@@ -73,7 +73,7 @@ export const PUT = async (request: Request): Promise<NextResponse> => {
     paypalMode?: string;
     paypalSubSyncIntervalMs?: number | string;
     paypalWebhookId?: string;
-    rates?: Record<string, number>;
+    rates?: Record<string, number | string>;
   };
 
   const councilYear = body.councilYear?.trim() ?? '';
