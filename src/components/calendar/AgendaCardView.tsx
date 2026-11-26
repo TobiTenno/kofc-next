@@ -99,8 +99,7 @@ const AgendaCardView = ({
           localizer.endOf(end, 'day'),
           accessors,
           localizer,
-        ),
-      )
+        ))
       .sort((left, right) => +accessors.start(left) - +accessors.start(right));
 
     return range
@@ -113,8 +112,7 @@ const AgendaCardView = ({
             localizer.endOf(day, 'day'),
             accessors,
             localizer,
-          ),
-        ),
+          )),
         label: localizer.format(day, 'agendaDateFormat') as string,
       }))
       .filter(group => group.events.length > 0);

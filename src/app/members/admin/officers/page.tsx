@@ -106,9 +106,7 @@ export default function OfficersAdminPage() {
   const updateOfficer = (index: number, patch: Partial<OfficerDraft>): void => {
     setOfficers(current =>
       current.map((officer, i) =>
-        i === index ? { ...officer, ...patch } : officer,
-      ),
-    );
+        i === index ? { ...officer, ...patch } : officer));
   };
 
   const addOfficer = (): void => {

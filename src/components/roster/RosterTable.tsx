@@ -569,8 +569,7 @@ export const RosterTable = ({
   const selectedMembers = useMemo(
     () =>
       members.filter(member =>
-        selectedMembershipNumbers.has(member.membershipNumber),
-      ),
+        selectedMembershipNumbers.has(member.membershipNumber)),
     [members, selectedMembershipNumbers],
   );
 
@@ -587,18 +586,15 @@ export const RosterTable = ({
   const allFilteredSelected
     = filteredMembershipNumbers.length > 0
       && filteredMembershipNumbers.every(membershipNumber =>
-        selectedMembershipNumbers.has(membershipNumber),
-      );
+        selectedMembershipNumbers.has(membershipNumber));
 
   const allPageSelected
     = pageMembershipNumbers.length > 0
       && pageMembershipNumbers.every(membershipNumber =>
-        selectedMembershipNumbers.has(membershipNumber),
-      );
+        selectedMembershipNumbers.has(membershipNumber));
 
   const somePageSelected = pageMembershipNumbers.some(membershipNumber =>
-    selectedMembershipNumbers.has(membershipNumber),
-  );
+    selectedMembershipNumbers.has(membershipNumber));
 
   const toggleMemberSelected = (
     membershipNumber: string,
