@@ -38,13 +38,13 @@ export type PaypalSubscriptionDetails = {
   };
 };
 
-export type PaypalSubscriptionStatus
-  = | 'ACTIVE'
-    | 'APPROVAL_PENDING'
-    | 'APPROVED'
-    | 'CANCELLED'
-    | 'EXPIRED'
-    | 'SUSPENDED';
+export type PaypalSubscriptionStatus =
+  | 'ACTIVE'
+  | 'APPROVAL_PENDING'
+  | 'APPROVED'
+  | 'CANCELLED'
+  | 'EXPIRED'
+  | 'SUSPENDED';
 
 const getDuesPaypal = () => loadCouncilConfig().dues;
 

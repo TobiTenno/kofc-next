@@ -12,10 +12,10 @@ export type SeedMemberPasswordOptions = {
   reset?: boolean;
 };
 
-export type SeedMemberPasswordResult
-  = | { action: 'created'; email: string; membershipNumber: string }
-    | { action: 'reset'; email: string; membershipNumber: string }
-    | { action: 'skipped'; membershipNumber: string; reason: string };
+export type SeedMemberPasswordResult =
+  | { action: 'created'; email: string; membershipNumber: string }
+  | { action: 'reset'; email: string; membershipNumber: string }
+  | { action: 'skipped'; membershipNumber: string; reason: string };
 
 const devEmailForMember = (membershipNumber: string): string =>
   `member-${membershipNumber}@dev.local`;

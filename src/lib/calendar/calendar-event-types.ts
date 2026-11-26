@@ -1,11 +1,11 @@
 import { parseCalendarDateLocal } from '@/lib/calendar/calendar-date-parse';
 
-export type CalendarEventKind
-  = | 'birthday'
-    | 'council-event'
-    | 'council-meeting'
-    | 'member-event'
-    | 'officers-meeting';
+export type CalendarEventKind =
+  | 'birthday'
+  | 'council-event'
+  | 'council-meeting'
+  | 'member-event'
+  | 'officers-meeting';
 
 export type CalendarEventVariant = 'outline' | 'primary' | 'secondary';
 

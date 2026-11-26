@@ -327,7 +327,7 @@ export const CalendarPreview = ({
                   className='w-full rounded-md bg-muted/30'
                   style={{
                     minHeight:
-                  calendarMinHeight === 'auto' ? '420px' : calendarMinHeight,
+                      calendarMinHeight === 'auto' ? '420px' : calendarMinHeight,
                   }}
                 />
               )}

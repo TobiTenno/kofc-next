@@ -66,8 +66,7 @@ export const writeCouncilCsv = (content: string): { rowCount: number } => {
   }
 
   const hasMembership = rows.some(row =>
-    Boolean(row[csvColumns.membershipNumber]?.trim()),
-  );
+    Boolean(row[csvColumns.membershipNumber]?.trim()));
   if (!hasMembership) {
     throw new Error('CSV has no membership numbers');
   }
